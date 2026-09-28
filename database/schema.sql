@@ -14,7 +14,7 @@ CREATE TABLE songs (
   title             VARCHAR(255) NOT NULL,
   artist            VARCHAR(255) NOT NULL,
   album             VARCHAR(255),
-  cover_url         VARCHAR(500),
+  cover_url         VARCHAR(500)
 );
 
 CREATE TABLE genres (

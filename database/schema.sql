@@ -15,7 +15,6 @@ CREATE TABLE songs (
   artist            VARCHAR(255) NOT NULL,
   album             VARCHAR(255),
   cover_url         VARCHAR(500),
-  preview_url       VARCHAR(500),
 );
 
 CREATE TABLE genres (
@@ -27,7 +26,7 @@ CREATE TABLE genres (
 CREATE TABLE streaming_accounts (
   id               INT AUTO_INCREMENT PRIMARY KEY,
   user_id          INT NOT NULL,
-  provider         ENUM('spotify', 'deezer', 'applemusic') NOT NULL,
+  provider         ENUM('spotify', 'deezer') NOT NULL,
   provider_user_id VARCHAR(255) NOT NULL,
   access_token     TEXT NOT NULL,
   refresh_token    TEXT,
@@ -73,4 +72,23 @@ CREATE TABLE skips (
   UNIQUE (user_id, drop_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
+);
+
+CREATE TABLE reports (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  drop_id    INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, drop_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
+);
+
+CREATE TABLE preview_urls (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  song_id    INT NOT NULL UNIQUE,
+  provider   ENUM('deezer', 'spotify') NOT NULL,
+  url        VARCHAR(500) NOT NULL,
+  fetched_at DATETIME NOT NULL,
+  FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
 );

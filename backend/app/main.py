@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres
+from app.routers import genres, auth
 
 app = FastAPI(
     title="meloDrop API",
@@ -12,6 +12,7 @@ app = FastAPI(
 )
 
 app.include_router(genres.router)
+app.include_router(auth.router)
 
 
 @app.get("/health")

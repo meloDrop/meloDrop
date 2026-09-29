@@ -8,7 +8,7 @@ from app.routers import genres, auth
 
 app = FastAPI(
     title="meloDrop API",
-    version="0.1.0",
+    description="API Backend of the MeloDrop App",
 )
 
 app.include_router(genres.router)

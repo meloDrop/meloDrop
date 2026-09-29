@@ -9,8 +9,10 @@ services:
     ports:
       - "3306:3306"
     volumes:
+      - mysql_data:/var/lib/mysql
       - ../database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ../database/seeds.sql:/docker-entrypoint-initdb.d/02_seeds.sql
+
 
   api:
     build: .
@@ -22,3 +24,6 @@ services:
       DB_HOST: db
     depends_on:
       - db
+
+volumes:
+  mysql_data:

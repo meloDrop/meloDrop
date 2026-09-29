@@ -1,13 +1,12 @@
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    DB_USER: str = Field(default="root", alias="MYSQL_USER")
-    DB_PASSWORD: str = Field(alias="MYSQL_ROOT_PASSWORD")
-    DB_HOST: str = Field(default="localhost", alias="MYSQL_HOST")
-    DB_PORT: int = Field(default=3306, alias="MYSQL_PORT")
-    DB_NAME: str = Field(alias="MYSQL_DATABASE")
+    DB_USER: str = "root"
+    DB_PASSWORD: str
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 3306
+    DB_NAME: str
 
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
@@ -23,10 +22,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        # Force reading the .env file in UTF-8 to prevent encoding errors across different OS
         env_file_encoding="utf-8",
-        # Ignore unused .env variables not defined in this class
-        extra="ignore"
+        extra="ignore",
     )
 
 

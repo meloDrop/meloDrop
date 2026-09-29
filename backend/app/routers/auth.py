@@ -5,10 +5,17 @@ from app.database import get_db
 from app.schemas.user import UserRegister
 from app.services.auth import register_user
 
+from app.utils import load_doc
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", status_code=201)
+@router.post(
+    "/register",
+    status_code=201,
+    description=load_doc("users_register.md"),
+
+)
 def register(body: UserRegister, db: Session = Depends(get_db)):
     try:
         user = register_user(db, body.email, body.username, body.password)

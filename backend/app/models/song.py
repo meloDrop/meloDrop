@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from app.database import Base
 
 class Song(Base):
-    __tablename__ = "song"
+    __tablename__ = "songs"
     id = Column(Integer, primary_key=True)
     isrc = Column(String(12), unique=True)
     title = Column(String(255), nullable=False)

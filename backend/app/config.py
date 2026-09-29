@@ -23,7 +23,9 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=".env",
+        # Force reading the .env file in UTF-8 to prevent encoding errors across different OS
         env_file_encoding="utf-8",
+        # Ignore unused .env variables not defined in this class
         extra="ignore"
     )
 

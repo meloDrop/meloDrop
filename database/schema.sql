@@ -41,6 +41,8 @@ CREATE TABLE drops (
   song_id    INT NOT NULL,
   expires_at DATETIME NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  rand_key   FLOAT NOT NULL,
+  INDEX idx_drops_rand_key (rand_key),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (song_id) REFERENCES songs(id)
 );

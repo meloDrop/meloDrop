@@ -1,4 +1,4 @@
-# ADR-0005: Named Docker Volume for MySQL Data
+# ADR-0003: Named Docker Volume for MySQL Data
 
 **Date:** 2026-09-28
 **Status:** Accepted

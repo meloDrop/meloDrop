@@ -54,9 +54,10 @@ CONSTRAINT fk_drops_song_id FOREIGN KEY (song_id) REFERENCES songs(id)
 );
 
 CREATE TABLE drop_genres (
+id       INT AUTO_INCREMENT PRIMARY KEY,
 drop_id  INT NOT NULL,
 genre_id INT NOT NULL,
-PRIMARY KEY (drop_id, genre_id),
+CONSTRAINT uq_drop_genres_drop_genre UNIQUE (drop_id, genre_id),
 CONSTRAINT fk_drop_genres_drop_id  FOREIGN KEY (drop_id)  REFERENCES drops(id) ON DELETE CASCADE,
 CONSTRAINT fk_drop_genres_genre_id FOREIGN KEY (genre_id) REFERENCES genres(id)
 );

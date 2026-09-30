@@ -13,8 +13,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post(
     "/register",
     status_code=201,
+    responses={
+        201: {"description": "User created"},
+        409: {"description": "Email or username already taken"},
+    },
     description=load_doc("users_register.md"),
-
 )
 def register(body: UserRegister, db: Session = Depends(get_db)):
     try:

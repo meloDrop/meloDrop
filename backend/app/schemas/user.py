@@ -8,6 +8,8 @@ class UserRegister(BaseModel):
 
 
 class UserOut(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     email: str
     username: str

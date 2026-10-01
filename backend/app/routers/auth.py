@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.exceptions import UserAlreadyExistsError
 from app.schemas.user import UserRegister
 from app.services.auth import register_user
 
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register(body: UserRegister, db: Session = Depends(get_db)):
     try:
         user = register_user(db, body.email, body.username, body.password)
-    except ValueError as e:
+    except UserAlreadyExistsError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
     return {"id": user.id, "email": user.email, "username": user.username}

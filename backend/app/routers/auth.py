@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.exceptions import UserAlreadyExistsError
-from app.schemas.user import UserOut, UserRegister
+from app.schemas.auth import UserOut, UserRegister
 from app.services.auth import register_user
 
 from app.utils import load_doc

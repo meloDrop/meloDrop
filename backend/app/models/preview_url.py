@@ -1,10 +1,12 @@
+"""Model of the preview_urls table."""
+
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
 
 from app.database import Base
 
 
 class PreviewUrl(Base):
-    """Model for the 'preview_urls' table."""
+    """A link to a short audio extract of a song, refreshed after 12 hours."""
 
     __tablename__ = "preview_urls"
 

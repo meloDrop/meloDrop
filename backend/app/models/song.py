@@ -1,6 +1,6 @@
 """Model of the songs table."""
 
-from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, func
+from sqlalchemy import BigInteger, Column, Integer, String, DateTime, UniqueConstraint, func
 
 from app.database import Base
 
@@ -15,7 +15,7 @@ class Song(Base):
     title = Column(String(255), nullable=False)
     artist_name = Column(String(255), nullable=False)
     cover_url = Column(String(500))
-    deezer_track_id = Column(Integer)
+    deezer_track_id = Column(BigInteger)
     spotify_track_id = Column(String(500))
     created_at = Column(DateTime, server_default=func.now())
 

@@ -33,3 +33,28 @@ def login_user(db: Session, identifier: str, password: str) -> str:
         raise InvalidCredentialsError("invalid_credentials")
 
     return create_access_token(user.id)
+
+def change_email(db: Session, user: User, password: str, new_email: str) -> User:
+    if not verify_password(password, user.password_hash):
+        raise InvalidCredentialsError("invalid_password")
+
+    if db.query(User).filter(User.email == new_email, User.id != user.id).first():
+        raise UserAlreadyExistsError("email_taken")
+
+    user.email = new_email
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def change_password(db: Session, user: User, old_password: str, new_password: str) -> None:
+    if not verify_password(old_password, user.password_hash):
+        raise InvalidCredentialsError("invalid_password")
+
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+
+def delete_user(db: Session, user: User) -> None:
+    db.delete(user)
+    db.commit()

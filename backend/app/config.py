@@ -1,7 +1,11 @@
+"""Settings of the API, read from the .env file."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """All the settings used by the API."""
+
     DB_USER: str = "root"
     DB_PASSWORD: str
     DB_HOST: str = "localhost"

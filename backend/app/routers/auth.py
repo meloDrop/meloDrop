@@ -1,3 +1,5 @@
+"""Routes of the auth module."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -22,6 +24,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     description=load_doc("users_register.md"),
 )
 def register(body: UserRegister, db: Session = Depends(get_db)):
+    """Create an account."""
     try:
         user = register_user(db, body.email, body.username, body.password)
     except UserAlreadyExistsError as e:
@@ -40,6 +43,7 @@ def register(body: UserRegister, db: Session = Depends(get_db)):
     description=load_doc("users_login.md"),
 )
 def login(body: UserLogin, db: Session = Depends(get_db)):
+    """Log in and get a token."""
     try:
         user_token = login_user(db, identifier=body.identifier, password=body.password)
     except InvalidCredentialsError as e:

@@ -1,10 +1,12 @@
+"""Model of the drops table."""
+
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, func
 
 from app.database import Base
 
 
 class Drop(Base):
-    """Model for the 'drops' table."""
+    """A song shared by a user, visible for 24 hours."""
 
     __tablename__ = "drops"
 

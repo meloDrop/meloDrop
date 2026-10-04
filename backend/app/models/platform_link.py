@@ -1,9 +1,13 @@
+"""Model of the platform_links table."""
+
 from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, UniqueConstraint
 
 from app.database import Base
 
 
 class PlatformLink(Base):
+    """A streaming account (Deezer or Spotify) linked to a user."""
+
     __tablename__ = "platform_links"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

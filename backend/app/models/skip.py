@@ -1,9 +1,13 @@
+"""Model of the skips table."""
+
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, UniqueConstraint, func
 
 from app.database import Base
 
 
 class Skip(Base):
+    """A drop passed by a user, so it no longer shows in their feed."""
+
     __tablename__ = "skips"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

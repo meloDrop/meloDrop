@@ -1,9 +1,13 @@
+"""Model of the drop_genres table."""
+
 from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
 
 from app.database import Base
 
 
 class DropGenre(Base):
+    """A genre given to a drop (a drop can have several genres)."""
+
     __tablename__ = "drop_genres"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

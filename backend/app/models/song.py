@@ -1,9 +1,13 @@
+"""Model of the songs table."""
+
 from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, func
 
 from app.database import Base
 
 
 class Song(Base):
+    """A song from Deezer or Spotify, stored once and shared by all its drops."""
+
     __tablename__ = "songs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

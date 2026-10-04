@@ -1,9 +1,13 @@
+"""Model of the saves table."""
+
 from sqlalchemy import Column, Integer, Enum, DateTime, UniqueConstraint, ForeignKey, func
 
 from app.database import Base
 
 
 class Save(Base):
+    """A drop kept by a user and added to their streaming favorites."""
+
     __tablename__ = "saves"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

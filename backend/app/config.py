@@ -21,8 +21,6 @@ class Settings(BaseSettings):
     REPORT_THRESHOLD_PROD: int = 15
     # threshold lowered to 3 during test phase
     REPORT_THRESHOLD_TEST: int = 3
-    # expiration of the music preview URL in hours
-    PREVIEW_URL_TTL_HOURS: int = 12
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -92,13 +92,3 @@ CONSTRAINT uq_genre_reports_user_drop UNIQUE (user_id, drop_id),
 CONSTRAINT fk_genre_reports_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 CONSTRAINT fk_genre_reports_drop_id FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
 );
-
-CREATE TABLE preview_urls (
-id         INT AUTO_INCREMENT PRIMARY KEY,
-song_id    INT NOT NULL,
-provider   ENUM('deezer', 'spotify') NOT NULL,
-url        VARCHAR(500) NOT NULL,
-fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-CONSTRAINT uq_preview_urls_song_provider UNIQUE (song_id, provider),
-CONSTRAINT fk_preview_urls_song_id FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-);

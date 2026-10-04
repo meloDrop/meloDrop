@@ -1,9 +1,13 @@
+"""Model of the users table."""
+
 from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, func
 
 from app.database import Base
 
 
 class User(Base):
+    """A meloDrop account."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

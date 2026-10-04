@@ -1,3 +1,5 @@
+"""Load the Markdown files that describe the routes in Swagger."""
+
 from pathlib import Path
 
 # goes back to backend/
@@ -6,7 +8,7 @@ DOCS_DIR = BASE_DIR / "docs"
 
 
 def load_doc(filename: str) -> str:
-    """Reads a file into backend/docs."""
+    """Read a file from backend/docs, or return an empty string if it is missing."""
     file_path = DOCS_DIR / filename
 
     if not file_path.exists():

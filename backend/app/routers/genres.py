@@ -1,3 +1,5 @@
+"""Routes of the genres module."""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -9,5 +11,6 @@ router = APIRouter(prefix="/genres", tags=["genres"])
 
 @router.get("")
 def get_genres(db: Session = Depends(get_db)):
+    """Return the list of all genres."""
     genres = db.query(Genre).all()
     return genres

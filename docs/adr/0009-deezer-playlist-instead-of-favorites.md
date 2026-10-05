@@ -1,7 +1,7 @@
 # ADR-0009: Save to a meloDrop Deezer Playlist Instead of Favorites
 
 **Date:** 2026-10-05
-**Status:** Accepted
+**Status:** Superseded by ADR-0010
 
 ## Context
 

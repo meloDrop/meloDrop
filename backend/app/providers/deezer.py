@@ -7,6 +7,7 @@ from app.providers.base import StreamingProvider
 
 BASE_URL = "https://api.deezer.com"
 OAUTH_URL = "https://connect.deezer.com/oauth"
+PLAYLIST_NAME = "meloDrop"
 
 
 class DeezerProvider(StreamingProvider):
@@ -55,3 +56,20 @@ class DeezerProvider(StreamingProvider):
         response = requests.get(f"{BASE_URL}/user/me", params={"access_token": access_token})
         response.raise_for_status()
         return response.json()
+
+    def create_playlist(self, access_token: str) -> str:
+        """Create the meloDrop playlist on Deezer and return its id."""
+        response = requests.post(
+            f"{BASE_URL}/user/me/playlists",
+            params={
+                "access_token": access_token,
+                "title": PLAYLIST_NAME,
+                "request_method": "POST",
+            },
+        )
+        response.raise_for_status()
+        return str(response.json()["id"])
+
+    def refresh_access_token(self, refresh_token: str) -> dict:
+        """Not needed: Deezer tokens do not expire with offline_access."""
+        raise NotImplementedError("Deezer tokens do not expire")

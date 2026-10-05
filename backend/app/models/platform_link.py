@@ -26,4 +26,5 @@ class PlatformLink(Base):
 
     __table_args__ = (
         UniqueConstraint("user_id", "provider", name="uq_platform_links_user_provider"),
+        UniqueConstraint("provider", "provider_user_id", name="uq_platform_links_provider_account"),
     )

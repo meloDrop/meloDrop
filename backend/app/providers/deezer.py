@@ -6,7 +6,7 @@ from app.config import settings
 from app.providers.base import StreamingProvider
 
 BASE_URL = "https://api.deezer.com"
-OAUTH_URL = "https://connect.deezer.com/oauth/auth.php"
+OAUTH_URL = "https://connect.deezer.com/oauth"
 
 
 class DeezerProvider(StreamingProvider):

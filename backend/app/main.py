@@ -13,6 +13,7 @@ app = FastAPI(
 
 app.include_router(genres.router)
 app.include_router(auth.router)
+app.include_router(auth.me_router)
 
 
 @app.get("/health")

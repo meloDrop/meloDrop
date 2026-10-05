@@ -38,6 +38,7 @@ access_token     TEXT NOT NULL,
 refresh_token    TEXT,
 expires_at       DATETIME,
 deezer_playlist_id BIGINT,
+spotify_playlist_id VARCHAR(64),
 CONSTRAINT uq_platform_links_user_provider UNIQUE (user_id, provider),
 CONSTRAINT fk_platform_links_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

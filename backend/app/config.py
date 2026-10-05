@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     DEEZER_APP_SECRET: str
     DEEZER_REDIRECT_URI: str
 
+    SPOTIFY_CLIENT_ID: str
+    SPOTIFY_CLIENT_SECRET: str
+    SPOTIFY_REDIRECT_URI: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

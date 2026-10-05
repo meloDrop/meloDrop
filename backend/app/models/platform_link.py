@@ -22,6 +22,7 @@ class PlatformLink(Base):
     refresh_token = Column(Text)
     expires_at = Column(DateTime)
     deezer_playlist_id = Column(BigInteger)
+    spotify_playlist_id = Column(String(64))
 
     __table_args__ = (
         UniqueConstraint("user_id", "provider", name="uq_platform_links_user_provider"),

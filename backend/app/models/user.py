@@ -1,6 +1,7 @@
 """Model of the users table."""
 
 from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, func
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -17,6 +18,8 @@ class User(Base):
     avatar_url = Column(String(255))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    links = relationship("PlatformLink", passive_deletes=True)
 
     __table_args__ = (
         UniqueConstraint("email", name="uq_users_email"),

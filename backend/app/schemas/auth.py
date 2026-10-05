@@ -2,6 +2,9 @@
 
 from pydantic import BaseModel, EmailStr, Field
 
+from datetime import datetime
+
+
 
 class UserRegister(BaseModel):
     """Data needed to create an account."""
@@ -33,3 +36,37 @@ class Token(BaseModel):
 
     access_token: str
     token_type: str = "bearer"
+
+
+class LinkedAccountOut(BaseModel):
+    """A streaming account linked to the user."""
+
+    model_config = {"from_attributes": True}
+
+    id: int
+    provider: str
+
+class MeOut(BaseModel):
+    """Data of the logged-in account, with its linked accounts."""
+
+    model_config = {"from_attributes": True}
+
+    id: int
+    email: str
+    username: str
+    created_at: datetime
+    linked_accounts: list[LinkedAccountOut] = Field(validation_alias="links")
+
+
+class EmailUpdate(BaseModel):
+    """Data needed to change the email."""
+
+    password: str = Field(max_length=128)
+    new_email: EmailStr
+
+
+class PasswordUpdate(BaseModel):
+    """Data needed to change the password."""
+
+    old_password: str = Field(max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)

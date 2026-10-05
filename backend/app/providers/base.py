@@ -25,3 +25,8 @@ class StreamingProvider(ABC):
     def exchange_code(self, code: str) -> dict:
         """Exchange an OAuth code for an access token (and related data)."""
         ...
+
+    @abstractmethod
+    def get_current_user(self, access_token: str) -> dict:
+        """Return the authenticated user's profile on the platform."""
+        ...

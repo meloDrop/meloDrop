@@ -6,7 +6,7 @@ from app.config import settings
 from app.providers.base import StreamingProvider
 
 BASE_URL = "https://api.deezer.com"
-OAUTH_URL = "https://connect.deezer.com/oauth/auth.php"
+OAUTH_URL = "https://connect.deezer.com/oauth"
 
 
 class DeezerProvider(StreamingProvider):
@@ -47,5 +47,11 @@ class DeezerProvider(StreamingProvider):
                 "output": "json",
             },
         )
+        response.raise_for_status()
+        return response.json()
+
+    def get_current_user(self, access_token: str) -> dict:
+        """Return the Deezer profile of the authenticated user."""
+        response = requests.get(f"{BASE_URL}/user/me", params={"access_token": access_token})
         response.raise_for_status()
         return response.json()

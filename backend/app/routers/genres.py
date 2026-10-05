@@ -6,7 +6,11 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.genre import Genre
 
-router = APIRouter(prefix="/genres", tags=["genres"])
+
+from app.dependencies import current_user
+
+
+router = APIRouter(prefix="/genres", tags=["genres"], dependencies=[Depends(current_user)])
 
 
 @router.get("")

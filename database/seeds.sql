@@ -2,7 +2,7 @@ INSERT INTO genres (label) VALUES
 ('Pop'),
 ('Electro'),
 ('Rock'),
-('Métal'),
+('Metal'),
 ('Jazz'),
 ('Classique'),
 ('Rap'),

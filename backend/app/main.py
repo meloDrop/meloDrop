@@ -4,21 +4,20 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres, auth
+from app.routers import genres, auth, health
 
 app = FastAPI(
     title="meloDrop API",
     description="API Backend of the MeloDrop App",
 )
 
+# Health route
+app.include_router(health.router)
+
+# Genre route
 app.include_router(genres.router)
+
+# Authentication
 app.include_router(auth.router)
+app.include_router(auth.me_router)
 
-
-@app.get("/health")
-def health(db: Session = Depends(get_db)):
-    try:
-        db.execute(text("SELECT 1"))
-        return {"status": "ok"}
-    except Exception:
-        return JSONResponse(status_code=503, content={"status": "unavailable"})

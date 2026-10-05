@@ -1,3 +1,5 @@
+"""Connection to the MySQL database."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -16,6 +18,7 @@ Base = declarative_base()
 
 
 def get_db():
+    """Give a database session to a route, then close it."""
     db = SessionLocal()
     try:
         yield db

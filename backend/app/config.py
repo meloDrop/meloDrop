@@ -1,7 +1,11 @@
+"""Settings of the API, read from the .env file."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """All the settings used by the API."""
+
     DB_USER: str = "root"
     DB_PASSWORD: str
     DB_HOST: str = "localhost"
@@ -17,8 +21,6 @@ class Settings(BaseSettings):
     REPORT_THRESHOLD_PROD: int = 15
     # threshold lowered to 3 during test phase
     REPORT_THRESHOLD_TEST: int = 3
-    # expiration of the music preview URL in hours
-    PREVIEW_URL_TTL_HOURS: int = 12
 
     model_config = SettingsConfigDict(
         env_file=".env",

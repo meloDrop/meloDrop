@@ -7,3 +7,6 @@ class UserAlreadyExistsError(Exception):
 
 class InvalidCredentialsError(Exception):
     """Raised when the identifier or the password is wrong."""
+
+class InvalidPasswordError(Exception):
+    """Raised when a new password doesn't meet the complexity rules."""

@@ -3,13 +3,18 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.exceptions import InvalidCredentialsError, UserAlreadyExistsError
+from app.exceptions import InvalidCredentialsError, UserAlreadyExistsError, InvalidPasswordError
 from app.models.user import User
 from app.utils.security import create_access_token, hash_password, verify_password
+
+# Regex
+import re
 
 
 def register_user(db: Session, email: str, username: str, password: str) -> User:
     """Create an account if the email and username are free."""
+    check_password_complexity(password)
+
     if db.query(User).filter(User.email == email).first():
         raise UserAlreadyExistsError("email_taken")
 
@@ -58,6 +63,8 @@ def change_password(db: Session, user: User, old_password: str, new_password: st
     if not verify_password(old_password, user.password_hash):
         raise InvalidCredentialsError("invalid_password")
 
+    check_password_complexity(new_password)
+
     user.password_hash = hash_password(new_password)
     db.commit()
 
@@ -66,3 +73,10 @@ def delete_user(db: Session, user: User) -> None:
     """Delete the user and all their data."""
     db.delete(user)
     db.commit()
+
+def check_password_complexity(password: str) -> None:
+    """Raise if the password lacks a digit or a special character."""
+    if not re.search(r"\d", password):
+        raise InvalidPasswordError("password_missing_digit")
+    if not re.search(r"[^\w\s]", password):
+        raise InvalidPasswordError("password_missing_special_char")

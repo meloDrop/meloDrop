@@ -10,7 +10,7 @@ class UserRegister(BaseModel):
     """Data needed to create an account."""
 
     email: EmailStr
-    username: str
+    username: str = Field(min_length=3, max_length=30, pattern=r"^[^@]+$")
     password: str = Field(min_length=8, max_length=128)
 
 
@@ -69,4 +69,8 @@ class PasswordUpdate(BaseModel):
     """Data needed to change the password."""
 
     old_password: str = Field(max_length=128)
-    new_password: str = Field(min_length=8, max_length=128)
+    # Same constraint as in UserRegister
+    new_password: str = Field(
+        min_length=8,
+        max_length=128,
+    )

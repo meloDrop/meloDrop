@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import current_user
-from app.exceptions import InvalidCredentialsError, UserAlreadyExistsError
+from app.exceptions import InvalidCredentialsError, UserAlreadyExistsError, InvalidPasswordError
 from app.models.user import User
 from app.schemas import auth as schemas
 from app.services import auth as services
@@ -22,6 +22,7 @@ me_router = APIRouter(prefix="/me", tags=["auth"])
     response_model=schemas.UserOut,
     responses={
         201: {"description": "User created"},
+        400: {"description": "Password doesn't validate complexity rules"},
         409: {"description": "Email or username already taken"},
     },
     description=load_doc("users_register.md"),
@@ -30,6 +31,8 @@ def register(body: schemas.UserRegister, db: Session = Depends(get_db)):
     """Create an account."""
     try:
         user = services.register_user(db, body.email, body.username, body.password)
+    except InvalidPasswordError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except UserAlreadyExistsError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
@@ -86,7 +89,10 @@ def update_email(
 @me_router.patch(
     "/password",
     status_code=204,
-    responses={403: {"description": "Wrong old password"}},
+    responses={
+        400: {"description": "New password doesn't validate complexity rules"},
+        403: {"description": "Wrong old password"},
+    },
 )
 def update_password(
     body: schemas.PasswordUpdate,
@@ -98,6 +104,8 @@ def update_password(
         services.change_password(db, user, body.old_password, body.new_password)
     except InvalidCredentialsError as e:
         raise HTTPException(status_code=403, detail=str(e))
+    except InvalidPasswordError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return Response(status_code=204)
 
 

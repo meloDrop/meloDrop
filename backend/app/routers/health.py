@@ -1,6 +1,7 @@
 """Routes for checking the service's health."""
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi import Depends

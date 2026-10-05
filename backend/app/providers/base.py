@@ -1,0 +1,27 @@
+"""Abstract base class for streaming platform providers."""
+
+from abc import ABC, abstractmethod
+
+
+class StreamingProvider(ABC):
+    """Common interface that every streaming platform provider must implement."""
+
+    @abstractmethod
+    def search(self, query: str) -> list[dict]:
+        """Search for tracks matching the query."""
+        ...
+
+    @abstractmethod
+    def get_track(self, track_id: str) -> dict:
+        """Return a track's details: ISRC, title, artist, cover, preview URL."""
+        ...
+
+    @abstractmethod
+    def add_favorite(self, access_token: str, track_id: str) -> None:
+        """Add a track to the user's favorites on the platform."""
+        ...
+
+    @abstractmethod
+    def exchange_code(self, code: str) -> dict:
+        """Exchange an OAuth code for an access token."""
+        ...

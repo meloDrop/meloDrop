@@ -49,3 +49,9 @@ class DeezerProvider(StreamingProvider):
         )
         response.raise_for_status()
         return response.json()
+
+    def get_current_user(self, access_token: str) -> dict:
+        """Return the Deezer profile of the authenticated user."""
+        response = requests.get(f"{BASE_URL}/user/me", params={"access_token": access_token})
+        response.raise_for_status()
+        return response.json()

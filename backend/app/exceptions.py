@@ -10,3 +10,9 @@ class InvalidCredentialsError(Exception):
 
 class InvalidPasswordError(Exception):
     """Raised when a new password doesn't meet the complexity rules."""
+
+class OAuthDeniedError(Exception):
+    """Raised when the user refuses to authorize the app on the streaming platform."""
+
+class AccountAlreadyLinkedError(Exception):
+    """Raised when a streaming account is already linked to another meloDrop user."""

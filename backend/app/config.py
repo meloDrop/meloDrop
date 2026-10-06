@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     # threshold lowered to 3 during test phase
     REPORT_THRESHOLD_TEST: int = 3
 
+    DEEZER_APP_ID: str
+    DEEZER_APP_SECRET: str
+    DEEZER_REDIRECT_URI: str
+
+    SPOTIFY_CLIENT_ID: str
+    SPOTIFY_CLIENT_SECRET: str
+    SPOTIFY_REDIRECT_URI: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

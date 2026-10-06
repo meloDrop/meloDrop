@@ -1,6 +1,6 @@
 """Model of the saves table."""
 
-from sqlalchemy import Column, Integer, Enum, DateTime, UniqueConstraint, ForeignKey, func
+from sqlalchemy import Column, Integer, DateTime, UniqueConstraint, ForeignKey, func
 
 from app.database import Base
 
@@ -21,7 +21,6 @@ class Save(Base):
         ForeignKey("drops.id", ondelete="CASCADE", name="fk_saves_drop_id"),
         nullable=False,
     )
-    provider = Column(Enum("spotify", "deezer"), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
 
     __table_args__ = (

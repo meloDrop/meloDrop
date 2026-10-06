@@ -1,6 +1,6 @@
 """Model of the platform_links table."""
 
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, BigInteger, ForeignKey, UniqueConstraint
 
 from app.database import Base
 
@@ -21,7 +21,10 @@ class PlatformLink(Base):
     access_token = Column(Text, nullable=False)
     refresh_token = Column(Text)
     expires_at = Column(DateTime)
+    deezer_playlist_id = Column(BigInteger)
+    spotify_playlist_id = Column(String(64))
 
     __table_args__ = (
         UniqueConstraint("user_id", "provider", name="uq_platform_links_user_provider"),
+        UniqueConstraint("provider", "provider_user_id", name="uq_platform_links_provider_account"),
     )

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from app.database import get_db
 from app.routers import genres, auth, health
 
+
 app = FastAPI(
     title="meloDrop API",
     description="API Backend of the MeloDrop App",
@@ -20,4 +21,3 @@ app.include_router(genres.router)
 # Authentication
 app.include_router(auth.router)
 app.include_router(auth.me_router)
-

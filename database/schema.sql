@@ -69,7 +69,6 @@ CREATE TABLE saves (
 id         INT AUTO_INCREMENT PRIMARY KEY,
 user_id    INT NOT NULL,
 drop_id    INT NOT NULL,
-provider   ENUM('spotify', 'deezer') NOT NULL,
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 CONSTRAINT uq_saves_user_drop UNIQUE (user_id, drop_id),
 CONSTRAINT fk_saves_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

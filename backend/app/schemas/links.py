@@ -3,5 +3,5 @@
 from pydantic import BaseModel
 
 
-class DeezerStartOut(BaseModel):
+class LinkStartOut(BaseModel):
     auth_url: str

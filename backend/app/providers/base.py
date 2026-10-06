@@ -30,3 +30,13 @@ class StreamingProvider(ABC):
     def get_current_user(self, access_token: str) -> dict:
         """Return the authenticated user's profile on the platform."""
         ...
+
+    @abstractmethod
+    def create_playlist(self, access_token: str) -> str:
+        """Create the meloDrop playlist for the user and return its id."""
+        ...
+
+    @abstractmethod
+    def refresh_access_token(self, refresh_token: str) -> dict:
+        """Get a new access token from a refresh token."""
+        ...

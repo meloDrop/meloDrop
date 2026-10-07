@@ -94,3 +94,13 @@ CONSTRAINT uq_genre_reports_user_drop UNIQUE (user_id, drop_id),
 CONSTRAINT fk_genre_reports_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 CONSTRAINT fk_genre_reports_drop_id FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
 );
+
+CREATE TABLE liked_songs (
+id         INT AUTO_INCREMENT PRIMARY KEY,
+user_id    INT NOT NULL,
+song_id    INT NOT NULL,
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+CONSTRAINT uq_liked_songs_user_song UNIQUE (user_id, song_id),
+CONSTRAINT fk_liked_songs_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+CONSTRAINT fk_liked_songs_song_id FOREIGN KEY (song_id) REFERENCES songs(id)
+);

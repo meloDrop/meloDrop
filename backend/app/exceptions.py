@@ -16,3 +16,9 @@ class OAuthDeniedError(Exception):
 
 class AccountAlreadyLinkedError(Exception):
     """Raised when a streaming account is already linked to another meloDrop user."""
+
+class DeezerError(Exception):
+    """Raised when Deezer returns an error or does not answer."""
+
+class TrackNotFoundError(DeezerError):
+    """Raised when Deezer has no track with this id."""

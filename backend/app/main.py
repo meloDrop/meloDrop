@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres, auth, health, catalog
+from app.routers import genres, auth, health, catalog, songs
 
 
 app = FastAPI(
@@ -25,3 +25,6 @@ app.include_router(auth.me_router)
 
 # Catalog Deezer
 app.include_router(catalog.router)
+
+# Song preview
+app.include_router(songs.router)

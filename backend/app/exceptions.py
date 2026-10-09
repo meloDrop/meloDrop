@@ -29,3 +29,7 @@ class TrackNotFoundError(DeezerError):
 
 class SongNotFoundError(Exception):
     """Raised when no song with this id is stored in meloDrop."""
+
+class DropAlreadyActiveError(Exception):
+    """Raised when the user already has a drop that has not expired."""
+

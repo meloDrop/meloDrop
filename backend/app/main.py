@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres, auth, health, catalog, songs
+from app.routers import genres, auth, health, catalog, songs, drops
 
 
 app = FastAPI(
@@ -28,3 +28,6 @@ app.include_router(catalog.router)
 
 # Song preview
 app.include_router(songs.router)
+
+# Drops
+app.include_router(drops.router)

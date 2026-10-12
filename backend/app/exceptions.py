@@ -39,3 +39,11 @@ class DropNotFoundError(Exception):
 
 class NotDropOwnerError(Exception):
     """Raised when a user tries to change someone else's drop."""
+
+
+class OwnDropError(Exception):
+    """Raised when a user tries to save or skip their own drop."""
+
+
+class DropAlreadySeenError(Exception):
+    """Raised when a user has already saved or skipped this drop."""

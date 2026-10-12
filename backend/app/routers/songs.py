@@ -1,6 +1,6 @@
 """Routes of the songs module."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -25,7 +25,10 @@ router = APIRouter(
         502: {"description": "Deezer returned an error or did not answer"},
     },
 )
-def get_preview(song_id: int, db: Session = Depends(get_db)):
+def get_preview(
+    song_id: int = Path(description="meloDrop song id (song_id in DropOut), not the Deezer id"),
+    db: Session = Depends(get_db),
+):
     """Get a fresh 30-second preview link for a song."""
     try:
         return services.get_preview(db, song_id)

@@ -33,3 +33,9 @@ class SongNotFoundError(Exception):
 class DropAlreadyActiveError(Exception):
     """Raised when the user already has a drop that has not expired."""
 
+class DropNotFoundError(Exception):
+    """Raised when a drop does not exist or has expired."""
+
+
+class NotDropOwnerError(Exception):
+    """Raised when a user tries to change someone else's drop."""

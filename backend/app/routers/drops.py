@@ -34,3 +34,13 @@ def create_drop(body: schemas.DropCreate, user: User = Depends(current_user), db
         raise HTTPException(status_code=404, detail=str(e))
     except DeezerError as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get(
+    "/me",
+    response_model=schemas.MyDropOut | None,
+    responses={200: {"description": "The current drop, or null if there is none"}},
+)
+def get_my_drop(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Get the logged-in user's current drop, or null if there is none."""
+    return services.get_my_drop(db, user.id)

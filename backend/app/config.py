@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 30
 
     # 15 reports needed to notify the drop author in production
-    REPORT_THRESHOLD_PROD: int = 15
+    GENRE_REPORT_THRESHOLD_PROD: int = 15
     # threshold lowered to 3 during test phase
-    REPORT_THRESHOLD_TEST: int = 3
+    GENRE_REPORT_THRESHOLD_TEST: int = 3
 
     DEEZER_APP_ID: str
     DEEZER_APP_SECRET: str

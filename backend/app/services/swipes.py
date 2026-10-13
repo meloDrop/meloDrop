@@ -32,6 +32,7 @@ def check_drop(db: Session, user_id: int, drop_id: int) -> Drop:
 
 def save_drop(db: Session, user_id: int, drop_id: int) -> None:
     """Like a drop: one row in saves and one row in liked_songs (ADR-0013)."""
+    # Check the rules: the drop exists, is not mine, and is not seen yet
     drop = check_drop(db, user_id, drop_id)
 
     # Remember that the user liked this drop
@@ -52,6 +53,7 @@ def save_drop(db: Session, user_id: int, drop_id: int) -> None:
 
 def skip_drop(db: Session, user_id: int, drop_id: int) -> None:
     """Skip a drop: one row in skips."""
+    # Check the rules: the drop exists, is not mine, and is not seen yet
     check_drop(db, user_id, drop_id)
 
     # Remember that the user skipped this drop

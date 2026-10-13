@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres, auth, health, catalog, songs, drops, feed
+from app.routers import genres, auth, health, catalog, songs, drops, feed, swipes
 
 
 app = FastAPI(
     title="meloDrop API",
     description="API Backend of the MeloDrop App",
+    swagger_ui_parameters={"syntaxHighlight.theme": "obsidian"}
 )
 
 # Health route
@@ -34,3 +35,6 @@ app.include_router(drops.router)
 
 # Feed
 app.include_router(feed.router)
+
+# Swipes (skip or save)
+app.include_router(swipes.router)

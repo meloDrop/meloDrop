@@ -37,6 +37,7 @@ def build_item(db: Session, drop: Drop) -> FeedItem:
     # Count the likes of the drop
     saves_count = db.query(Save).filter(Save.drop_id == drop.id).count()
 
+    # Build the card sent to the app
     return FeedItem(
         id=drop.id,
         song_id=song.id,

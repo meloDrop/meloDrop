@@ -10,7 +10,6 @@ from app.models.user import User
 from app.schemas import auth as schemas
 from app.services import auth as services
 
-from app.utils import load_doc
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 me_router = APIRouter(prefix="/me", tags=["auth"])
@@ -25,7 +24,6 @@ me_router = APIRouter(prefix="/me", tags=["auth"])
         400: {"description": "Password doesn't validate complexity rules"},
         409: {"description": "Email or username already taken"},
     },
-    description=load_doc("users_register.md"),
 )
 def register(body: schemas.UserRegister, db: Session = Depends(get_db)):
     """Create an account."""
@@ -46,7 +44,6 @@ def register(body: schemas.UserRegister, db: Session = Depends(get_db)):
         200: {"description": "Logged in, returns a JWT"},
         401: {"description": "Invalid credentials"},
     },
-    description=load_doc("users_login.md"),
 )
 def login(body: schemas.UserLogin, db: Session = Depends(get_db)):
     """Log in and get a token."""

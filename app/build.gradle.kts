@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace = "com.app.melodrop"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.app.melodrop"
@@ -24,6 +22,11 @@ android {
             optimization {
                 enable = false
             }
+            // Temp URL
+            buildConfigField("String", "BASE_URL", "\"https://api.melodrop.example/\"")
+        }
+        debug {
+            buildConfigField("String", "BASE_URL", "\"http://localhost:8000/\"")
         }
     }
     compileOptions {
@@ -32,7 +35,19 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
+}
+
+// Redirige le port 8000 du téléphone vers celui du PC avant chaque build debug
+val adbReverse by tasks.registering(Exec::class) {
+    val adb = androidComponents.sdkComponents.adb
+    commandLine(adb.get().asFile.absolutePath, "reverse", "tcp:8000", "tcp:8000")
+    isIgnoreExitValue = true
+}
+
+tasks.matching { it.name == "assembleDebug" }.configureEach {
+    dependsOn(adbReverse)
 }
 
 dependencies {
@@ -51,4 +66,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Network : Retrofit + OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

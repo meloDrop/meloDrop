@@ -1,3 +1,5 @@
+import org.gradle.api.internal.DocumentationRegistry.BASE_URL
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,9 +7,7 @@ plugins {
 
 android {
     namespace = "com.app.melodrop"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.app.melodrop"
@@ -25,6 +25,10 @@ android {
                 enable = false
             }
         }
+        debug {
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000\"")
+        }
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -32,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -51,4 +56,12 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    // Optionnel : pour voir les requêtes HTTP dans le Logcat
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
 }

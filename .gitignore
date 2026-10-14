@@ -1,11 +1,17 @@
+# Configuration JetBrains (PyCharm & Android Studio)
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.ipr
+
+# Frontend (Android / Kotlin)
 local.properties
-.kotlin
+.gradle/
+build/
+**/build/
+.kotlin/
+/captures
+
+# Système
+.DS_Store
+Thumbs.db

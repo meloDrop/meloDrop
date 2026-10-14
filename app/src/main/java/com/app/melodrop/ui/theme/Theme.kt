@@ -5,15 +5,15 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Orange,
-    onPrimary = Night,
-    background = Night,
-    onBackground = TextPrimary,
-    surface = Card,
-    onSurface = TextPrimary,
-    onSurfaceVariant = TextSecondary,
-    outline = Outline,
-    error = Danger
+    primary = Orange, // Main accent: buttons, highlights
+    onPrimary = Night, // Text and icons on orange
+    background = Night, // Screen background
+    onBackground = TextPrimary, // Text on the screen background
+    surface = Card, // Background of Surface components
+    onSurface = TextPrimary, // Text and icons on surfaces
+    onSurfaceVariant = TextSecondary, // Secondary text: labels, hints
+    outline = Outline, // Borders of outlined fields and buttons
+    error = Danger // Errors and destructive actions
 )
 
 @Composable

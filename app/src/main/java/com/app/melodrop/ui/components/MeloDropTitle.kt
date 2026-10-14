@@ -13,18 +13,23 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.app.melodrop.R
+import com.app.melodrop.ui.theme.Butter
+import com.app.melodrop.ui.theme.Lavender
+import com.app.melodrop.ui.theme.Mint
+import com.app.melodrop.ui.theme.Peach
+import com.app.melodrop.ui.theme.Rose
 
-// Police du nom de l'appli : Unbounded Bold (fichier res/font/unbounded_bold.ttf)
+// App name font: Unbounded Bold (file res/font/unbounded_bold.ttf)
 val Unbounded = FontFamily(Font(R.font.unbounded_bold, FontWeight.Bold))
 
-// Les cinq pastels du logo, dans l'ordre des bandes de la goutte
+// The five logo pastels, in the order of the drop's stripes
 private val PastelGradient = Brush.horizontalGradient(
     listOf(
-        Color(0xFFB4A7F5), // lavande
-        Color(0xFFF5A8C8), // rose
-        Color(0xFFFFB38A), // pêche
-        Color(0xFFFFE08A), // jaune beurre
-        Color(0xFF9EE0B8)  // menthe
+        Lavender,
+        Rose,
+        Peach,
+        Butter,
+        Mint
     )
 )
 
@@ -36,7 +41,7 @@ fun MeloDropTitle(modifier: Modifier = Modifier) {
         fontSize = 28.sp,
         letterSpacing = (-0.5).sp
     )
-    // Deux Text côte à côte : le dégradé ne couvre que « Drop »
+    // Two Text side by side: the gradient only covers "Drop"
     Row(modifier = modifier) {
         Text(text = "melo", style = style, color = MaterialTheme.colorScheme.onBackground)
         Text(text = "Drop", style = style.merge(TextStyle(brush = PastelGradient)))

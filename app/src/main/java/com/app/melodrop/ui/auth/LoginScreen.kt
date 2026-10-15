@@ -7,13 +7,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,15 +30,42 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.ui.components.MeloDropTitle
+import com.app.melodrop.ui.theme.MeloDropTheme
 
+// Connects the screen to its ViewModel
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    onLoggedIn: () -> Unit,
+    viewModel: LoginViewModel = viewModel()
+) {
+    val uiState = viewModel.uiState
+
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
+            viewModel.onLoginHandled()
+            onLoggedIn()
+        }
+    }
+
+    LoginContent(
+        uiState = uiState,
+        onLoginClick = viewModel::login
+    )
+}
+
+// Pure UI: only displays the state it receives
+@Composable
+private fun LoginContent(
+    uiState: LoginUiState,
+    onLoginClick: (String, String) -> Unit
+) {
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    Scaffold() { innerPadding ->
+
+    Scaffold { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             LoginBackground()
             Column(
@@ -58,6 +89,7 @@ fun LoginScreen() {
                     onValueChange = { identifier = it },
                     label = { Text("E-mail ou pseudo") },
                     singleLine = true,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -66,16 +98,32 @@ fun LoginScreen() {
                     onValueChange = { password = it },
                     label = { Text("Mot de passe") },
                     singleLine = true,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 )
 
+                uiState.error?.let { message ->
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
                 Button(
-                    onClick = { },
-                    Modifier.fillMaxWidth()
+                    onClick = { onLoginClick(identifier, password) },
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("SE CONNECTER")
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("SE CONNECTER")
+                    }
                 }
 
                 Text("Pas encore de compte ? Créer un compte")
@@ -87,7 +135,9 @@ fun LoginScreen() {
 @Preview
 @Composable
 fun LoginScreenPreview() {
-    MeloDropTheme { LoginScreen() }
+    MeloDropTheme {
+        LoginContent(uiState = LoginUiState(), onLoginClick = { _, _ -> })
+    }
 }
 
 @Composable

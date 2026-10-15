@@ -69,11 +69,23 @@ dependencies {
 
 
     // Network : Retrofit + OkHttp
+
+    // Retrofit: turns a Kotlin interface into HTTP calls to the FastAPI backend
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
+
+    // Gson converter: converts JSON responses into Kotlin objects (and objects into JSON for requests)
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    // OkHttp: HTTP client used by Retrofit to send requests (connections, timeouts, interceptors)
+    // Declared explicitly so its version matches logging-interceptor
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Logging interceptor: prints requests and responses in Logcat (debug only)
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // Token stock
     implementation("androidx.datastore:datastore-preferences:1.2.1")
+
+    // ViewModel integration for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
 }

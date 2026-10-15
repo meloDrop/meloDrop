@@ -10,11 +10,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.app.melodrop.data.TokenStore
 import com.app.melodrop.network.AuthEvents
-import com.app.melodrop.ui.auth.LoginScreen
+import com.app.melodrop.ui.auth.AuthNavHost
 import com.app.melodrop.ui.main.MainScreen
 import kotlinx.coroutines.launch
 
-// Root of the app: shows the login screen or the main area
+// Root of the app: shows the login part or the main area
 @Composable
 fun MeloDropApp() {
     val context = LocalContext.current.applicationContext
@@ -43,7 +43,7 @@ fun MeloDropApp() {
 
     when (isLoggedIn) {
         null -> Unit
-        false -> LoginScreen(onLoggedIn = { isLoggedIn = true })
+        false -> AuthNavHost(onLoggedIn = { isLoggedIn = true })
         true -> MainScreen(onLogout = { logout() })
     }
 }

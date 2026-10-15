@@ -6,9 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.melodrop.data.TokenStore
-import com.app.melodrop.network.RetrofitClient
-import com.app.melodrop.network.dto.UserLogin
+import com.app.melodrop.data.AuthRepository
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -21,6 +19,8 @@ data class LoginUiState(
 )
 
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository = AuthRepository(application)
 
     var uiState by mutableStateOf(LoginUiState())
         private set
@@ -36,8 +36,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             uiState = try {
-                val token = RetrofitClient.api.login(UserLogin(identifier.trim(), password))
-                TokenStore.save(getApplication(), token.accessToken)
+                repository.login(identifier.trim(), password)
                 LoginUiState(isLoggedIn = true)
             } catch (e: HttpException) {
                 val message = if (e.code() == 401) {

@@ -30,6 +30,21 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_SECRET: str
     SPOTIFY_REDIRECT_URI: str
 
+    # Sending emails with the Brevo SMTP relay (development and production)
+    SMTP_HOST: str = "smtp-relay.brevo.com"
+    SMTP_PORT: int = 587
+
+    # SMTP login and key generated in Brevo, kept in .env only
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+
+    # Must be a sender address verified in Brevo
+    MAIL_FROM: str
+
+    # Codes sent by email (ADR-0015)
+    EMAIL_CODE_EXPIRE_MINUTES: int = 15
+    EMAIL_CODE_MAX_ATTEMPTS: int = 5
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

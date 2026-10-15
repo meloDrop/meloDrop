@@ -13,7 +13,15 @@ services:
       - mysql_data:/var/lib/mysql
       - ../database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ../database/seeds.sql:/docker-entrypoint-initdb.d/02_seeds.sql
-
+    # Healthy once MySQL accepts network connections,
+    # which only happens after schema.sql and seeds.sql have run
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -u root --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+      start_interval: 2s
 
   api:
     build: .
@@ -26,8 +34,18 @@ services:
     volumes:
       - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Starts only once the database is ready
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    # Healthy once GET /health answers 200 (API started and database reachable)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
 
 volumes:
   mysql_data:

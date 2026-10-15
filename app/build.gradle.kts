@@ -87,5 +87,5 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.2.1")
 
     // ViewModel integration for Compose
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:lifecycleRuntimeKtx")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
 }

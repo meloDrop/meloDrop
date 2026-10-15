@@ -15,6 +15,14 @@ class AuthInterceptor : Interceptor {
         } else {
             chain.request()
         }
-        return chain.proceed(request)
+
+        val response = chain.proceed(request)
+
+        // The saved token was refused: the session is over (ADR-0007)
+        if (response.code == 401 && token != null) {
+            AuthEvents.notifySessionExpired()
+        }
+
+        return response
     }
 }

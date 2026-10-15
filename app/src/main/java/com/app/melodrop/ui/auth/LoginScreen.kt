@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +41,7 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 @Composable
 fun LoginScreen(
     onLoggedIn: () -> Unit,
+    onRegisterClick: () -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -52,7 +55,8 @@ fun LoginScreen(
 
     LoginContent(
         uiState = uiState,
-        onLoginClick = viewModel::login
+        onLoginClick = viewModel::login,
+        onRegisterClick = onRegisterClick,
     )
 }
 
@@ -60,7 +64,8 @@ fun LoginScreen(
 @Composable
 private fun LoginContent(
     uiState: LoginUiState,
-    onLoginClick: (String, String) -> Unit
+    onLoginClick: (String, String) -> Unit,
+    onRegisterClick: () -> Unit,
 ) {
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -126,7 +131,15 @@ private fun LoginContent(
                     }
                 }
 
-                Text("Pas encore de compte ? Créer un compte")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Pas encore de compte ?",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    TextButton(onClick = onRegisterClick) {
+                        Text("Créer un compte")
+                    }
+                }
             }
         }
     }
@@ -136,7 +149,11 @@ private fun LoginContent(
 @Composable
 fun LoginScreenPreview() {
     MeloDropTheme {
-        LoginContent(uiState = LoginUiState(), onLoginClick = { _, _ -> })
+        LoginContent(
+            uiState = LoginUiState(),
+            onLoginClick = { _, _ -> },
+            onRegisterClick = {},
+        )
     }
 }
 

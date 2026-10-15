@@ -24,3 +24,15 @@ data class MeOut(
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("linked_accounts") val linkedAccounts: List<LinkedAccountOut>
 )
+
+data class UserRegister(
+    val email: String,
+    val username: String,
+    val password: String
+)
+
+data class UserOut(
+    val id: Int,
+    val email: String,
+    val username: String
+)

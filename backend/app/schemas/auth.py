@@ -56,6 +56,7 @@ class MeOut(BaseModel):
     username: str
     created_at: datetime
     linked_accounts: list[LinkedAccountOut] = Field(validation_alias="links")
+    pending_email: str | None = None
 
 
 class EmailUpdate(BaseModel):
@@ -74,3 +75,27 @@ class PasswordUpdate(BaseModel):
         min_length=8,
         max_length=128,
     )
+
+class EmailVerify(BaseModel):
+    """Email and 6-digit code, to confirm the email of a new account."""
+
+    email: EmailStr
+    # A string, not a number: a code like 048213 must keep its first 0
+    code: str = Field(pattern=r"^\d{6}$")
+
+class CodeRequest(BaseModel):
+    """Email to send a code to (new verification code or forgotten password)."""
+
+    email: EmailStr
+
+class PasswordReset(BaseModel):
+    """Email, 6-digit code and new password, to reset a forgotten password."""
+
+    email: EmailStr
+    code: str = Field(pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=8, max_length=128)
+
+class EmailChangeConfirm(BaseModel):
+    """6-digit code received at the new email, to confirm the email change."""
+
+    code: str = Field(pattern=r"^\d{6}$")

@@ -6,8 +6,22 @@ password_hash VARCHAR(255) NOT NULL,
 avatar_url    VARCHAR(255),
 created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+pending_email VARCHAR(255) NULL,
 CONSTRAINT uq_users_email    UNIQUE (email),
 CONSTRAINT uq_users_username UNIQUE (username)
+);
+
+CREATE TABLE email_codes (
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT NOT NULL,
+purpose ENUM('verify_email', 'reset_password', 'change_email') NOT NULL,
+code_hash VARCHAR(255) NOT NULL,
+attempts INT NOT NULL DEFAULT 0,
+expires_at DATETIME NOT NULL,
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CONSTRAINT uq_email_codes_user_id_purpose UNIQUE (user_id, purpose),
+CONSTRAINT fk_email_codes_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE songs (
@@ -95,11 +109,12 @@ CONSTRAINT fk_genre_reports_user_id FOREIGN KEY (user_id) REFERENCES users(id) O
 CONSTRAINT fk_genre_reports_drop_id FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
 );
 
-CREATE TABLE playlists (
+CREATE TABLE liked_songs (
 id         INT AUTO_INCREMENT PRIMARY KEY,
 user_id    INT NOT NULL,
-name       VARCHAR(50) NOT NULL,
+song_id    INT NOT NULL,
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-CONSTRAINT uq_playlists_user_name UNIQUE (user_id, name),
-CONSTRAINT fk_playlists_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+CONSTRAINT uq_liked_songs_user_song UNIQUE (user_id, song_id),
+CONSTRAINT fk_liked_songs_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+CONSTRAINT fk_liked_songs_song_id FOREIGN KEY (song_id) REFERENCES songs(id)
 );

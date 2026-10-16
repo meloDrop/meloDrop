@@ -1,21 +1,22 @@
 {#
-  Template d'e-mail meloDrop pour les codes à 6 chiffres (ADR-0015).
-  Variables attendues :
-    kind            "verify_email" ou "reset_password"
-    code            le code à 6 chiffres
-    expires_minutes durée de validité du code
-    logo_src        URL publique HTTPS du logo en PNG (pas de SVG : Gmail ne l'affiche pas)
-  Règles e-mail : mise en page en tableaux, styles en ligne uniquement, pas de CSS externe.
-  Couleurs pastel : à remplacer par les valeurs exactes de la maquette Figma.
+meloDrop email template for 6-digit codes (ADR-0015).
+Expected variables:
+kind            "verify_email" or "reset_password"
+code            the 6-digit code
+expires_minutes how long the code stays valid
+logo_src        public HTTPS URL of the logo as a PNG (no SVG: Gmail does not show it)
+Email rules: table layout, inline styles only, no external CSS.
+Pastel colors: replace them with the exact values from the Figma mockup.
+The email texts stay in French, like the app interface.
 #}
 {% if kind == "reset_password" %}
-  {% set title = "Réinitialise ton mot de passe" %}
-  {% set intro = "Tu as demandé à changer ton mot de passe. Saisis ce code dans l'application :" %}
-  {% set ignore_text = "Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste inchangé." %}
+{% set title = "Réinitialise ton mot de passe" %}
+{% set intro = "Tu as demandé à changer ton mot de passe. Saisis ce code dans l'application :" %}
+{% set ignore_text = "Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste inchangé." %}
 {% else %}
-  {% set title = "Confirme ton adresse e-mail" %}
-  {% set intro = "Bienvenue sur meloDrop ! Pour activer ton compte, saisis ce code dans l'application :" %}
-  {% set ignore_text = "Si tu n'as pas créé de compte meloDrop, ignore cet e-mail." %}
+{% set title = "Confirme ton adresse e-mail" %}
+{% set intro = "Bienvenue sur meloDrop ! Pour activer ton compte, saisis ce code dans l'application :" %}
+{% set ignore_text = "Si tu n'as pas créé de compte meloDrop, ignore cet e-mail." %}
 {% endif %}
 <!DOCTYPE html>
 <html lang="fr">
@@ -28,75 +29,75 @@
 </head>
 <body style="margin:0; padding:0; background-color:#0c0c10;">
 
-  <!-- Preheader : texte affiché dans l'aperçu de la boîte de réception, caché dans l'e-mail -->
-  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#0c0c10;">
-    Ton code meloDrop : {{ code }}
-  </div>
+{# Preheader: text shown in the inbox preview, hidden in the email #}
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#0c0c10;">
+  Ton code meloDrop : {{ code }}
+</div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0c0c10" style="background-color:#0c0c10;">
-    <tr>
-      <td align="center" style="padding:40px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0c0c10" style="background-color:#0c0c10;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
 
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
 
-          <!-- Logo -->
-          <tr>
-            <td align="center" style="padding-bottom:28px;">
-              <img src="{{ logo_src }}" width="140" alt="meloDrop"
-                   style="display:block; width:140px; height:auto; border:0; outline:none; text-decoration:none;
+        {# Logo #}
+        <tr>
+          <td align="center" style="padding-bottom:28px;">
+            <img src="{{ logo_src }}" width="140" alt="meloDrop"
+                 style="display:block; width:140px; height:auto; border:0; outline:none; text-decoration:none;
                           color:#f2f0f7; font-family:Arial, Helvetica, sans-serif; font-size:24px; font-weight:bold;">
-            </td>
-          </tr>
+          </td>
+        </tr>
 
-          <!-- Carte -->
-          <tr>
-            <td bgcolor="#17171f" style="background-color:#17171f; border-radius:20px; padding:36px 32px 32px; font-family:Arial, Helvetica, sans-serif;">
+        {# Card #}
+        <tr>
+          <td bgcolor="#17171f" style="background-color:#17171f; border-radius:20px; padding:36px 32px 32px; font-family:Arial, Helvetica, sans-serif;">
 
-              <!-- Bandes pastel, rappel du logo Spectre -->
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
-                <tr>
-                  <td width="22" height="4" bgcolor="#b9a7ff" style="background-color:#b9a7ff; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
-                  <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
-                  <td width="22" height="4" bgcolor="#ffb38a" style="background-color:#ffb38a; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
-                  <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
-                  <td width="22" height="4" bgcolor="#ffe08a" style="background-color:#ffe08a; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
-                  <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
-                  <td width="22" height="4" bgcolor="#9fe3c1" style="background-color:#9fe3c1; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
-                  <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
-                  <td width="22" height="4" bgcolor="#ffa8c8" style="background-color:#ffa8c8; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
-                </tr>
-              </table>
+            {# Pastel stripes, echoing the Spectre logo #}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+              <tr>
+                <td width="22" height="4" bgcolor="#b9a7ff" style="background-color:#b9a7ff; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
+                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                <td width="22" height="4" bgcolor="#ffb38a" style="background-color:#ffb38a; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
+                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                <td width="22" height="4" bgcolor="#ffe08a" style="background-color:#ffe08a; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
+                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                <td width="22" height="4" bgcolor="#9fe3c1" style="background-color:#9fe3c1; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
+                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                <td width="22" height="4" bgcolor="#ffa8c8" style="background-color:#ffa8c8; font-size:0; line-height:0; border-radius:2px;">&nbsp;</td>
+              </tr>
+            </table>
 
-              <h1 style="margin:0 0 12px; font-size:22px; line-height:30px; color:#f2f0f7; font-weight:bold;">{{ title }}</h1>
-              <p style="margin:0 0 28px; font-size:15px; line-height:23px; color:#a9a6b8;">{{ intro }}</p>
+            <h1 style="margin:0 0 12px; font-size:22px; line-height:30px; color:#f2f0f7; font-weight:bold;">{{ title }}</h1>
+            <p style="margin:0 0 28px; font-size:15px; line-height:23px; color:#a9a6b8;">{{ intro }}</p>
 
-              <!-- Encadré du code -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td align="center" bgcolor="#221f33" style="background-color:#221f33; border:1px solid #b9a7ff; border-radius:14px; padding:22px 12px 22px 22px;">
-                    <span style="font-family:'Courier New', Courier, monospace; font-size:34px; line-height:40px; font-weight:bold; letter-spacing:10px; color:#e4dcff;">{{ code }}</span>
-                  </td>
-                </tr>
-              </table>
+            {# Code box #}
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#221f33" style="background-color:#221f33; border:1px solid #b9a7ff; border-radius:14px; padding:22px 12px 22px 22px;">
+                  <span style="font-family:'Courier New', Courier, monospace; font-size:34px; line-height:40px; font-weight:bold; letter-spacing:10px; color:#e4dcff;">{{ code }}</span>
+                </td>
+              </tr>
+            </table>
 
-              <p style="margin:24px 0 0; font-size:14px; line-height:21px; color:#a9a6b8;">
-                Ce code expire dans <strong style="color:#f2f0f7;">{{ expires_minutes }} minutes</strong>.
-              </p>
-              <p style="margin:12px 0 0; font-size:13px; line-height:20px; color:#77748a;">{{ ignore_text }}</p>
-            </td>
-          </tr>
+            <p style="margin:24px 0 0; font-size:14px; line-height:21px; color:#a9a6b8;">
+              Ce code expire dans <strong style="color:#f2f0f7;">{{ expires_minutes }} minutes</strong>.
+            </p>
+            <p style="margin:12px 0 0; font-size:13px; line-height:20px; color:#77748a;">{{ ignore_text }}</p>
+          </td>
+        </tr>
 
-          <!-- Pied de page -->
-          <tr>
-            <td align="center" style="padding-top:28px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#77748a;">
-              meloDrop &middot; Une chanson par jour, choisie par quelqu'un.<br>
-              E-mail envoyé automatiquement, merci de ne pas y répondre.
-            </td>
-          </tr>
+        {# Footer #}
+        <tr>
+          <td align="center" style="padding-top:28px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#77748a;">
+            meloDrop &middot; Une chanson par jour, choisie par quelqu'un.<br>
+            E-mail envoyé automatiquement, merci de ne pas y répondre.
+          </td>
+        </tr>
 
-        </table>
-      </td>
-    </tr>
-  </table>
+      </table>
+    </td>
+  </tr>
+</table>
 </body>
 </html>

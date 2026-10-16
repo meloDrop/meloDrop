@@ -28,6 +28,7 @@ templates = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=True)
 CODE_SUBJECTS = {
     "verify_email": "Ton code de vérification meloDrop",
     "reset_password": "Réinitialisation de ton mot de passe meloDrop",
+    "change_email": "Confirme ta nouvelle adresse e-mail meloDrop",
 }
 
 

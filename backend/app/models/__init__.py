@@ -10,3 +10,4 @@ from app.models.skip import Skip
 from app.models.song import Song
 from app.models.user import User
 from app.models.liked_song import LikedSong
+from app.models.email_code import EmailCode

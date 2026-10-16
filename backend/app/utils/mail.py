@@ -24,11 +24,12 @@ HEADER_IMAGE = TEMPLATE_DIR / "header.jpg"
 # autoescape protects the HTML if a variable contains special characters
 templates = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=True)
 
-# Subject of each code email, by kind
+# Subject of each code email, by kind: the code is in it, so each email gets its own
+# conversation in Gmail and the code shows in the phone notification
 CODE_SUBJECTS = {
-    "verify_email": "Ton code de vérification meloDrop",
-    "reset_password": "Réinitialisation de ton mot de passe meloDrop",
-    "change_email": "Confirme ta nouvelle adresse e-mail meloDrop",
+    "verify_email": "{code} est ton code de vérification meloDrop",
+    "reset_password": "{code} est ton code de réinitialisation meloDrop",
+    "change_email": "{code} est ton code pour ta nouvelle adresse meloDrop",
 }
 
 
@@ -71,4 +72,4 @@ def send_code_email(to: str, kind: str, code: str, expires_minutes: int) -> None
     }
     body = templates.get_template("code_email.txt").render(variables)
     html = templates.get_template("code_email.html").render(variables)
-    send_email(to, CODE_SUBJECTS[kind], body, html, header_cid)
+    send_email(to, CODE_SUBJECTS[kind].format(code=code), body, html, header_cid)

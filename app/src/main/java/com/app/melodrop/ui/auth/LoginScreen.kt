@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.ui.components.MeloDropTitle
+import com.app.melodrop.ui.components.WaterRippleLayer
 import com.app.melodrop.ui.theme.MeloDropTheme
 
 // Connects the screen to its ViewModel
@@ -69,10 +71,17 @@ private fun LoginContent(
 ) {
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    // Used to hide the keyboard when the background is touched
+    val focusManager = LocalFocusManager.current
 
     Scaffold { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             LoginBackground()
+
+            // Water rings where the user touches the background, drawn under the form.
+            // Fields and buttons catch their own touches, so they never trigger a ripple.
+            WaterRippleLayer(onTap = { focusManager.clearFocus() })
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()

@@ -47,3 +47,9 @@ class OwnDropError(Exception):
 
 class DropAlreadySeenError(Exception):
     """Raised when a user has already saved or skipped this drop."""
+
+class InvalidCodeError(Exception):
+    """Raised when an email code is wrong, expired or tried too many times."""
+
+class EmailNotVerifiedError(Exception):
+    """Raised when a user tries to log in before confirming their email."""

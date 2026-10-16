@@ -18,7 +18,7 @@ def now_utc() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def create_and_send_code(db: Session, user: User, purpose: str) -> None:
+def create_and_send_code(db: Session, user: User, purpose: str, to: str | None = None) -> None:
     """Create a new 6-digit code for the user, save its hash, then email it."""
     # Random code from 000000 to 999999, with a generator made for secrets
     code = f"{secrets.randbelow(1_000_000):06d}"
@@ -37,8 +37,8 @@ def create_and_send_code(db: Session, user: User, purpose: str) -> None:
     ))
     db.commit()
 
-    # Send the code after saving it: if the email fails, the user can ask again
-    send_code_email(user.email, purpose, code, settings.EMAIL_CODE_EXPIRE_MINUTES)
+    # Send to the given address, or to the account's email by default
+    send_code_email(to or user.email, purpose, code, settings.EMAIL_CODE_EXPIRE_MINUTES)
 
 
 def check_code(db: Session, user: User, purpose: str, code: str) -> None:

@@ -4,7 +4,7 @@ import smtplib
 import ssl
 from datetime import datetime
 from email.message import EmailMessage
-from email.utils import format_datetime
+from email.utils import format_datetime, make_msgid
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -18,6 +18,9 @@ MAIL_TIMEZONE = ZoneInfo("Europe/Paris")
 # Email templates live in app/templates/email/
 TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates" / "email"
 
+# Header image (logo and light beams), sent inside the email itself
+HEADER_IMAGE = TEMPLATE_DIR / "header.jpg"
+
 # autoescape protects the HTML if a variable contains special characters
 templates = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=True)
 
@@ -28,8 +31,9 @@ CODE_SUBJECTS = {
 }
 
 
-def send_email(to: str, subject: str, body: str, html: str | None = None) -> None:
-    """Send an email, with an HTML version if one is given."""
+def send_email(to: str, subject: str, body: str, html: str | None = None,
+               header_cid: str | None = None) -> None:
+    """Send an email, with an HTML version and its header image if given."""
     # Build the email: sender, receiver, date, subject and text
     message = EmailMessage()
     message["From"] = settings.MAIL_FROM
@@ -41,6 +45,10 @@ def send_email(to: str, subject: str, body: str, html: str | None = None) -> Non
     # The mail app shows the HTML version, or the text one if it can't
     if html is not None:
         message.add_alternative(html, subtype="html")
+        if header_cid is not None:
+            # Attach the image to the HTML version: the template shows it with "cid:"
+            html_part = message.get_payload()[1]
+            html_part.add_related(HEADER_IMAGE.read_bytes(), "image", "jpeg", cid=header_cid)
 
     # Connect to Brevo, encrypt the connection, log in, then send
     with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
@@ -51,12 +59,15 @@ def send_email(to: str, subject: str, body: str, html: str | None = None) -> Non
 
 def send_code_email(to: str, kind: str, code: str, expires_minutes: int) -> None:
     """Send a 6-digit code email (kind: verify_email or reset_password)."""
+    # Unique id of the header image inside this email, like <...@melodrop-app.com>
+    header_cid = make_msgid(domain="melodrop-app.com")
     variables = {
         "kind": kind,
         "code": code,
         "expires_minutes": expires_minutes,
-        "logo_src": settings.MAIL_LOGO_URL,
+        # The template needs the id without the < > around it
+        "header_src": "cid:" + header_cid[1:-1],
     }
     body = templates.get_template("code_email.txt").render(variables)
     html = templates.get_template("code_email.html").render(variables)
-    send_email(to, CODE_SUBJECTS[kind], body, html)
+    send_email(to, CODE_SUBJECTS[kind], body, html, header_cid)

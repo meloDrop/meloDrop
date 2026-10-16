@@ -45,7 +45,6 @@ class Settings(BaseSettings):
     EMAIL_CODE_EXPIRE_MINUTES: int = 15
     EMAIL_CODE_MAX_ATTEMPTS: int = 5
 
-    MAIL_LOGO_URL: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

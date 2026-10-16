@@ -6,8 +6,21 @@ password_hash VARCHAR(255) NOT NULL,
 avatar_url    VARCHAR(255),
 created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+email_verified BOOLEAN NOT NULL DEFAULT FALSE,
 CONSTRAINT uq_users_email    UNIQUE (email),
 CONSTRAINT uq_users_username UNIQUE (username)
+);
+
+CREATE TABLE email_codes (
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT NOT NULL,
+purpose ENUM('verify_email', 'reset_password') NOT NULL,
+code_hash VARCHAR(255) NOT NULL,
+attempts INT NOT NULL DEFAULT 0,
+expires_at DATETIME NOT NULL,
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CONSTRAINT uq_email_codes_user_id_purpose UNIQUE (user_id, purpose),
+CONSTRAINT fk_email_codes_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE songs (

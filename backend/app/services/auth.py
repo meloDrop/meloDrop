@@ -122,8 +122,8 @@ def reset_password(db: Session, email: str, code: str, new_password: str) -> Non
     db.commit()
 
 
-def change_email(db: Session, user: User, password: str, new_email: str) -> User:
-    """Change the user's email after checking their password."""
+def change_email(db: Session, user: User, password: str, new_email: str) -> None:
+    """Save the new email as pending and send it a code, after checking the password."""
     # The current password must be right
     if not verify_password(password, user.password_hash):
         raise InvalidCredentialsError("invalid_password")
@@ -132,8 +132,31 @@ def change_email(db: Session, user: User, password: str, new_email: str) -> User
     if db.query(User).filter(User.email == new_email, User.id != user.id).first():
         raise UserAlreadyExistsError("email_taken")
 
-    # Save the new email
-    user.email = new_email
+    # The new email waits for the code: the current email stays active
+    user.pending_email = new_email
+    db.commit()
+
+    # Send the code to the new email, to prove it belongs to the user
+    create_and_send_code(db, user, "change_email", to=new_email)
+
+
+def confirm_email_change(db: Session, user: User, code: str) -> User:
+    """Replace the email with the pending one, after checking the code."""
+    # No email change waiting for this account
+    if user.pending_email is None:
+        raise InvalidCodeError("no_pending_email")
+
+    check_code(db, user, "change_email", code)
+
+    # Another account may have taken this email since the request
+    if db.query(User).filter(User.email == user.pending_email, User.id != user.id).first():
+        user.pending_email = None
+        db.commit()
+        raise UserAlreadyExistsError("email_taken")
+
+    # Swap the emails
+    user.email = user.pending_email
+    user.pending_email = None
     db.commit()
     db.refresh(user)
     return user

@@ -1,0 +1,14 @@
+{% autoescape false %}{% if kind == "reset_password" %}{% set title = "Réinitialise ton mot de passe" %}{% set intro = "Tu as demandé à changer ton mot de passe. Saisis ce code dans l'application :" %}{% set ignore_text = "Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste inchangé." %}{% else %}{% set title = "Confirme ton adresse e-mail" %}{% set intro = "Bienvenue sur meloDrop ! Pour activer ton compte, saisis ce code dans l'application :" %}{% set ignore_text = "Si tu n'as pas créé de compte meloDrop, ignore cet e-mail." %}{% endif %}{{ title }}
+
+{{ intro }}
+
+    {{ code }}
+
+Ce code expire dans {{ expires_minutes }} minutes.
+
+{{ ignore_text }}
+
+--
+meloDrop - Une chanson par jour, choisie par quelqu'un.
+E-mail envoyé automatiquement, merci de ne pas y répondre.
+{% endautoescape %}

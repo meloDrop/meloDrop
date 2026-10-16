@@ -7,6 +7,7 @@ avatar_url    VARCHAR(255),
 created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+pending_email VARCHAR(255) NULL,
 CONSTRAINT uq_users_email    UNIQUE (email),
 CONSTRAINT uq_users_username UNIQUE (username)
 );
@@ -14,7 +15,7 @@ CONSTRAINT uq_users_username UNIQUE (username)
 CREATE TABLE email_codes (
 id INT AUTO_INCREMENT PRIMARY KEY,
 user_id INT NOT NULL,
-purpose ENUM('verify_email', 'reset_password') NOT NULL,
+purpose ENUM('verify_email', 'reset_password', 'change_email') NOT NULL,
 code_hash VARCHAR(255) NOT NULL,
 attempts INT NOT NULL DEFAULT 0,
 expires_at DATETIME NOT NULL,

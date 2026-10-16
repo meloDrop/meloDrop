@@ -124,6 +124,11 @@ def reset_password(db: Session, email: str, code: str, new_password: str) -> Non
 
 def change_email(db: Session, user: User, password: str, new_email: str) -> None:
     """Save the new email as pending and send it a code, after checking the password."""
+
+    # The new email must be different from the current one
+    if new_email.lower() == user.email.lower():
+        raise UserAlreadyExistsError("same_email")
+
     # The current password must be right
     if not verify_password(password, user.password_hash):
         raise InvalidCredentialsError("invalid_password")

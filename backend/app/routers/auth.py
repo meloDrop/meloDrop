@@ -130,9 +130,11 @@ def get_me(user: User = Depends(current_user)):
 
 @me_router.patch(
     "/email",
-    response_model=schemas.UserOut,
+    status_code=204,
     responses={
+        204: {"description": "Code sent to the new email"},
         403: {"description": "Wrong password"},
+        409: {"description": "Email already taken, or same as the current one"},
         409: {"description": "Email already taken"},
     },
 )
@@ -141,11 +143,35 @@ def update_email(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    """Change the email of the logged-in account."""
+    """Ask to change the email: a code is sent to the new one."""
     try:
-        return services.change_email(db, user, body.password, body.new_email)
+        services.change_email(db, user, body.password, body.new_email)
     except InvalidCredentialsError as e:
         raise HTTPException(status_code=403, detail=str(e))
+    except UserAlreadyExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    return Response(status_code=204)
+
+
+@me_router.post(
+    "/email/confirm",
+    response_model=schemas.UserOut,
+    responses={
+        200: {"description": "Email changed"},
+        400: {"description": "Code invalid, expired or tried too many times, or no email change waiting"},
+        409: {"description": "Email taken by another account since the request"},
+    },
+)
+def confirm_email(
+    body: schemas.EmailChangeConfirm,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    """Confirm the email change with the code received at the new email."""
+    try:
+        return services.confirm_email_change(db, user, body.code)
+    except InvalidCodeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except UserAlreadyExistsError as e:
         raise HTTPException(status_code=409, detail=str(e))
 

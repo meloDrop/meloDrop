@@ -21,7 +21,7 @@ class EmailCode(Base):
         nullable=False,
     )
     # Same values as kind in send_code_email
-    purpose = Column(Enum("verify_email", "reset_password"), nullable=False)
+    purpose = Column(Enum("verify_email", "reset_password", "change_email"), nullable=False)
     # Only the hash of the code is stored, like for passwords
     code_hash = Column(String(255), nullable=False)
     # Number of wrong codes typed

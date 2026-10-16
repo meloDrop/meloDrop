@@ -1,7 +1,7 @@
 {#
 meloDrop email template for 6-digit codes (ADR-0015).
 Expected variables:
-kind            "verify_email" or "reset_password"
+kind            "verify_email" or "reset_password" or "change_email"
 code            the 6-digit code
 expires_minutes how long the code stays valid
 header_src      "cid:" link to the header image attached to the email (see utils/mail.py)
@@ -9,13 +9,17 @@ Email rules: table layout, inline styles only, no external CSS.
 The email texts stay in French, like the app interface.
 #}
 {% if kind == "reset_password" %}
-{% set title = "Réinitialise ton mot de passe" %}
-{% set intro = "Tu as demandé à changer ton mot de passe. Saisis ce code dans l'application :" %}
-{% set ignore_text = "Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste inchangé." %}
+    {% set title = "Réinitialise ton mot de passe" %}
+    {% set intro = "Tu as demandé à changer ton mot de passe. Saisis ce code dans l'application :" %}
+    {% set ignore_text = "Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste inchangé." %}
+{% elif kind == "change_email" %}
+    {% set title = "Confirme ta nouvelle adresse e-mail" %}
+    {% set intro = "Pour que cette adresse devienne celle de ton compte meloDrop, saisis ce code dans l'application :" %}
+    {% set ignore_text = "Si tu n'es pas à l'origine de cette demande, ignore cet e-mail : cette adresse ne sera liée à aucun compte." %}
 {% else %}
-{% set title = "Confirme ton adresse e-mail" %}
-{% set intro = "Bienvenue sur meloDrop ! Pour activer ton compte, saisis ce code dans l'application :" %}
-{% set ignore_text = "Si tu n'as pas créé de compte meloDrop, ignore cet e-mail." %}
+    {% set title = "Confirme ton adresse e-mail" %}
+    {% set intro = "Bienvenue sur meloDrop ! Pour activer ton compte, saisis ce code dans l'application :" %}
+    {% set ignore_text = "Si tu n'as pas créé de compte meloDrop, ignore cet e-mail." %}
 {% endif %}
 <!DOCTYPE html>
 <html lang="fr">

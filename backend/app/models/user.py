@@ -22,6 +22,8 @@ class User(Base):
     links = relationship("PlatformLink", passive_deletes=True)
     # False until the user types the code received by email
     email_verified = Column(Boolean, nullable=False, default=False)
+    # New email waiting for the code sent to it, empty the rest of the time
+    pending_email = Column(String(255), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("email", name="uq_users_email"),

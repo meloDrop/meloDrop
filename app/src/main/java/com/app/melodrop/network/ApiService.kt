@@ -1,6 +1,7 @@
 package com.app.melodrop.network
 
 import com.app.melodrop.network.dto.MeOut
+import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.Token
 import com.app.melodrop.network.dto.UserLogin
 import com.app.melodrop.network.dto.UserOut
@@ -69,4 +70,8 @@ interface ApiService {
     // 201 with the new drop, 409 if a drop is already active
     @POST("drops")
     suspend fun createDrop(@Body body: DropCreate): DropOut
+
+    // Response<...>: lets us read a null body (no drop today) without an error
+    @GET("drops/me")
+    suspend fun getMyDrop(): Response<MyDropOut>
 }

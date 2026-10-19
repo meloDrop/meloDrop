@@ -1,6 +1,7 @@
 package com.app.melodrop.ui.drop
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,9 +33,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
@@ -46,13 +51,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.GenreOut
+import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.genreColor
+import kotlinx.coroutines.delay
+import java.time.Duration
+import java.time.Instant
+import java.time.OffsetDateTime
 
 // Connects the screen to its ViewModel
 @Composable
@@ -67,8 +76,13 @@ fun DropScreen(viewModel: DropViewModel = viewModel()) {
         viewModel.pausePreview()
     }
 
+    // Each time the tab opens: is a drop online, and how many likes does it have?
+    LaunchedEffect(Unit) {
+        viewModel.loadMyDrop()
+    }
+
     // Back button on the genre step: back to the results, not out of the tab
-    BackHandler(enabled = viewModel.uiState.selectedTrack != null) {
+    BackHandler(enabled = viewModel.uiState.selectedTrack != null && viewModel.uiState.myDrop == null) {
         viewModel.clearSelection()
     }
 
@@ -80,6 +94,7 @@ fun DropScreen(viewModel: DropViewModel = viewModel()) {
         onGenreClick = viewModel::toggleGenre,
         onSubmit = viewModel::submitDrop,
         onChangeTrack = viewModel::clearSelection,
+        onRefresh = viewModel::loadMyDrop,
     )
 }
 
@@ -93,6 +108,7 @@ private fun DropContent(
     onGenreClick: (Int) -> Unit,
     onSubmit: () -> Unit,
     onChangeTrack: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -103,11 +119,23 @@ private fun DropContent(
         MeloDropTitle()
 
         // Local copies: Kotlin can then treat them as not null in each branch
-        val createdDrop = uiState.createdDrop
+        val myDrop = uiState.myDrop
         val selectedTrack = uiState.selectedTrack
 
         when {
-            createdDrop != null -> DropSuccess(drop = createdDrop)
+            // First answer of GET /drops/me not there yet
+            uiState.isCheckingDrop -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+
+            myDrop != null -> MyDropView(
+                drop = myDrop,
+                justDropped = uiState.justDropped,
+                onRefresh = onRefresh,
+            )
 
             selectedTrack != null -> GenreStep(
                 uiState = uiState,
@@ -299,9 +327,23 @@ private fun GenreStep(
     }
 }
 
-// Step 3: the drop is online
+// Shown while a drop is online: the drop, its likes and the time left
 @Composable
-private fun DropSuccess(drop: DropOut) {
+private fun MyDropView(
+    drop: MyDropOut,
+    justDropped: Boolean,
+    onRefresh: () -> Unit,
+) {
+    // Current time, refreshed every minute for the countdown
+    val now by produceState(initialValue = Instant.now()) {
+        while (true) {
+            delay(60_000)
+            value = Instant.now()
+        }
+    }
+    val expiresAt = OffsetDateTime.parse(drop.expiresAt).toInstant()
+    val minutesLeft = Duration.between(now, expiresAt).toMinutes()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -310,7 +352,7 @@ private fun DropSuccess(drop: DropOut) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "C'est en ligne !",
+            text = if (justDropped) "C'est en ligne !" else "Ton drop du jour",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -320,7 +362,7 @@ private fun DropSuccess(drop: DropOut) {
             contentDescription = "Pochette de ${drop.title}",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth(0.7f)
+                .fillMaxWidth(0.6f)
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.outline),
@@ -339,18 +381,107 @@ private fun DropSuccess(drop: DropOut) {
         )
 
         // Genres on one line, like "Rock · Metal"
-        Text(
-            text = drop.genres.joinToString(" · ") { it.label },
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.secondary,
-        )
+        if (drop.genres.isNotEmpty()) {
+            Text(
+                text = drop.genres.joinToString(" · ") { it.label },
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
 
-        Text(
-            text = "Ton titre reste en ligne 24 heures. Les autres peuvent le découvrir dès maintenant.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        // Enough users said the genres are wrong: the author is told here
+        if (drop.genreReported) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+            ) {
+                Text(
+                    text = "Plusieurs personnes pensent que les genres de ce titre ne correspondent pas.",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(12.dp),
+                )
+            }
+        }
+
+        // Two tiles side by side, with the same width
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            StatTile(
+                value = drop.savesCount.toString(),
+                label = if (drop.savesCount == 1) "like reçu" else "likes reçus",
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.weight(1f),
+            )
+            StatTile(
+                value = timeLeftLabel(minutesLeft),
+                label = "avant expiration",
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        if (minutesLeft <= 0) {
+            // Expired: the backend now accepts a new drop
+            Text(
+                text = "Ton drop a expiré. Tu peux en déposer un nouveau.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Button(
+                onClick = onRefresh,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("DÉPOSER UN NOUVEAU TITRE")
+            }
+        } else {
+            Text(
+                text = "Tu pourras déposer un nouveau titre quand celui-ci aura expiré.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
+}
+
+// A big number with a short label under it
+@Composable
+private fun StatTile(
+    value: String,
+    label: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium,
+                color = color,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// Time left in a short form: "14 h 05", "45 min", or "0 min" once expired
+private fun timeLeftLabel(minutes: Long): String = when {
+    minutes <= 0 -> "0 min"
+    minutes < 60 -> "$minutes min"
+    else -> "${minutes / 60} h ${(minutes % 60).toString().padStart(2, '0')}"
 }
 
 // One track: cover, title, artist, and a play button if there is a preview.
@@ -462,6 +593,7 @@ private fun DropGenreStepPreview() {
     MeloDropTheme {
         DropContent(
             uiState = DropUiState(
+                isCheckingDrop = false,
                 selectedTrack = previewTrack,
                 genres = listOf(GenreOut(1, "Pop"), GenreOut(2, "Electro"), GenreOut(3, "Rock"), GenreOut(5, "Jazz")),
                 selectedGenreIds = setOf(1, 2),
@@ -472,23 +604,29 @@ private fun DropGenreStepPreview() {
             onGenreClick = {},
             onSubmit = {},
             onChangeTrack = {},
+            onRefresh = {},
         )
     }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)
 @Composable
-private fun DropSuccessPreview() {
+private fun MyDropPreview() {
     MeloDropTheme {
         DropContent(
             uiState = DropUiState(
-                createdDrop = DropOut(
+                isCheckingDrop = false,
+                myDrop = MyDropOut(
+                    id = 1,
                     songId = 1,
                     title = "Get Lucky",
                     artist = "Daft Punk",
                     coverUrl = "",
                     genres = listOf(GenreOut(1, "Pop"), GenreOut(2, "Electro")),
-                    expiresAt = "2026-10-20T20:35:00+00:00",
+                    // Expires in 14 hours, whatever the day the preview is opened
+                    expiresAt = Instant.now().plusSeconds(14L * 3600).toString(),
+                    savesCount = 3,
+                    genreReported = true,
                 ),
             ),
             onQueryChange = {},
@@ -497,6 +635,7 @@ private fun DropSuccessPreview() {
             onGenreClick = {},
             onSubmit = {},
             onChangeTrack = {},
+            onRefresh = {},
         )
     }
 }

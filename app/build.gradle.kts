@@ -98,4 +98,10 @@ dependencies {
     // Lets Coil download the images with OkHttp
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 
+    // Audio: plays the 30-second previews
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
+
+// Lifecycle events in Compose: stops the music when the app goes to the background
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+
 }

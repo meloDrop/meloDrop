@@ -8,6 +8,7 @@ import com.app.melodrop.network.dto.UserRegister
 import com.app.melodrop.network.dto.EmailVerify
 import com.app.melodrop.network.dto.CodeRequest
 import com.app.melodrop.network.dto.FeedItem
+import com.app.melodrop.network.dto.PreviewOut
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -47,5 +48,9 @@ interface ApiService {
 
     @POST("drops/{drop_id}/skip")
     suspend fun skipDrop(@Path("drop_id") dropId: Int)
+
+    // song_id is the meloDrop id of the song, not the Deezer id
+    @GET("songs/{song_id}/preview")
+    suspend fun getPreview(@Path("song_id") songId: Int): PreviewOut
 
 }

@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,6 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.MeloDropTitle
@@ -55,10 +58,21 @@ private const val FLY_OUT_MS = 250
 // Connects the screen to its ViewModel
 @Composable
 fun DiscoverScreen(viewModel: DiscoverViewModel = viewModel()) {
+    // Leaving the Discover tab: the music stops
+    DisposableEffect(Unit) {
+        onDispose { viewModel.pausePreview() }
+    }
+
+    // App sent to the background (home button, screen off): the music stops too
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.pausePreview()
+    }
+
     DiscoverContent(
         uiState = viewModel.uiState,
         onRefresh = viewModel::loadFeed,
         onSwiped = viewModel::onSwiped,
+        onPlayPause = viewModel::togglePlay,
     )
 }
 
@@ -68,6 +82,7 @@ private fun DiscoverContent(
     uiState: DiscoverUiState,
     onRefresh: () -> Unit,
     onSwiped: (FeedItem, Boolean) -> Unit,
+    onPlayPause: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -102,9 +117,9 @@ private fun DiscoverContent(
                 )
 
                 else -> DropDeck(
-                    drops = uiState.drops,
-                    swipeError = uiState.swipeError,
+                    uiState = uiState,
                     onSwiped = onSwiped,
+                    onPlayPause = onPlayPause,
                 )
             }
         }
@@ -114,10 +129,15 @@ private fun DiscoverContent(
 // The card on top, the next one waiting behind it, and a hint below
 @Composable
 private fun DropDeck(
-    drops: List<FeedItem>,
-    swipeError: String?,
+    uiState: DiscoverUiState,
     onSwiped: (FeedItem, Boolean) -> Unit,
+    onPlayPause: () -> Unit,
 ) {
+    val drops = uiState.drops
+    // First message found wins: swipe problem, then preview problem, then the hint
+    val message = uiState.swipeError ?: uiState.previewError
+    val hint = message ?: "Glisse à droite pour garder, à gauche pour passer"
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -139,15 +159,17 @@ private fun DropDeck(
             key(top.id) {
                 SwipeableDropCard(
                     drop = top,
+                    isPlaying = uiState.isPlaying,
                     onSwiped = { liked -> onSwiped(top, liked) },
+                    onPlayPause = onPlayPause,
                 )
             }
         }
 
         Text(
-            text = swipeError ?: "Glisse à droite pour garder, à gauche pour passer",
+            text = hint,
             style = MaterialTheme.typography.bodySmall,
-            color = if (swipeError != null) MaterialTheme.colorScheme.error
+            color = if (message != null) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -158,7 +180,9 @@ private fun DropDeck(
 @Composable
 private fun SwipeableDropCard(
     drop: FeedItem,
+    isPlaying: Boolean,
     onSwiped: (liked: Boolean) -> Unit,
+    onPlayPause: () -> Unit,
 ) {
     // Horizontal shift of the card in pixels (0 = centered)
     val offsetX = remember { Animatable(0f) }
@@ -202,7 +226,11 @@ private fun SwipeableDropCard(
                 rotationZ = MAX_TILT * offsetX.value / (width * SWIPE_THRESHOLD)
             },
     ) {
-        DropCard(drop = drop)
+        DropCard(
+            drop = drop,
+            isPlaying = isPlaying,
+            onPlayPause = onPlayPause,
+        )
 
         // 0 at rest, 1 (or -1) at the threshold
         val progress = offsetX.value / (width * SWIPE_THRESHOLD)
@@ -290,7 +318,12 @@ private fun FeedMessage(
 @Composable
 private fun DiscoverEmptyPreview() {
     MeloDropTheme {
-        DiscoverContent(uiState = DiscoverUiState(), onRefresh = {}, onSwiped = { _, _ -> })
+        DiscoverContent(
+            uiState = DiscoverUiState(),
+            onRefresh = {},
+            onSwiped = { _, _ -> },
+            onPlayPause = {},
+        )
     }
 }
 
@@ -302,6 +335,7 @@ private fun DiscoverErrorPreview() {
             uiState = DiscoverUiState(error = "Impossible de joindre le serveur."),
             onRefresh = {},
             onSwiped = { _, _ -> },
+            onPlayPause = {},
         )
     }
 }

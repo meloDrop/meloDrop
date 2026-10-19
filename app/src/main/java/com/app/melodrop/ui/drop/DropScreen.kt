@@ -1,25 +1,35 @@
 package com.app.melodrop.ui.drop
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
@@ -36,10 +46,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.app.melodrop.network.dto.DropOut
+import com.app.melodrop.network.dto.GenreOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.theme.genreColor
 
 // Connects the screen to its ViewModel
 @Composable
@@ -54,23 +67,33 @@ fun DropScreen(viewModel: DropViewModel = viewModel()) {
         viewModel.pausePreview()
     }
 
+    // Back button on the genre step: back to the results, not out of the tab
+    BackHandler(enabled = viewModel.uiState.selectedTrack != null) {
+        viewModel.clearSelection()
+    }
+
     DropContent(
         uiState = viewModel.uiState,
         onQueryChange = viewModel::onQueryChange,
         onPlayClick = viewModel::togglePreview,
+        onTrackClick = viewModel::selectTrack,
+        onGenreClick = viewModel::toggleGenre,
+        onSubmit = viewModel::submitDrop,
+        onChangeTrack = viewModel::clearSelection,
     )
 }
 
-// Pure UI: only displays the state it receives
+// Pure UI: shows one step at a time, from the state it receives
 @Composable
 private fun DropContent(
     uiState: DropUiState,
     onQueryChange: (String) -> Unit,
     onPlayClick: (TrackResult) -> Unit,
+    onTrackClick: (TrackResult) -> Unit,
+    onGenreClick: (Int) -> Unit,
+    onSubmit: () -> Unit,
+    onChangeTrack: () -> Unit,
 ) {
-    // Used to close the keyboard with the search key
-    val focusManager = LocalFocusManager.current
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -79,6 +102,47 @@ private fun DropContent(
     ) {
         MeloDropTitle()
 
+        // Local copies: Kotlin can then treat them as not null in each branch
+        val createdDrop = uiState.createdDrop
+        val selectedTrack = uiState.selectedTrack
+
+        when {
+            createdDrop != null -> DropSuccess(drop = createdDrop)
+
+            selectedTrack != null -> GenreStep(
+                uiState = uiState,
+                track = selectedTrack,
+                onPlayClick = onPlayClick,
+                onGenreClick = onGenreClick,
+                onSubmit = onSubmit,
+                onChangeTrack = onChangeTrack,
+            )
+
+            else -> SearchStep(
+                uiState = uiState,
+                onQueryChange = onQueryChange,
+                onPlayClick = onPlayClick,
+                onTrackClick = onTrackClick,
+            )
+        }
+    }
+}
+
+// Step 1: search field and results
+@Composable
+private fun SearchStep(
+    uiState: DropUiState,
+    onQueryChange: (String) -> Unit,
+    onPlayClick: (TrackResult) -> Unit,
+    onTrackClick: (TrackResult) -> Unit,
+) {
+    // Used to close the keyboard with the search key
+    val focusManager = LocalFocusManager.current
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         Text(
             text = "Ton drop du jour",
             style = MaterialTheme.typography.headlineSmall,
@@ -135,6 +199,7 @@ private fun DropContent(
                             track = track,
                             isPlaying = uiState.isPlaying && uiState.playingTrackId == track.deezerTrackId,
                             onPlayClick = { onPlayClick(track) },
+                            onClick = { onTrackClick(track) },
                         )
                     }
                 }
@@ -143,12 +208,159 @@ private fun DropContent(
     }
 }
 
-// One search result: cover, title, artist, and a play button if there is a preview
+// Step 2: the chosen track, its genres, and the button to drop it
+@Composable
+private fun GenreStep(
+    uiState: DropUiState,
+    track: TrackResult,
+    onPlayClick: (TrackResult) -> Unit,
+    onGenreClick: (Int) -> Unit,
+    onSubmit: () -> Unit,
+    onChangeTrack: () -> Unit,
+) {
+    val selectedIds = uiState.selectedGenreIds
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            // Scrolls on small screens, with the 13 genres
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = "Quel genre pour ce titre ?",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+
+        // The chosen track, with its play button (no onClick: it is already chosen)
+        TrackRow(
+            track = track,
+            isPlaying = uiState.isPlaying && uiState.playingTrackId == track.deezerTrackId,
+            onPlayClick = { onPlayClick(track) },
+        )
+
+        Text(
+            text = "Choisis jusqu'à $MAX_GENRES genres. Ils indiquent aux autres à quoi s'attendre.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        // Spinner while the list of genres arrives
+        if (uiState.genres.isEmpty() && uiState.submitError == null) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            uiState.genres.forEach { genre ->
+                val selected = genre.id in selectedIds
+                GenreChoiceChip(
+                    genre = genre,
+                    selected = selected,
+                    // At the limit, the other genres are greyed out
+                    enabled = selected || selectedIds.size < MAX_GENRES,
+                    onClick = { onGenreClick(genre.id) },
+                )
+            }
+        }
+
+        uiState.submitError?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
+        Button(
+            onClick = onSubmit,
+            // At least one genre is needed
+            enabled = selectedIds.isNotEmpty() && !uiState.isSubmitting,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (uiState.isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Text("DÉPOSER CE TITRE")
+            }
+        }
+
+        TextButton(
+            onClick = onChangeTrack,
+            enabled = !uiState.isSubmitting,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Text("Changer de titre")
+        }
+    }
+}
+
+// Step 3: the drop is online
+@Composable
+private fun DropSuccess(drop: DropOut) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = "C'est en ligne !",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+
+        AsyncImage(
+            model = drop.coverUrl,
+            contentDescription = "Pochette de ${drop.title}",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.outline),
+        )
+
+        Text(
+            text = drop.title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+
+        Text(
+            text = drop.artist,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        // Genres on one line, like "Rock · Metal"
+        Text(
+            text = drop.genres.joinToString(" · ") { it.label },
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+
+        Text(
+            text = "Ton titre reste en ligne 24 heures. Les autres peuvent le découvrir dès maintenant.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+// One track: cover, title, artist, and a play button if there is a preview.
+// onClick null: the row cannot be tapped
 @Composable
 private fun TrackRow(
     track: TrackResult,
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -156,7 +368,10 @@ private fun TrackRow(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier
+                // Inside the Surface: the touch effect keeps the rounded corners
+                .clickable(enabled = onClick != null) { onClick?.invoke() }
+                .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -199,6 +414,34 @@ private fun TrackRow(
     }
 }
 
+// A genre to pick, in its own pastel once selected
+@Composable
+private fun GenreChoiceChip(
+    genre: GenreOut,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val color = genreColor(genre.id)
+
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        enabled = enabled,
+        label = { Text(genre.label) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = color.copy(alpha = 0.15f),
+            selectedLabelColor = color,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = enabled,
+            selected = selected,
+            selectedBorderColor = color,
+            selectedBorderWidth = 1.dp,
+        ),
+    )
+}
+
 // Short centered text under the field: hint, no result or error
 @Composable
 private fun InfoText(text: String, isError: Boolean = false) {
@@ -211,22 +454,49 @@ private fun InfoText(text: String, isError: Boolean = false) {
     )
 }
 
+private val previewTrack = TrackResult(3135556, "Get Lucky", "Daft Punk", "", "https://example.com")
+
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)
 @Composable
-private fun DropResultsPreview() {
+private fun DropGenreStepPreview() {
     MeloDropTheme {
         DropContent(
             uiState = DropUiState(
-                query = "daft punk",
-                results = listOf(
-                    TrackResult(3135556, "Get Lucky", "Daft Punk", "", "https://example.com"),
-                    TrackResult(3135553, "One More Time", "Daft Punk", "", null),
-                ),
-                playingTrackId = 3135556,
-                isPlaying = true,
+                selectedTrack = previewTrack,
+                genres = listOf(GenreOut(1, "Pop"), GenreOut(2, "Electro"), GenreOut(3, "Rock"), GenreOut(5, "Jazz")),
+                selectedGenreIds = setOf(1, 2),
             ),
             onQueryChange = {},
             onPlayClick = {},
+            onTrackClick = {},
+            onGenreClick = {},
+            onSubmit = {},
+            onChangeTrack = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0C0C10)
+@Composable
+private fun DropSuccessPreview() {
+    MeloDropTheme {
+        DropContent(
+            uiState = DropUiState(
+                createdDrop = DropOut(
+                    songId = 1,
+                    title = "Get Lucky",
+                    artist = "Daft Punk",
+                    coverUrl = "",
+                    genres = listOf(GenreOut(1, "Pop"), GenreOut(2, "Electro")),
+                    expiresAt = "2026-10-20T20:35:00+00:00",
+                ),
+            ),
+            onQueryChange = {},
+            onPlayClick = {},
+            onTrackClick = {},
+            onGenreClick = {},
+            onSubmit = {},
+            onChangeTrack = {},
         )
     }
 }

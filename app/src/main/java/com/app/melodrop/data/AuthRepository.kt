@@ -2,6 +2,8 @@ package com.app.melodrop.data
 
 import android.content.Context
 import com.app.melodrop.network.RetrofitClient
+import com.app.melodrop.network.dto.CodeRequest
+import com.app.melodrop.network.dto.EmailVerify
 import com.app.melodrop.network.dto.UserLogin
 import com.app.melodrop.network.dto.UserRegister
 
@@ -16,9 +18,18 @@ class AuthRepository(private val context: Context) {
         TokenStore.save(context, token.accessToken)
     }
 
-    // Creates the account, then logs in with the same password
+    // Creates the account: the backend sends a code to the email
     suspend fun register(email: String, username: String, password: String) {
         api.register(UserRegister(email, username, password))
-        login(username, password)
+    }
+
+    // Confirms the email with the 6-digit code
+    suspend fun verifyEmail(email: String, code: String) {
+        api.verifyEmail(EmailVerify(email, code))
+    }
+
+    // Asks the backend to send a new code
+    suspend fun resendCode(email: String) {
+        api.resendCode(CodeRequest(email))
     }
 }

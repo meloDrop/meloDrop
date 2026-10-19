@@ -36,7 +36,7 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 // Connects the screen to its ViewModel
 @Composable
 fun RegisterScreen(
-    onRegistered: () -> Unit,
+    onRegistered: (String) -> Unit,
     onLoginClick: () -> Unit,
     viewModel: RegisterViewModel = viewModel()
 ) {
@@ -44,8 +44,10 @@ fun RegisterScreen(
 
     LaunchedEffect(uiState.isRegistered) {
         if (uiState.isRegistered) {
+            // Read before the reset, which empties the state
+            val email = uiState.email
             viewModel.onRegisterHandled()
-            onRegistered()
+            onRegistered(email)
         }
     }
 

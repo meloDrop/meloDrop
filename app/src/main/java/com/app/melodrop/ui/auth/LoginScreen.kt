@@ -44,6 +44,7 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 fun LoginScreen(
     onLoggedIn: () -> Unit,
     onRegisterClick: () -> Unit,
+    onVerifyNeeded: (String) -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -52,6 +53,16 @@ fun LoginScreen(
         if (uiState.isLoggedIn) {
             viewModel.onLoginHandled()
             onLoggedIn()
+        }
+    }
+
+    // Email not confirmed yet: open the code screen
+    LaunchedEffect(uiState.needsVerification) {
+        if (uiState.needsVerification) {
+            // Read before the reset, which empties the state
+            val email = uiState.email
+            viewModel.onVerificationHandled()
+            onVerifyNeeded(email)
         }
     }
 

@@ -53,3 +53,6 @@ class InvalidCodeError(Exception):
 
 class EmailNotVerifiedError(Exception):
     """Raised when a user tries to log in before confirming their email."""
+
+class LikeNotFoundError(Exception):
+    """Raised when a song is not in the user's "Mes likes" list."""

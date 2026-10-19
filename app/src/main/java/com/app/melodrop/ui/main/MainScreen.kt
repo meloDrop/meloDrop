@@ -1,5 +1,8 @@
 package com.app.melodrop.ui.main
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -11,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.app.melodrop.ui.components.HaloBackground
 import com.app.melodrop.ui.discover.DiscoverScreen
 import com.app.melodrop.ui.drop.DropScreen
 import com.app.melodrop.ui.navigation.BottomBar
@@ -24,30 +28,37 @@ fun MainScreen(onLogout: () -> Unit) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    Scaffold(
-        bottomBar = {
-            BottomBar(
-                currentRoute = currentRoute,
-                onTabClick = { route ->
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Behind all the screens: the halos move when the tab changes
+        HaloBackground(route = currentRoute)
+
+        Scaffold(
+            // Transparent, so the halos show through
+            containerColor = Color.Transparent,
+            bottomBar = {
+                BottomBar(
+                    currentRoute = currentRoute,
+                    onTabClick = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-            )
-        },
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.DISCOVER,
-            modifier = Modifier.padding(innerPadding),
-        ) {
-            composable(Routes.DISCOVER) { DiscoverScreen() }
-            composable(Routes.DROP) { DropScreen() }
-            composable(Routes.PROFILE) { ProfileScreen(onLogout = onLogout) }
+                    },
+                )
+            },
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Routes.DISCOVER,
+                modifier = Modifier.padding(innerPadding),
+            ) {
+                composable(Routes.DISCOVER) { DiscoverScreen() }
+                composable(Routes.DROP) { DropScreen() }
+                composable(Routes.PROFILE) { ProfileScreen(onLogout = onLogout) }
+            }
         }
     }
 }

@@ -13,6 +13,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface ApiService {
 
@@ -39,5 +40,12 @@ interface ApiService {
     // Up to 10 drops not seen yet, or an empty list
     @GET("feed")
     suspend fun getFeed(): List<FeedItem>
+
+    // 204 with no body: nothing to read back
+    @POST("drops/{drop_id}/save")
+    suspend fun saveDrop(@Path("drop_id") dropId: Int)
+
+    @POST("drops/{drop_id}/skip")
+    suspend fun skipDrop(@Path("drop_id") dropId: Int)
 
 }

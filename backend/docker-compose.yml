@@ -38,9 +38,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # Healthy once GET /health answers 200 (API started and database reachable)
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: [ "CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8000), timeout=2)" ]
       interval: 10s
       timeout: 5s
       retries: 5

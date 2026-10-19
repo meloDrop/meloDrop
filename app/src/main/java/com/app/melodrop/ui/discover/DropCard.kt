@@ -1,6 +1,5 @@
 package com.app.melodrop.ui.discover
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,10 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -21,25 +18,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.GenreOut
-import com.app.melodrop.ui.theme.Butter
-import com.app.melodrop.ui.theme.Lavender
+import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
-import com.app.melodrop.ui.theme.Mint
-import com.app.melodrop.ui.theme.Peach
-import com.app.melodrop.ui.theme.Rose
+import com.app.melodrop.ui.theme.genreColor
 
 // A drop in the feed: cover, song, genres, author and likes
 @Composable
@@ -129,60 +117,9 @@ fun DropCard(
     }
 }
 
-// Round lavender button with a play or pause sign drawn by hand
-@Composable
-private fun PlayPauseButton(
-    isPlaying: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier
-            .size(52.dp)
-            // Read aloud by TalkBack, since the button has no text
-            .semantics { contentDescription = if (isPlaying) "Pause" else "Écouter l'extrait" },
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary,
-    ) {
-        val iconColor = MaterialTheme.colorScheme.onPrimary
-
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(17.dp)
-        ) {
-            if (isPlaying) {
-                // Pause: two rounded bars
-                val barWidth = size.width * 0.32f
-                val corner = CornerRadius(2.dp.toPx())
-                drawRoundRect(iconColor, Offset.Zero, Size(barWidth, size.height), corner)
-                drawRoundRect(
-                    iconColor,
-                    Offset(size.width - barWidth, 0f),
-                    Size(barWidth, size.height),
-                    corner,
-                )
-            } else {
-                // Play: a triangle pointing right, nudged right to look centered
-                val triangle = Path().apply {
-                    moveTo(size.width * 0.15f, 0f)
-                    lineTo(size.width, size.height / 2)
-                    lineTo(size.width * 0.15f, size.height)
-                    close()
-                }
-                drawPath(triangle, iconColor)
-            }
-        }
-    }
-}
-
-// The five pastels: a genre always gets the same one
-private val genreColors = listOf(Lavender, Peach, Butter, Mint, Rose)
-
 @Composable
 private fun GenreChip(genre: GenreOut) {
-    val color = genreColors[genre.id % genreColors.size]
+    val color = genreColor(genre.id)
 
     Surface(
         shape = CircleShape,

@@ -26,3 +26,10 @@ val Butter = Color(0xFFFFE08A)
 val Mint = Color(0xFF9EE0B8)
 
 val Rose = Color(0xFFF5A8C8)
+
+
+
+// Genres: each one always gets the same pastel, on every screen
+private val GenrePalette = listOf(Lavender, Peach, Butter, Mint, Rose)
+
+fun genreColor(genreId: Int): Color = GenrePalette[genreId % GenrePalette.size]

@@ -7,7 +7,10 @@ import com.app.melodrop.network.dto.UserOut
 import com.app.melodrop.network.dto.UserRegister
 import com.app.melodrop.network.dto.EmailVerify
 import com.app.melodrop.network.dto.CodeRequest
+import com.app.melodrop.network.dto.DropCreate
+import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.FeedItem
+import com.app.melodrop.network.dto.GenreOut
 import com.app.melodrop.network.dto.PreviewOut
 import com.app.melodrop.network.dto.TrackResult
 import okhttp3.ResponseBody
@@ -59,4 +62,11 @@ interface ApiService {
     @GET("catalog/search")
     suspend fun searchTracks(@Query("q") query: String): List<TrackResult>
 
+    // The closed list of genres (Pop, Rock...)
+    @GET("genres")
+    suspend fun getGenres(): List<GenreOut>
+
+    // 201 with the new drop, 409 if a drop is already active
+    @POST("drops")
+    suspend fun createDrop(@Body body: DropCreate): DropOut
 }

@@ -10,4 +10,10 @@ class DiscoverRepository {
 
     // The token is added by AuthInterceptor, nothing to do here
     suspend fun getFeed(): List<FeedItem> = api.getFeed()
+
+    // Right swipe: like the drop, its song goes to "Mes likes"
+    suspend fun save(dropId: Int) = api.saveDrop(dropId)
+
+    // Left swipe: skip the drop
+    suspend fun skip(dropId: Int) = api.skipDrop(dropId)
 }

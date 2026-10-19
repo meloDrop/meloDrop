@@ -16,4 +16,7 @@ class DiscoverRepository {
 
     // Left swipe: skip the drop
     suspend fun skip(dropId: Int) = api.skipDrop(dropId)
+
+    // Fresh preview link: Deezer links expire after about 15 minutes
+    suspend fun getPreviewUrl(songId: Int): String? = api.getPreview(songId).previewUrl
 }

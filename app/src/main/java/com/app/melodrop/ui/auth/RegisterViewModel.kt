@@ -17,7 +17,9 @@ import java.io.IOException
 data class RegisterUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isRegistered: Boolean = false
+    val isRegistered: Boolean = false,
+    // Email of the new account, to fill in the verify screen
+    val email: String = ""
 )
 
 class RegisterViewModel(application: Application) : AndroidViewModel(application) {
@@ -40,7 +42,7 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             uiState = try {
                 repository.register(email.trim(), username.trim(), password)
-                RegisterUiState(isRegistered = true)
+                RegisterUiState(isRegistered = true, email = email.trim())
             } catch (e: HttpException) {
                 RegisterUiState(error = errorMessage(e))
             } catch (e: IOException) {

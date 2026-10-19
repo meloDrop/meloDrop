@@ -5,6 +5,8 @@ import com.app.melodrop.network.dto.Token
 import com.app.melodrop.network.dto.UserLogin
 import com.app.melodrop.network.dto.UserOut
 import com.app.melodrop.network.dto.UserRegister
+import com.app.melodrop.network.dto.EmailVerify
+import com.app.melodrop.network.dto.CodeRequest
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -25,4 +27,11 @@ interface ApiService {
 
     @GET("me")
     suspend fun getMe(): MeOut
+
+    // 204 with no body: nothing to read back
+    @POST("auth/verify-email")
+    suspend fun verifyEmail(@Body body: EmailVerify)
+
+    @POST("auth/resend-code")
+    suspend fun resendCode(@Body body: CodeRequest)
 }

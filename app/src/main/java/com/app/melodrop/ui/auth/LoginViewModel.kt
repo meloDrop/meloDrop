@@ -15,7 +15,11 @@ import java.io.IOException
 data class LoginUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isLoggedIn: Boolean = false
+    val isLoggedIn: Boolean = false,
+    // The account exists, but its email is not confirmed yet (403)
+    val needsVerification: Boolean = false,
+    // Known only if the user typed an email to log in
+    val email: String = ""
 )
 
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,12 +43,15 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 repository.login(identifier.trim(), password)
                 LoginUiState(isLoggedIn = true)
             } catch (e: HttpException) {
-                val message = if (e.code() == 401) {
-                    "Identifiant ou mot de passe incorrect."
-                } else {
-                    "Erreur du serveur (${e.code()})."
+                when (e.code()) {
+                    401 -> LoginUiState(error = "Identifiant ou mot de passe incorrect.")
+                    // Email not confirmed: the screen opens the code screen
+                    403 -> LoginUiState(
+                        needsVerification = true,
+                        email = if ('@' in identifier) identifier.trim() else "",
+                    )
+                    else -> LoginUiState(error = "Erreur du serveur (${e.code()}).")
                 }
-                LoginUiState(error = message)
             } catch (e: IOException) {
                 // Backend down, no network, or adb reverse missing
                 LoginUiState(error = "Impossible de joindre le serveur.")
@@ -54,6 +61,11 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     // Called once the screen has reacted to the successful login
     fun onLoginHandled() {
+        uiState = LoginUiState()
+    }
+
+    // Called once the screen has opened the code screen
+    fun onVerificationHandled() {
         uiState = LoginUiState()
     }
 }

@@ -36,3 +36,12 @@ data class UserOut(
     val email: String,
     val username: String
 )
+
+data class EmailVerify(
+    val email: String,
+    val code: String
+)
+
+data class CodeRequest(
+    val email: String
+)

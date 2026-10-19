@@ -7,6 +7,7 @@ import com.app.melodrop.network.dto.UserOut
 import com.app.melodrop.network.dto.UserRegister
 import com.app.melodrop.network.dto.EmailVerify
 import com.app.melodrop.network.dto.CodeRequest
+import com.app.melodrop.network.dto.FeedItem
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -34,4 +35,9 @@ interface ApiService {
 
     @POST("auth/resend-code")
     suspend fun resendCode(@Body body: CodeRequest)
+
+    // Up to 10 drops not seen yet, or an empty list
+    @GET("feed")
+    suspend fun getFeed(): List<FeedItem>
+
 }

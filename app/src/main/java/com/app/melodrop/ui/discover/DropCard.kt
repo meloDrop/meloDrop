@@ -1,0 +1,149 @@
+package com.app.melodrop.ui.discover
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import com.app.melodrop.network.dto.FeedItem
+import com.app.melodrop.network.dto.GenreOut
+import com.app.melodrop.ui.theme.Butter
+import com.app.melodrop.ui.theme.Lavender
+import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.theme.Mint
+import com.app.melodrop.ui.theme.Peach
+import com.app.melodrop.ui.theme.Rose
+
+// A drop in the feed: cover, song, genres, author and likes
+@Composable
+fun DropCard(drop: FeedItem, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Downloads the image from its URL, grey square while it loads
+            AsyncImage(
+                model = drop.coverUrl,
+                contentDescription = "Pochette de ${drop.title}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.outline),
+            )
+
+            Text(
+                text = drop.title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = drop.artist,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            // Goes to the next line when the genres do not fit
+            if (drop.genres.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    drop.genres.forEach { genre -> GenreChip(genre) }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Déposé par ${drop.authorUsername}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = likesLabel(drop.savesCount),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+        }
+    }
+}
+
+// The five pastels: a genre always gets the same one
+private val genreColors = listOf(Lavender, Peach, Butter, Mint, Rose)
+
+@Composable
+private fun GenreChip(genre: GenreOut) {
+    val color = genreColors[genre.id % genreColors.size]
+
+    Surface(
+        shape = CircleShape,
+        // Same pastel, very transparent, behind the text
+        color = color.copy(alpha = 0.15f),
+    ) {
+        Text(
+            text = genre.label,
+            color = color,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
+}
+
+private fun likesLabel(count: Int): String = when (count) {
+    0 -> "Aucun like"
+    1 -> "1 like"
+    else -> "$count likes"
+}
+
+@Preview
+@Composable
+private fun DropCardPreview() {
+    MeloDropTheme {
+        DropCard(
+            drop = FeedItem(
+                id = 1,
+                songId = 1,
+                title = "Numb",
+                artist = "Linkin Park",
+                // No network in the preview: the grey square shows instead
+                coverUrl = "",
+                genres = listOf(GenreOut(3, "Rock"), GenreOut(4, "Metal")),
+                authorId = 2,
+                authorUsername = "elliot",
+                savesCount = 3,
+            ),
+        )
+    }
+}

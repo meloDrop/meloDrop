@@ -6,17 +6,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DiscoverRepository
 import com.app.melodrop.network.dto.FeedItem
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+
 
 // Everything the Discover screen needs to display
 data class DiscoverUiState(
@@ -40,19 +39,8 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
         private set
 
     // Plays the previews, one at a time. It lives as long as the ViewModel,
-    // so it survives a screen rotation or a change of tab
-    private val player: ExoPlayer = ExoPlayer.Builder(application)
-        // Music: pauses by itself during a call or when another app plays sound
-        .setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(C.USAGE_MEDIA)
-                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                .build(),
-            true,
-        )
-        // Pauses when the headphones are unplugged
-        .setHandleAudioBecomingNoisy(true)
-        .build()
+// so it survives a screen rotation or a change of tab
+    private val player = buildPreviewPlayer(application)
 
     init {
         // The preview starts again at the end, while the card stays on screen

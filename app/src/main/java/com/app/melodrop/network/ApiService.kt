@@ -9,12 +9,14 @@ import com.app.melodrop.network.dto.EmailVerify
 import com.app.melodrop.network.dto.CodeRequest
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.PreviewOut
+import com.app.melodrop.network.dto.TrackResult
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -52,5 +54,9 @@ interface ApiService {
     // song_id is the meloDrop id of the song, not the Deezer id
     @GET("songs/{song_id}/preview")
     suspend fun getPreview(@Path("song_id") songId: Int): PreviewOut
+
+    // Tracks found on Deezer, for example catalog/search?q=daft+punk
+    @GET("catalog/search")
+    suspend fun searchTracks(@Query("q") query: String): List<TrackResult>
 
 }

@@ -11,8 +11,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DropRepository
-import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.GenreOut
+import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.TrackResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,6 +31,12 @@ const val MAX_GENRES = 3
 
 // Everything the Drop screen needs to display
 data class DropUiState(
+    // True until the first answer of GET /drops/me: we do not know yet which step to show
+    val isCheckingDrop: Boolean = true,
+    // The user's drop online today, null if there is none
+    val myDrop: MyDropOut? = null,
+    // True right after posting: the screen says "C'est en ligne !"
+    val justDropped: Boolean = false,
     // Step 1: search
     val query: String = "",
     val isSearching: Boolean = false,
@@ -44,9 +50,7 @@ data class DropUiState(
     val genres: List<GenreOut> = emptyList(),
     val selectedGenreIds: Set<Int> = emptySet(),
     val isSubmitting: Boolean = false,
-    val submitError: String? = null,
-    // Step 3: the drop is online
-    val createdDrop: DropOut? = null
+    val submitError: String? = null
 )
 
 class DropViewModel(application: Application) : AndroidViewModel(application) {
@@ -81,6 +85,28 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
                 player.pause()
             }
         })
+    }
+
+    // Asks the backend for the user's drop of today (null if none).
+    // Called each time the tab opens, so the likes count stays fresh
+    fun loadMyDrop() {
+        viewModelScope.launch {
+            uiState = try {
+                val myDrop = repository.getMyDrop()
+                uiState.copy(
+                    isCheckingDrop = false,
+                    myDrop = myDrop,
+                    justDropped = false,
+                    // A drop is online: no track can be chosen until it expires
+                    selectedTrack = if (myDrop != null) null else uiState.selectedTrack,
+                )
+            } catch (e: HttpException) {
+                // The search stays usable: a second drop would get a 409 anyway
+                uiState.copy(isCheckingDrop = false)
+            } catch (e: IOException) {
+                uiState.copy(isCheckingDrop = false)
+            }
+        }
     }
 
     // Called on every key typed in the search field
@@ -147,11 +173,22 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             uiState = try {
-                val drop = repository.createDrop(track.deezerTrackId, uiState.selectedGenreIds.toList())
-                // Online: the music stops, the screen shows the confirmation
+                repository.createDrop(track.deezerTrackId, uiState.selectedGenreIds.toList())
+                // Asks for the new drop again: this answer has its id and its stats
+                val myDrop = repository.getMyDrop()
+                // Online: the music stops, the search is cleared for the next time
                 stopPreview()
-                uiState.copy(isSubmitting = false, selectedTrack = null, createdDrop = drop)
+                uiState.copy(
+                    isSubmitting = false,
+                    selectedTrack = null,
+                    query = "",
+                    results = emptyList(),
+                    myDrop = myDrop,
+                    justDropped = true,
+                )
             } catch (e: HttpException) {
+                // 409: a drop is already online, the screen will show it
+                if (e.code() == 409) loadMyDrop()
                 uiState.copy(isSubmitting = false, submitError = submitErrorMessage(e))
             } catch (e: IOException) {
                 uiState.copy(isSubmitting = false, submitError = "Impossible de joindre le serveur.")

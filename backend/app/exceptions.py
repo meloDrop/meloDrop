@@ -37,10 +37,6 @@ class DropNotFoundError(Exception):
     """Raised when a drop does not exist or has expired."""
 
 
-class NotDropOwnerError(Exception):
-    """Raised when a user tries to change someone else's drop."""
-
-
 class OwnDropError(Exception):
     """Raised when a user tries to save or skip their own drop."""
 

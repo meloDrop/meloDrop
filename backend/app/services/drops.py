@@ -5,17 +5,12 @@ from datetime import timedelta, timezone
 
 from sqlalchemy.orm import Session
 
-from app.config import settings
-from app.exceptions import DeezerError, DropAlreadyActiveError, DropNotFoundError, NotDropOwnerError
+from app.exceptions import DeezerError, DropAlreadyActiveError
 from app.models.drop import Drop
-from app.models.drop_genre import DropGenre
-from app.models.genre import Genre
-from app.models.genre_report import GenreReport
 from app.models.save import Save
 from app.models.song import Song
 from app.providers.deezer import DeezerProvider
 from app.schemas.drops import DropOut, MyDropOut
-from app.schemas.genres import GenreOut
 from app.utils.time import utc_now
 
 # Talks to the public Deezer API
@@ -75,7 +70,7 @@ def find_or_create_song(db: Session, deezer_track_id: int) -> Song:
     return song
 
 
-def create_drop(db: Session, user_id: int, deezer_track_id: int, genre_ids: list[int]) -> DropOut:
+def create_drop(db: Session, user_id: int, deezer_track_id: int) -> DropOut:
     """Drop the song of the day for this user."""
     # Only one drop at a time
     if get_active_drop(db, user_id) is not None:
@@ -93,17 +88,7 @@ def create_drop(db: Session, user_id: int, deezer_track_id: int, genre_ids: list
     )
     db.add(drop)
 
-    # Get the drop id now, but do not save yet
-    db.flush()
-
-    # Keep only the genres that exist
-    genres = db.query(Genre).filter(Genre.id.in_(genre_ids)).all()
-
-    # Add each genre to the drop
-    for genre in genres:
-        db.add(DropGenre(drop_id=drop.id, genre_id=genre.id))
-
-    # Save the song, the drop and the genres together
+    # Save the song and the drop together
     db.commit()
 
     # Send the drop back, with the date in UTC
@@ -113,7 +98,6 @@ def create_drop(db: Session, user_id: int, deezer_track_id: int, genre_ids: list
         artist=song.artist_name,
         cover_url=song.cover_url,
         genre=song.genre,
-        genres=[GenreOut(id=genre.id, label=genre.label) for genre in genres],
         expires_at=drop.expires_at.replace(tzinfo=timezone.utc),
     )
 
@@ -128,17 +112,8 @@ def get_my_drop(db: Session, user_id: int) -> MyDropOut | None:
     # Get the song of the drop
     song = db.get(Song, drop.song_id)
 
-    # Get the genres of the drop
-    genres = (
-        db.query(Genre)
-        .join(DropGenre, DropGenre.genre_id == Genre.id)
-        .filter(DropGenre.drop_id == drop.id)
-        .all()
-    )
-
-    # Count the likes and the genre reports of the drop
+    # Count the likes of the drop
     saves_count = db.query(Save).filter(Save.drop_id == drop.id).count()
-    reports_count = db.query(GenreReport).filter(GenreReport.drop_id == drop.id).count()
 
     # Send the drop back with its stats
     return MyDropOut(
@@ -148,39 +123,6 @@ def get_my_drop(db: Session, user_id: int) -> MyDropOut | None:
         artist=song.artist_name,
         cover_url=song.cover_url,
         genre=song.genre,
-        genres=[GenreOut(id=genre.id, label=genre.label) for genre in genres],
         expires_at=drop.expires_at.replace(tzinfo=timezone.utc),
         saves_count=saves_count,
-        genre_reported=reports_count >= settings.GENRE_REPORT_THRESHOLD_TEST,
     )
-
-
-def update_genres(db: Session, user_id: int, drop_id: int, genre_ids: list[int]) -> MyDropOut:
-    """Replace the genres of the user's current drop and clear its genre reports."""
-    # The drop must exist and must not be expired
-    drop = db.get(Drop, drop_id)
-    if drop is None or drop.expires_at <= utc_now():
-        raise DropNotFoundError("drop_not_found")
-
-    # Only the author can change the genres
-    if drop.user_id != user_id:
-        raise NotDropOwnerError("not_drop_owner")
-
-    # Delete the old genres
-    db.query(DropGenre).filter(DropGenre.drop_id == drop.id).delete()
-
-    # Delete the genre reports, because the genres are fixed
-    db.query(GenreReport).filter(GenreReport.drop_id == drop.id).delete()
-
-    # Keep only the genres that exist
-    genres = db.query(Genre).filter(Genre.id.in_(genre_ids)).all()
-
-    # Add each new genre to the drop
-    for genre in genres:
-        db.add(DropGenre(drop_id=drop.id, genre_id=genre.id))
-
-    # Save everything together
-    db.commit()
-
-    # Send the updated drop back
-    return get_my_drop(db, user_id)

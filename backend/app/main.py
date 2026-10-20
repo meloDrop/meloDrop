@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres, auth, health, catalog, songs, drops, feed, swipes
+from app.routers import genres, auth, health, catalog, songs, drops, feed, swipes, likes
 
 
 app = FastAPI(
@@ -38,3 +38,6 @@ app.include_router(feed.router)
 
 # Swipes (skip or save)
 app.include_router(swipes.router)
+
+# "Mes likes" list
+app.include_router(likes.router)

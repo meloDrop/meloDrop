@@ -6,7 +6,7 @@ from datetime import timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.exceptions import DropAlreadyActiveError, DropNotFoundError, NotDropOwnerError
+from app.exceptions import DeezerError, DropAlreadyActiveError, DropNotFoundError, NotDropOwnerError
 from app.models.drop import Drop
 from app.models.drop_genre import DropGenre
 from app.models.genre import Genre
@@ -26,6 +26,20 @@ def get_active_drop(db: Session, user_id: int) -> Drop | None:
     """Return the user's drop that has not expired yet, or None."""
     # A drop is active if it ends later than now
     return db.query(Drop).filter(Drop.user_id == user_id, Drop.expires_at > utc_now()).first()
+
+def get_album_genre(album_id: int) -> str | None:
+    """Return the name of the album's first genre, or None (ADR-0017)."""
+    # The genre is only informative: a Deezer error must not block the drop
+    try:
+        album = deezer_provider.get_album(album_id)
+    except DeezerError:
+        return None
+
+    # Some albums have no genre
+    genres = album.get("genres", {}).get("data", [])
+    if not genres:
+        return None
+    return genres[0]["name"]
 
 
 def find_or_create_song(db: Session, deezer_track_id: int) -> Song:
@@ -51,6 +65,7 @@ def find_or_create_song(db: Session, deezer_track_id: int) -> Song:
         title=track["title"],
         artist_name=track["artist"]["name"],
         cover_url=track["album"]["cover_big"],
+        genre=get_album_genre(track["album"]["id"]),
         deezer_track_id=track["id"],
     )
     db.add(song)

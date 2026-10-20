@@ -13,6 +13,7 @@ class FeedItem(BaseModel):
     title: str
     artist: str
     cover_url: str
+    genre: str | None = None
     genres: list[GenreOut]
     author_id: int
     author_username: str

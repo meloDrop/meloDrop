@@ -32,4 +32,5 @@ val Rose = Color(0xFFF5A8C8)
 // Genres: each one always gets the same pastel, on every screen
 private val GenrePalette = listOf(Lavender, Peach, Butter, Mint, Rose)
 
-fun genreColor(genreId: Int): Color = GenrePalette[genreId % GenrePalette.size]
+// Same pastel for the same genre name, on every screen (ADR-0017)
+fun genreColor(genre: String): Color = GenrePalette[genre.hashCode().mod(GenrePalette.size)]

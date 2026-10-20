@@ -553,7 +553,7 @@ private fun GenreChoiceChip(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val color = genreColor(genre.id)
+    val color = genreColor(genre.label)
 
     FilterChip(
         selected = selected,

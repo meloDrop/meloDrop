@@ -44,6 +44,7 @@ def build_item(db: Session, drop: Drop) -> FeedItem:
         title=song.title,
         artist=song.artist_name,
         cover_url=song.cover_url,
+        genre=song.genre,
         genres=[GenreOut(id=genre.id, label=genre.label) for genre in genres],
         author_id=author.id,
         author_username=author.username,

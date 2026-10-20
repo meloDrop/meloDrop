@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +28,7 @@ import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.genreColor
 
-// A drop in the feed: cover, song, genres, author and likes
+// A drop in the feed: cover, song, genre, author and likes
 @Composable
 fun DropCard(
     drop: FeedItem,
@@ -47,7 +46,8 @@ fun DropCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // The cover, with the play button in its bottom right corner
+            // The cover, with the genre in its top left corner
+            // and the play button in its bottom right corner
             Box {
                 // Downloads the image from its URL, grey square while it loads
                 AsyncImage(
@@ -60,6 +60,16 @@ fun DropCard(
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.outline),
                 )
+
+                // Genre of the album, hidden when Deezer has none
+                if (drop.genre != null) {
+                    GenreChip(
+                        genre = drop.genre,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp),
+                    )
+                }
 
                 if (onPlayPause != null) {
                     PlayPauseButton(
@@ -87,16 +97,6 @@ fun DropCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Goes to the next line when the genres do not fit
-            if (drop.genres.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    drop.genres.forEach { genre -> GenreChip(genre) }
-                }
-            }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,18 +117,17 @@ fun DropCard(
     }
 }
 
+// A genre shown on the cover: dark background so it stays readable on any image
 @Composable
-private fun GenreChip(genre: GenreOut) {
-    val color = genreColor(genre.label)
-
+private fun GenreChip(genre: String, modifier: Modifier = Modifier) {
     Surface(
+        modifier = modifier,
         shape = CircleShape,
-        // Same pastel, very transparent, behind the text
-        color = color.copy(alpha = 0.15f),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
     ) {
         Text(
-            text = genre.label,
-            color = color,
+            text = genre,
+            color = genreColor(genre),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
         )
@@ -153,7 +152,9 @@ private fun DropCardPreview() {
                 artist = "Linkin Park",
                 // No network in the preview: the grey square shows instead
                 coverUrl = "",
-                genres = listOf(GenreOut(3, "Rock"), GenreOut(4, "Metal")),
+                genre = "Rock",
+                // Still required by FeedItem, removed in ticket 15
+                genres = listOf(GenreOut(3, "Rock")),
                 authorId = 2,
                 authorUsername = "elliot",
                 savesCount = 3,

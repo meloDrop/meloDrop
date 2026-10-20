@@ -112,6 +112,7 @@ def create_drop(db: Session, user_id: int, deezer_track_id: int, genre_ids: list
         title=song.title,
         artist=song.artist_name,
         cover_url=song.cover_url,
+        genre=song.genre,
         genres=[GenreOut(id=genre.id, label=genre.label) for genre in genres],
         expires_at=drop.expires_at.replace(tzinfo=timezone.utc),
     )
@@ -146,6 +147,7 @@ def get_my_drop(db: Session, user_id: int) -> MyDropOut | None:
         title=song.title,
         artist=song.artist_name,
         cover_url=song.cover_url,
+        genre=song.genre,
         genres=[GenreOut(id=genre.id, label=genre.label) for genre in genres],
         expires_at=drop.expires_at.replace(tzinfo=timezone.utc),
         saves_count=saves_count,

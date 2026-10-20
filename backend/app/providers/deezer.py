@@ -44,6 +44,10 @@ class DeezerProvider(StreamingProvider):
         """Return a Deezer track's details, including its ISRC and preview URL."""
         return call_public_api(f"/track/{track_id}")
 
+    def get_album(self, album_id: int) -> dict:
+        """Return a Deezer album's details, including its genres (ADR-0017)."""
+        return call_public_api(f"/album/{album_id}")
+
     # =========================================================================
     # V2 ONLY - NOT USED IN V1
     #

@@ -11,8 +11,8 @@ data class FeedItem(
     val title: String,
     val artist: String,
     @SerializedName("cover_url") val coverUrl: String,
+    // Genre of the song's Deezer album, null when Deezer has none
     val genre: String? = null,
-    val genres: List<GenreOut>,
     @SerializedName("author_id") val authorId: Int,
     @SerializedName("author_username") val authorUsername: String,
     @SerializedName("saves_count") val savesCount: Int

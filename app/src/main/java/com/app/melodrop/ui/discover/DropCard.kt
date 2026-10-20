@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,9 +23,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.GenreOut
+import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
-import com.app.melodrop.ui.theme.genreColor
 
 // A drop in the feed: cover, song, genre, author and likes
 @Composable
@@ -119,23 +118,6 @@ fun DropCard(
                 )
             }
         }
-    }
-}
-
-// A genre shown on the cover: dark background so it stays readable on any image
-@Composable
-private fun GenreChip(genre: String, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
-    ) {
-        Text(
-            text = genre,
-            color = genreColor(genre),
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        )
     }
 }
 

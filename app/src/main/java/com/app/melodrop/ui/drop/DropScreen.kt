@@ -1,7 +1,6 @@
 package com.app.melodrop.ui.drop
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +53,7 @@ import coil3.compose.AsyncImage
 import com.app.melodrop.network.dto.GenreOut
 import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.TrackResult
+import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
@@ -357,16 +357,29 @@ private fun MyDropView(
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        AsyncImage(
-            model = drop.coverUrl,
-            contentDescription = "Pochette de ${drop.title}",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.outline),
-        )
+        // The cover, with the genre in its top left corner
+        Box(modifier = Modifier.fillMaxWidth(0.6f)) {
+            AsyncImage(
+                model = drop.coverUrl,
+                contentDescription = "Pochette de ${drop.title}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.outline),
+            )
+
+            // Genre of the album, hidden when Deezer has none
+            if (drop.genre != null) {
+                GenreChip(
+                    genre = drop.genre,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp),
+                )
+            }
+        }
 
         Text(
             text = drop.title,
@@ -379,30 +392,6 @@ private fun MyDropView(
             text = drop.artist,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-
-        // Genres on one line, like "Rock · Metal"
-        if (drop.genres.isNotEmpty()) {
-            Text(
-                text = drop.genres.joinToString(" · ") { it.label },
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-        }
-
-        // Enough users said the genres are wrong: the author is told here
-        if (drop.genreReported) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-            ) {
-                Text(
-                    text = "Plusieurs personnes pensent que les genres de ce titre ne correspondent pas.",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(12.dp),
-                )
-            }
-        }
 
         // Two tiles side by side, with the same width
         Row(
@@ -622,6 +611,8 @@ private fun MyDropPreview() {
                     title = "Get Lucky",
                     artist = "Daft Punk",
                     coverUrl = "",
+                    genre = "Electro",
+                    // Still required by MyDropOut, removed in ticket 15
                     genres = listOf(GenreOut(1, "Pop"), GenreOut(2, "Electro")),
                     // Expires in 14 hours, whatever the day the preview is opened
                     expiresAt = Instant.now().plusSeconds(14L * 3600).toString(),

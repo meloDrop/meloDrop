@@ -4,14 +4,11 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.schemas.genres import GenreOut
-
 
 class DropCreate(BaseModel):
     """Data needed to drop the song of the day."""
 
     deezer_track_id: int
-    genres: list[int] = []
 
 
 class DropOut(BaseModel):
@@ -22,7 +19,6 @@ class DropOut(BaseModel):
     artist: str
     cover_url: str
     genre: str | None = None
-    genres: list[GenreOut]
     expires_at: datetime
 
 
@@ -31,10 +27,3 @@ class MyDropOut(DropOut):
 
     id: int
     saves_count: int
-    genre_reported: bool
-
-
-class GenresUpdate(BaseModel):
-    """New genres chosen by the author of a drop."""
-
-    genres: list[int]

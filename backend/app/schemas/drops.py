@@ -21,6 +21,7 @@ class DropOut(BaseModel):
     title: str
     artist: str
     cover_url: str
+    genre: str | None = None
     genres: list[GenreOut]
     expires_at: datetime
 

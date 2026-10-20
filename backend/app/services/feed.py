@@ -6,14 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.drop import Drop
-from app.models.drop_genre import DropGenre
-from app.models.genre import Genre
 from app.models.save import Save
 from app.models.skip import Skip
 from app.models.song import Song
 from app.models.user import User
 from app.schemas.feed import FeedItem
-from app.schemas.genres import GenreOut
 from app.utils.time import utc_now
 
 # Number of drops sent to the app at once
@@ -26,14 +23,6 @@ def build_item(db: Session, drop: Drop) -> FeedItem:
     song = db.get(Song, drop.song_id)
     author = db.get(User, drop.user_id)
 
-    # Get the genres of the drop
-    genres = (
-        db.query(Genre)
-        .join(DropGenre, DropGenre.genre_id == Genre.id)
-        .filter(DropGenre.drop_id == drop.id)
-        .all()
-    )
-
     # Count the likes of the drop
     saves_count = db.query(Save).filter(Save.drop_id == drop.id).count()
 
@@ -45,7 +34,6 @@ def build_item(db: Session, drop: Drop) -> FeedItem:
         artist=song.artist_name,
         cover_url=song.cover_url,
         genre=song.genre,
-        genres=[GenreOut(id=genre.id, label=genre.label) for genre in genres],
         author_id=author.id,
         author_username=author.username,
         saves_count=saves_count,

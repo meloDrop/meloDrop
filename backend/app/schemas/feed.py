@@ -2,8 +2,6 @@
 
 from pydantic import BaseModel
 
-from app.schemas.genres import GenreOut
-
 
 class FeedItem(BaseModel):
     """A drop shown as a card in the Discover feed."""
@@ -14,7 +12,6 @@ class FeedItem(BaseModel):
     artist: str
     cover_url: str
     genre: str | None = None
-    genres: list[GenreOut]
     author_id: int
     author_username: str
     saves_count: int

@@ -40,10 +40,22 @@ android {
 }
 
 // Redirige le port 8000 du téléphone vers celui du PC avant chaque build debug
-val adbReverse by tasks.registering(Exec::class) {
+val adbReverse by tasks.registering {
     val adb = androidComponents.sdkComponents.adb
-    commandLine(adb.get().asFile.absolutePath, "reverse", "tcp:8000", "tcp:8000")
-    isIgnoreExitValue = true
+    doLast {
+        val adbPath = adb.get().asFile.absolutePath
+        val serials = ProcessBuilder(adbPath, "devices")
+            .start()
+            .inputStream.bufferedReader().readLines()
+            .filter { it.endsWith("\tdevice") }
+            .map { it.substringBefore("\t") }
+        serials.forEach { serial ->
+            ProcessBuilder(adbPath, "-s", serial, "reverse", "tcp:8000", "tcp:8000")
+                .inheritIO()
+                .start()
+                .waitFor()
+        }
+    }
 }
 
 tasks.matching { it.name == "assembleDebug" }.configureEach {

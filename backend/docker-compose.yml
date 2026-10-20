@@ -12,9 +12,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ../database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ../database/seeds.sql:/docker-entrypoint-initdb.d/02_seeds.sql
     # Healthy once MySQL accepts network connections,
-    # which only happens after schema.sql and seeds.sql have run
+    # which only happens after schema.sql has run
     healthcheck:
       test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -u root --silent"]
       interval: 5s

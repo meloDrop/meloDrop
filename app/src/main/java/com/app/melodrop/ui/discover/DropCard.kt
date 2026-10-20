@@ -119,7 +119,7 @@ fun DropCard(
 
 @Composable
 private fun GenreChip(genre: GenreOut) {
-    val color = genreColor(genre.id)
+    val color = genreColor(genre.label)
 
     Surface(
         shape = CircleShape,

@@ -142,7 +142,10 @@ private fun DropDeck(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.weight(1f, fill = false),
+            contentAlignment = Alignment.Center,
+        ) {
             // Next card: a bit smaller, seen when the top one moves away
             drops.getOrNull(1)?.let { next ->
                 DropCard(

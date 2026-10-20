@@ -38,12 +38,6 @@ CONSTRAINT uq_songs_isrc            UNIQUE (isrc),
 CONSTRAINT uq_songs_deezer_track_id UNIQUE (deezer_track_id)
 );
 
-CREATE TABLE genres (
-id    INT AUTO_INCREMENT PRIMARY KEY,
-label VARCHAR(50) NOT NULL,
-CONSTRAINT uq_genres_label UNIQUE (label)
-);
-
 CREATE TABLE platform_links (
 id               INT AUTO_INCREMENT PRIMARY KEY,
 user_id          INT NOT NULL,
@@ -71,15 +65,6 @@ CONSTRAINT fk_drops_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE
 CONSTRAINT fk_drops_song_id FOREIGN KEY (song_id) REFERENCES songs(id)
 );
 
-CREATE TABLE drop_genres (
-id       INT AUTO_INCREMENT PRIMARY KEY,
-drop_id  INT NOT NULL,
-genre_id INT NOT NULL,
-CONSTRAINT uq_drop_genres_drop_genre UNIQUE (drop_id, genre_id),
-CONSTRAINT fk_drop_genres_drop_id  FOREIGN KEY (drop_id)  REFERENCES drops(id) ON DELETE CASCADE,
-CONSTRAINT fk_drop_genres_genre_id FOREIGN KEY (genre_id) REFERENCES genres(id)
-);
-
 CREATE TABLE saves (
 id         INT AUTO_INCREMENT PRIMARY KEY,
 user_id    INT NOT NULL,
@@ -98,16 +83,6 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 CONSTRAINT uq_skips_user_drop UNIQUE (user_id, drop_id),
 CONSTRAINT fk_skips_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 CONSTRAINT fk_skips_drop_id FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
-);
-
-CREATE TABLE genre_reports (
-id         INT AUTO_INCREMENT PRIMARY KEY,
-user_id    INT NOT NULL,
-drop_id    INT NOT NULL,
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-CONSTRAINT uq_genre_reports_user_drop UNIQUE (user_id, drop_id),
-CONSTRAINT fk_genre_reports_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-CONSTRAINT fk_genre_reports_drop_id FOREIGN KEY (drop_id) REFERENCES drops(id) ON DELETE CASCADE
 );
 
 CREATE TABLE liked_songs (

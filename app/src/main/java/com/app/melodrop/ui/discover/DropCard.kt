@@ -47,16 +47,21 @@ fun DropCard(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // The cover, with the genre in its top left corner
-            // and the play button in its bottom right corner
-            Box {
+            // and the play button in its bottom right corner.
+            // Shrinks on short screens, so the lines below are never cut
+            Box(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .align(Alignment.CenterHorizontally),
+            ) {
                 // Downloads the image from its URL, grey square while it loads
                 AsyncImage(
                     model = drop.coverUrl,
                     contentDescription = "Pochette de ${drop.title}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
+                        // Square, sized from the height left first, then from the width
+                        .aspectRatio(1f, matchHeightConstraintsFirst = true)
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.outline),
                 )
@@ -140,7 +145,8 @@ private fun likesLabel(count: Int): String = when (count) {
     else -> "$count likes"
 }
 
-@Preview
+// Fixed height: the cover shrinks to the space left, so it needs a limited height
+@Preview(heightDp = 640)
 @Composable
 private fun DropCardPreview() {
     MeloDropTheme {

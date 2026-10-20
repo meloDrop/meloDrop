@@ -15,9 +15,8 @@ data class DropOut(
     val title: String,
     val artist: String,
     @SerializedName("cover_url") val coverUrl: String,
-    @SerializedName("cover_url") val coverUrl: String,
     // Genre of the song's Deezer album, null when Deezer has none
-    val genre: String?,
+    val genre: String? = null,
     val genres: List<GenreOut>,
     // Date and time in UTC, like "2026-10-20T20:35:00+00:00"
     @SerializedName("expires_at") val expiresAt: String
@@ -31,7 +30,7 @@ data class MyDropOut(
     val title: String,
     val artist: String,
     @SerializedName("cover_url") val coverUrl: String,
-    val genre: String?,
+    val genre: String? = null,
     val genres: List<GenreOut>,
     // Date and time in UTC, like "2026-10-20T20:35:00+00:00"
     @SerializedName("expires_at") val expiresAt: String,

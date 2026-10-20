@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.app.melodrop.network.dto.FeedItem
-import com.app.melodrop.network.dto.GenreOut
 import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
@@ -141,8 +140,6 @@ private fun DropCardPreview() {
                 // No network in the preview: the grey square shows instead
                 coverUrl = "",
                 genre = "Rock",
-                // Still required by FeedItem, removed in ticket 15
-                genres = listOf(GenreOut(3, "Rock")),
                 authorId = 2,
                 authorUsername = "elliot",
                 savesCount = 3,

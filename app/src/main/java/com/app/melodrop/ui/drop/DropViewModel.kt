@@ -11,7 +11,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DropRepository
-import com.app.melodrop.network.dto.GenreOut
 import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.TrackResult
 import kotlinx.coroutines.Job
@@ -25,9 +24,6 @@ private const val SEARCH_DELAY_MS = 400L
 
 // Fewer letters than this: no search
 private const val MIN_QUERY_LENGTH = 2
-
-// Most genres for one drop (public: the screen shows it in its text)
-const val MAX_GENRES = 3
 
 // Everything the Drop screen needs to display
 data class DropUiState(
@@ -45,10 +41,8 @@ data class DropUiState(
     // Preview player: track loaded, and play or pause icon
     val playingTrackId: Long? = null,
     val isPlaying: Boolean = false,
-    // Step 2: genres of the chosen track
+    // Step 2: the chosen track, before dropping it
     val selectedTrack: TrackResult? = null,
-    val genres: List<GenreOut> = emptyList(),
-    val selectedGenreIds: Set<Int> = emptySet(),
     val isSubmitting: Boolean = false,
     val submitError: String? = null
 )
@@ -138,33 +132,14 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // A result was tapped: go to the genre step (the music keeps playing)
+    // A result was tapped: go to the confirm step (the music keeps playing)
     fun selectTrack(track: TrackResult) {
-        uiState = uiState.copy(
-            selectedTrack = track,
-            selectedGenreIds = emptySet(),
-            submitError = null,
-        )
-        // The list never changes: loaded once, the first time it is needed
-        if (uiState.genres.isEmpty()) {
-            loadGenres()
-        }
+        uiState = uiState.copy(selectedTrack = track, submitError = null)
     }
 
     // "Changer de titre" or back button: back to the results
     fun clearSelection() {
         uiState = uiState.copy(selectedTrack = null, submitError = null)
-    }
-
-    // Tap on a genre: selects it, or unselects it
-    fun toggleGenre(genreId: Int) {
-        val ids = uiState.selectedGenreIds
-        uiState = when {
-            genreId in ids -> uiState.copy(selectedGenreIds = ids - genreId)
-            ids.size < MAX_GENRES -> uiState.copy(selectedGenreIds = ids + genreId)
-            // Already at the limit: nothing happens
-            else -> uiState
-        }
     }
 
     fun submitDrop() {
@@ -173,7 +148,7 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             uiState = try {
-                repository.createDrop(track.deezerTrackId, uiState.selectedGenreIds.toList())
+                repository.createDrop(track.deezerTrackId)
                 // Asks for the new drop again: this answer has its id and its stats
                 val myDrop = repository.getMyDrop()
                 // Online: the music stops, the search is cleared for the next time
@@ -219,19 +194,6 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
         player.pause()
         player.clearMediaItems()
         uiState = uiState.copy(playingTrackId = null)
-    }
-
-    private fun loadGenres() {
-        viewModelScope.launch {
-            try {
-                val genres = repository.getGenres()
-                uiState = uiState.copy(genres = genres)
-            } catch (e: HttpException) {
-                uiState = uiState.copy(submitError = "Les genres n'ont pas pu se charger.")
-            } catch (e: IOException) {
-                uiState = uiState.copy(submitError = "Impossible de joindre le serveur.")
-            }
-        }
     }
 
     // The ViewModel is destroyed (logout): free the player

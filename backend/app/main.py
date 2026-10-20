@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import genres, auth, health, catalog, songs, drops, feed, swipes, likes
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes
 
 
 app = FastAPI(
@@ -15,9 +15,6 @@ app = FastAPI(
 
 # Health route
 app.include_router(health.router)
-
-# Genre route
-app.include_router(genres.router)
 
 # Authentication
 app.include_router(auth.router)

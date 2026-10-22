@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.app.melodrop.ui.account.AccountScreen
 import com.app.melodrop.ui.components.HaloBackground
 import com.app.melodrop.ui.discover.DiscoverScreen
 import com.app.melodrop.ui.likes.LikesScreen
@@ -36,6 +37,7 @@ fun MainScreen(onLogout: () -> Unit) {
     // Screens opened from a tab: no bottom bar, and the halos of the Profile tab
     val isSubScreen = currentRoute == Routes.EDIT_PROFILE ||
         currentRoute == Routes.LIKES ||
+        currentRoute == Routes.ACCOUNT ||
         currentRoute == Routes.USER_PROFILE
 
     // Opens the profile of the author of a drop. launchSingleTop: a double tap
@@ -83,6 +85,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         onLogout = onLogout,
                         onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
                         onLikesClick = { navController.navigate(Routes.LIKES) },
+                        onAccountClick = { navController.navigate(Routes.ACCOUNT) },
                     )
                 }
                 composable(Routes.EDIT_PROFILE) {
@@ -95,6 +98,13 @@ fun MainScreen(onLogout: () -> Unit) {
                     LikesScreen(
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                         onAuthorClick = ::openUserProfile,
+                    )
+                }
+                composable(Routes.ACCOUNT) {
+                    AccountScreen(
+                        onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                        // Account deleted: same as a logout, back to the login screen
+                        onAccountDeleted = onLogout,
                     )
                 }
                 composable(

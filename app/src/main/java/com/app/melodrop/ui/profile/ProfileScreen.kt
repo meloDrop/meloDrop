@@ -69,6 +69,7 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onAccountClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -82,6 +83,7 @@ fun ProfileScreen(
         onLogout = onLogout,
         onEditProfile = onEditProfile,
         onLikesClick = onLikesClick,
+        onAccountClick = onAccountClick,
     )
 }
 
@@ -93,6 +95,7 @@ private fun ProfileContent(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onAccountClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -111,6 +114,7 @@ private fun ProfileContent(
                 onLogout = onLogout,
                 onEditProfile = onEditProfile,
                 onLikesClick = onLikesClick,
+                onAccountClick = onAccountClick,
             )
 
             // First answer not there yet
@@ -133,6 +137,7 @@ private fun ProfileBody(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onAccountClick: () -> Unit,
 ) {
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
@@ -146,7 +151,11 @@ private fun ProfileBody(
     ) {
         // The menu is given to the header: only the user's own profile has one
         ProfileHeader(profile = profile) {
-            ProfileMenu(onLogout = onLogout, onEditProfile = onEditProfile)
+            ProfileMenu(
+                onLogout = onLogout,
+                onEditProfile = onEditProfile,
+                onAccountClick = onAccountClick,
+            )
         }
 
         StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
@@ -204,9 +213,13 @@ internal fun ProfileHeader(
     }
 }
 
-// "⋮" button with the profile and account actions ("Mon compte" will be added here)
+// "⋮" button with the profile and account actions
 @Composable
-private fun ProfileMenu(onLogout: () -> Unit, onEditProfile: () -> Unit) {
+private fun ProfileMenu(
+    onLogout: () -> Unit,
+    onEditProfile: () -> Unit,
+    onAccountClick: () -> Unit,
+) {
     var menuOpen by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
 
@@ -232,6 +245,13 @@ private fun ProfileMenu(onLogout: () -> Unit, onEditProfile: () -> Unit) {
                 onClick = {
                     menuOpen = false
                     onEditProfile()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Mon compte") },
+                onClick = {
+                    menuOpen = false
+                    onAccountClick()
                 },
             )
             DropdownMenuItem(
@@ -505,6 +525,7 @@ private fun ProfileScreenPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onAccountClick = {},
         )
     }
 }
@@ -519,6 +540,7 @@ private fun ProfileErrorPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onAccountClick = {},
         )
     }
 }

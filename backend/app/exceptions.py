@@ -52,3 +52,8 @@ class EmailNotVerifiedError(Exception):
 
 class LikeNotFoundError(Exception):
     """Raised when a song is not in the user's "Mes likes" list."""
+
+
+
+class UserNotFoundError(Exception):
+    """Raised when no user has this id."""

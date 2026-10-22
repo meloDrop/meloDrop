@@ -21,6 +21,8 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import com.app.melodrop.network.dto.ProfileUpdate
+import retrofit2.http.PATCH
 
 interface ApiService {
 
@@ -74,4 +76,8 @@ interface ApiService {
     // A user's profile: counters, drop of the day and last drops (ADR-0018)
     @GET("users/{user_id}/profile")
     suspend fun getProfile(@Path("user_id") userId: Int): ProfileOut
+
+    // Changes the logged-in user's profile, sends back the updated profile
+    @PATCH("me/profile")
+    suspend fun updateProfile(@Body body: ProfileUpdate): ProfileOut
 }

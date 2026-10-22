@@ -244,6 +244,17 @@ private fun LikedSongRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            // Who made the user discover the song; nothing if the author's
+            // account was deleted (ADR-0013)
+            if (song.authorUsername != null) {
+                Text(
+                    text = "drop par @${song.authorUsername}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         PlayPauseButton(

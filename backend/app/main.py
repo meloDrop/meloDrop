@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, profile
 
 
 app = FastAPI(
@@ -38,3 +38,7 @@ app.include_router(swipes.router)
 
 # "Mes likes" list
 app.include_router(likes.router)
+
+
+# Profiles: the user's own and the others'
+app.include_router(profile.router)

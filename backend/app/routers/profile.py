@@ -8,6 +8,7 @@ from app.dependencies import current_user
 from app.exceptions import UserNotFoundError
 from app.schemas import profile as schemas
 from app.services import profile as services
+from app.models.user import User
 
 # Every route of this module needs a logged-in user
 router = APIRouter(prefix="/users", tags=["profile"], dependencies=[Depends(current_user)])
@@ -30,3 +31,25 @@ def get_profile(
         return services.get_profile(db, user_id)
     except UserNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+
+# Routes on the logged-in user's own profile
+me_router = APIRouter(prefix="/me/profile", tags=["profile"])
+
+
+@me_router.patch(
+    "",
+    response_model=schemas.ProfileOut,
+    responses={
+        200: {"description": "Profile updated, sent back with the changes"},
+        422: {"description": "Display name longer than 30 characters"},
+    },
+)
+def update_profile(
+    body: schemas.ProfileUpdate,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    """Change the logged-in user's display name. An empty name shows the username again."""
+    return services.update_profile(db, user, body.display_name)

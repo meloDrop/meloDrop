@@ -42,3 +42,4 @@ app.include_router(likes.router)
 
 # Profiles: the user's own and the others'
 app.include_router(profile.router)
+app.include_router(profile.me_router)

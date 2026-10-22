@@ -22,6 +22,9 @@ data class EditProfileUiState(
     val profile: ProfileOut? = null,
     // Text typed in the field
     val displayName: String = "",
+    // Color and drop style chosen: the preview shows them before saving
+    val avatarColor: String = "lavender",
+    val avatarStyle: String = "simple",
     val isSaving: Boolean = false,
     val error: String? = null,
     // True once saved: the screen goes back to the profile
@@ -51,6 +54,8 @@ class EditProfileViewModel : ViewModel() {
                     isLoading = false,
                     profile = profile,
                     displayName = profile.displayName ?: "",
+                    avatarColor = profile.avatarColor,
+                    avatarStyle = profile.avatarStyle,
                 )
             } catch (e: HttpException) {
                 uiState.copy(isLoading = false, error = "Erreur du serveur (${e.code()}).")
@@ -68,6 +73,16 @@ class EditProfileViewModel : ViewModel() {
         }
     }
 
+    // Called when the user taps a color
+    fun onAvatarColorChange(name: String) {
+        uiState = uiState.copy(avatarColor = name, error = null)
+    }
+
+    // Called when the user taps a drop style
+    fun onAvatarStyleChange(name: String) {
+        uiState = uiState.copy(avatarStyle = name, error = null)
+    }
+
     fun save() {
         uiState = uiState.copy(isSaving = true, error = null)
 
@@ -75,7 +90,11 @@ class EditProfileViewModel : ViewModel() {
             uiState = try {
                 // The backend removes the spaces around the name, and an empty name
                 // gives back the @username (ADR-0019)
-                val profile = repository.updateProfile(uiState.displayName)
+                val profile = repository.updateProfile(
+                    displayName = uiState.displayName,
+                    avatarColor = uiState.avatarColor,
+                    avatarStyle = uiState.avatarStyle,
+                )
                 uiState.copy(isSaving = false, profile = profile, isSaved = true)
             } catch (e: HttpException) {
                 uiState.copy(isSaving = false, error = "Erreur du serveur (${e.code()}).")

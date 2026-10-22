@@ -26,6 +26,10 @@ import retrofit2.http.PATCH
 import com.app.melodrop.network.dto.LikedSongOut
 import retrofit2.http.DELETE
 
+import com.app.melodrop.network.dto.EmailChangeConfirm
+import com.app.melodrop.network.dto.EmailUpdate
+import com.app.melodrop.network.dto.PasswordUpdate
+
 interface ApiService {
 
     // Checks that the backend answers
@@ -91,4 +95,21 @@ interface ApiService {
     // Removes a song from "Mes likes". 204 with no body: nothing to read back
     @DELETE("me/likes/{song_id}")
     suspend fun removeLike(@Path("song_id") songId: Int)
+
+
+    // Asks to change the email: a code is sent to the new one. 204 with no body
+    @PATCH("me/email")
+    suspend fun updateEmail(@Body body: EmailUpdate)
+
+    // Confirms the new email with the code received there
+    @POST("me/email/confirm")
+    suspend fun confirmEmail(@Body body: EmailChangeConfirm): UserOut
+
+    // Changes the password. 204 with no body
+    @PATCH("me/password")
+    suspend fun updatePassword(@Body body: PasswordUpdate)
+
+    // Deletes the account and all its data. 204 with no body
+    @DELETE("me")
+    suspend fun deleteMe()
 }

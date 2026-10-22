@@ -232,15 +232,22 @@ INSERT INTO liked_songs (user_id, song_id, created_at) VALUES
 
 
 -- ======================================================================
--- Avatars: a pastel background for each account, so the profiles do not
--- all look the same. The others keep the default color (lavender):
--- litoxam, lea, lucas and adam. The drop style stays 'simple' for everyone.
+-- Avatars: a pastel background and a drop style for each account, so the
+-- profiles do not all look the same. litoxam, lea, lucas and adam keep the
+-- default color (lavender) and the default style ('simple').
 -- ======================================================================
 
 UPDATE users SET avatar_color = 'peach'  WHERE username IN ('elliot', 'jules', 'chloe', 'louis', 'theo');
 UPDATE users SET avatar_color = 'butter' WHERE username IN ('sam', 'tom', 'emma', 'manon', 'paul');
 UPDATE users SET avatar_color = 'mint'   WHERE username IN ('nina', 'hugo', 'noah', 'camille');
 UPDATE users SET avatar_color = 'rose'   WHERE username IN ('ines', 'jade', 'sarah');
+
+UPDATE users SET avatar_style = 'rock'      WHERE username IN ('elliot', 'tom', 'louis');
+UPDATE users SET avatar_style = 'rap'       WHERE username IN ('sam', 'hugo', 'theo');
+UPDATE users SET avatar_style = 'pop'       WHERE username IN ('nina', 'chloe', 'sarah');
+UPDATE users SET avatar_style = 'classical' WHERE username IN ('jules', 'emma');
+UPDATE users SET avatar_style = 'reggae'    WHERE username IN ('ines', 'noah');
+UPDATE users SET avatar_style = 'electro'   WHERE username IN ('jade', 'manon', 'camille', 'paul');
 
 
 

@@ -66,7 +66,6 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
     return ProfileOut(
         id=user.id,
         username=user.username,
-        username=user.username,
         display_name=user.display_name,
         created_at=user.created_at.replace(tzinfo=timezone.utc),
         avatar_color=user.avatar_color,

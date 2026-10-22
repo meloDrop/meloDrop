@@ -2,6 +2,7 @@ CREATE TABLE users (
 id            INT AUTO_INCREMENT PRIMARY KEY,
 email         VARCHAR(255) NOT NULL,
 username      VARCHAR(30)  NOT NULL,
+display_name  VARCHAR(30)  NULL,
 password_hash VARCHAR(255) NOT NULL,
 avatar_color  VARCHAR(20)  NOT NULL DEFAULT 'lavender',
 avatar_style  VARCHAR(20)  NOT NULL DEFAULT 'simple',

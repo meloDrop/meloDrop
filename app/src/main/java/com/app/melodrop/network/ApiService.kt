@@ -23,6 +23,8 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import com.app.melodrop.network.dto.ProfileUpdate
 import retrofit2.http.PATCH
+import com.app.melodrop.network.dto.LikedSongOut
+import retrofit2.http.DELETE
 
 interface ApiService {
 
@@ -80,4 +82,13 @@ interface ApiService {
     // Changes the logged-in user's profile, sends back the updated profile
     @PATCH("me/profile")
     suspend fun updateProfile(@Body body: ProfileUpdate): ProfileOut
+
+
+    // The user's "Mes likes" list, the most recent first (or an empty list)
+    @GET("me/likes")
+    suspend fun getLikes(): List<LikedSongOut>
+
+    // Removes a song from "Mes likes". 204 with no body: nothing to read back
+    @DELETE("me/likes/{song_id}")
+    suspend fun removeLike(@Path("song_id") songId: Int)
 }

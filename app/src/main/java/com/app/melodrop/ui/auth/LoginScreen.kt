@@ -45,6 +45,7 @@ fun LoginScreen(
     onLoggedIn: () -> Unit,
     onRegisterClick: () -> Unit,
     onVerifyNeeded: (String) -> Unit,
+    onForgotPasswordClick: () -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
@@ -70,6 +71,7 @@ fun LoginScreen(
         uiState = uiState,
         onLoginClick = viewModel::login,
         onRegisterClick = onRegisterClick,
+        onForgotPasswordClick = onForgotPasswordClick,
     )
 }
 
@@ -79,6 +81,7 @@ private fun LoginContent(
     uiState: LoginUiState,
     onLoginClick: (String, String) -> Unit,
     onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
 ) {
     var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -151,6 +154,10 @@ private fun LoginContent(
                     }
                 }
 
+                TextButton(onClick = onForgotPasswordClick) {
+                    Text("Mot de passe oublié ?")
+                }
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Pas encore de compte ?",
@@ -173,6 +180,7 @@ fun LoginScreenPreview() {
             uiState = LoginUiState(),
             onLoginClick = { _, _ -> },
             onRegisterClick = {},
+            onForgotPasswordClick = {},
         )
     }
 }

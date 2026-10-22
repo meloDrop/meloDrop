@@ -4,6 +4,7 @@ import android.content.Context
 import com.app.melodrop.network.RetrofitClient
 import com.app.melodrop.network.dto.CodeRequest
 import com.app.melodrop.network.dto.EmailVerify
+import com.app.melodrop.network.dto.PasswordReset
 import com.app.melodrop.network.dto.UserLogin
 import com.app.melodrop.network.dto.UserRegister
 
@@ -31,5 +32,15 @@ class AuthRepository(private val context: Context) {
     // Asks the backend to send a new code
     suspend fun resendCode(email: String) {
         api.resendCode(CodeRequest(email))
+    }
+
+    // Forgotten password, step 1: a code is sent to the email
+    suspend fun forgotPassword(email: String) {
+        api.forgotPassword(CodeRequest(email))
+    }
+
+    // Forgotten password, step 2: the code and the new password
+    suspend fun resetPassword(email: String, code: String, newPassword: String) {
+        api.resetPassword(PasswordReset(email, code, newPassword))
     }
 }

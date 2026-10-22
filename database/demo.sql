@@ -241,3 +241,16 @@ UPDATE users SET avatar_color = 'peach'  WHERE username IN ('elliot', 'jules', '
 UPDATE users SET avatar_color = 'butter' WHERE username IN ('sam', 'tom', 'emma', 'manon', 'paul');
 UPDATE users SET avatar_color = 'mint'   WHERE username IN ('nina', 'hugo', 'noah', 'camille');
 UPDATE users SET avatar_color = 'rose'   WHERE username IN ('ines', 'jade', 'sarah');
+
+
+
+-- ======================================================================
+-- Display names: the public name shown on the profile, above the @username.
+-- The accounts without one show their username instead.
+-- ======================================================================
+
+UPDATE users SET display_name = 'Lito'   WHERE username = 'litoxam';
+UPDATE users SET display_name = 'Elliot' WHERE username = 'elliot';
+UPDATE users SET display_name = 'Sam D.' WHERE username = 'sam';
+UPDATE users SET display_name = 'Inès'   WHERE username = 'ines';
+UPDATE users SET display_name = 'Jade'   WHERE username = 'jade';

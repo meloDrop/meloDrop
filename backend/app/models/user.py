@@ -14,6 +14,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), nullable=False)
     username = Column(String(30), nullable=False)
+    # Public name shown on the profile, free to change; empty = the username
+    display_name = Column(String(30), nullable=True)
     password_hash = Column(String(255), nullable=False)
     # Avatar: a pastel background and a drop style, from closed lists
     avatar_color = Column(String(20), nullable=False, server_default="lavender")

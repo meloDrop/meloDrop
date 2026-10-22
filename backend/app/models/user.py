@@ -15,7 +15,9 @@ class User(Base):
     email = Column(String(255), nullable=False)
     username = Column(String(30), nullable=False)
     password_hash = Column(String(255), nullable=False)
-    avatar_url = Column(String(255))
+    # Avatar: a pastel background and a drop style, from closed lists
+    avatar_color = Column(String(20), nullable=False, server_default="lavender")
+    avatar_style = Column(String(20), nullable=False, server_default="simple")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

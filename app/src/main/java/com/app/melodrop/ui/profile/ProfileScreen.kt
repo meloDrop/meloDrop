@@ -1,6 +1,7 @@
 package com.app.melodrop.ui.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,7 @@ private const val COVERS_PER_ROW = 3
 fun ProfileScreen(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
+    onLikesClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -79,6 +81,7 @@ fun ProfileScreen(
         onRetry = viewModel::load,
         onLogout = onLogout,
         onEditProfile = onEditProfile,
+        onLikesClick = onLikesClick,
     )
 }
 
@@ -89,6 +92,7 @@ private fun ProfileContent(
     onRetry: () -> Unit,
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
+    onLikesClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -106,6 +110,7 @@ private fun ProfileContent(
                 profile = profile,
                 onLogout = onLogout,
                 onEditProfile = onEditProfile,
+                onLikesClick = onLikesClick,
             )
 
             // First answer not there yet
@@ -127,6 +132,7 @@ private fun ProfileBody(
     profile: ProfileOut,
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
+    onLikesClick: () -> Unit,
 ) {
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
@@ -140,7 +146,7 @@ private fun ProfileBody(
     ) {
         ProfileHeader(profile = profile, onLogout = onLogout, onEditProfile = onEditProfile)
 
-        StatsRow(stats = profile.stats)
+        StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("MES DERNIERS DROPS")
@@ -259,9 +265,9 @@ private fun ProfileMenu(onLogout: () -> Unit, onEditProfile: () -> Unit) {
     }
 }
 
-// Three tiles side by side, with the same width
+// Three tiles side by side, with the same width. The last one opens "Mes likes"
 @Composable
-private fun StatsRow(stats: StatsOut) {
+private fun StatsRow(stats: StatsOut, onLikesClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -280,9 +286,14 @@ private fun StatsRow(stats: StatsOut) {
         )
         CounterTile(
             value = stats.likesCount,
-            label = if (stats.likesCount <= 1) "titre liké" else "titres likés",
+            // The arrow shows that the tile can be tapped
+            label = if (stats.likesCount <= 1) "titre liké ›" else "titres likés ›",
             color = Mint,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                // Clip first, so the ripple of the tap keeps the round corners
+                .clip(RoundedCornerShape(20.dp))
+                .clickable(onClick = onLikesClick),
         )
     }
 }
@@ -478,6 +489,7 @@ private fun ProfileScreenPreview() {
             onRetry = {},
             onLogout = {},
             onEditProfile = {},
+            onLikesClick = {},
         )
     }
 }
@@ -491,6 +503,7 @@ private fun ProfileErrorPreview() {
             onRetry = {},
             onLogout = {},
             onEditProfile = {},
+            onLikesClick = {},
         )
     }
 }

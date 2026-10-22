@@ -9,7 +9,7 @@ from app.models.drop import Drop
 from app.models.save import Save
 from app.models.song import Song
 from app.models.user import User
-from app.schemas.profile import ProfileDropOut, ProfileOut
+from app.schemas.profile import ProfileDropOut, ProfileOut, ProfileUpdate
 from app.services.drops import get_active_drop
 from app.services.stats import get_stats
 from app.utils.time import utc_now
@@ -77,14 +77,23 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
 
 
 
-def update_profile(db: Session, user: User, display_name: str) -> ProfileOut:
+def update_profile(db: Session, user: User, changes: ProfileUpdate) -> ProfileOut:
     """Change the editable part of the user's own profile, then return the profile."""
-    # Spaces around the name are removed; an empty name gives back the username
-    name = display_name.strip()
-    if name:
-        user.display_name = name
-    else:
-        user.display_name = None
+    # Only the fields sent are changed: None means "not sent"
+    if changes.display_name is not None:
+        # Spaces around the name are removed; an empty name gives back the username
+        name = changes.display_name.strip()
+        if name:
+            user.display_name = name
+        else:
+            user.display_name = None
+
+    # The schema already checked that the color and the style are in their lists
+    if changes.avatar_color is not None:
+        user.avatar_color = changes.avatar_color
+
+    if changes.avatar_style is not None:
+        user.avatar_style = changes.avatar_style
 
     db.commit()
     return get_profile(db, user.id)

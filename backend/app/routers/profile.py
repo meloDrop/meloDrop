@@ -43,7 +43,7 @@ me_router = APIRouter(prefix="/me/profile", tags=["profile"])
     response_model=schemas.ProfileOut,
     responses={
         200: {"description": "Profile updated, sent back with the changes"},
-        422: {"description": "Display name longer than 30 characters"},
+        422: {"description": "Display name longer than 30 characters, or unknown avatar color or style"},
     },
 )
 def update_profile(
@@ -51,5 +51,5 @@ def update_profile(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    """Change the logged-in user's display name. An empty name shows the username again."""
-    return services.update_profile(db, user, body.display_name)
+    """Change the logged-in user's display name and avatar. A field left out stays the same."""
+    return services.update_profile(db, user, body)

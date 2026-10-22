@@ -1,10 +1,17 @@
 """Data received and sent by the profile routes."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from app.schemas.stats import StatsOut
+
+# Background colors an avatar can have (same names in Avatar.kt)
+AvatarColor = Literal["lavender", "peach", "butter", "mint", "rose"]
+
+# Drop styles an avatar can have (same names in Avatar.kt)
+AvatarStyle = Literal["simple", "rock", "rap", "pop", "classical", "reggae", "electro"]
 
 
 class ProfileDropOut(BaseModel):
@@ -42,7 +49,11 @@ class ProfileOut(BaseModel):
 
 
 class ProfileUpdate(BaseModel):
-    """What the user can change on their own profile, sent all together."""
+    """What the user can change on their own profile. A field left out stays the same."""
 
     # New display name; an empty text gives back the username
-    display_name: str = Field(max_length=30)
+    display_name: str | None = Field(default=None, max_length=30)
+    # One of the 5 background colors
+    avatar_color: AvatarColor | None = None
+    # One of the 7 drop styles
+    avatar_style: AvatarStyle | None = None

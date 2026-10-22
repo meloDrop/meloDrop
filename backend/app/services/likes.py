@@ -8,6 +8,23 @@ from app.exceptions import LikeNotFoundError
 from app.models.liked_song import LikedSong
 from app.models.song import Song
 from app.schemas.likes import LikedSongOut
+from app.models.drop import Drop
+from app.models.save import Save
+from app.models.user import User
+
+
+
+def find_author(db: Session, user_id: int, song_id: int) -> User | None:
+    """Return the author of the drop the user liked for this song, or None."""
+    # liked_songs has no drop: the like is found in saves, on a drop of this song
+    return (
+        db.query(User)
+        .join(Drop, Drop.user_id == User.id)
+        .join(Save, Save.drop_id == Drop.id)
+        .filter(Save.user_id == user_id, Drop.song_id == song_id)
+        .order_by(Save.created_at.desc())
+        .first()
+    )
 
 
 def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
@@ -24,6 +41,8 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
     # Turn each line into a LikedSongOut
     likes = []
     for liked, song in rows:
+        # None when the author deleted their account: the song stays (ADR-0013)
+        author = find_author(db, user_id, song.id)
         likes.append(
             LikedSongOut(
                 song_id=song.id,
@@ -31,6 +50,8 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
                 artist=song.artist_name,
                 cover_url=song.cover_url,
                 liked_at=liked.created_at.replace(tzinfo=timezone.utc),
+                author_id=author.id if author else None,
+                author_username=author.username if author else None,
             )
         )
     return likes

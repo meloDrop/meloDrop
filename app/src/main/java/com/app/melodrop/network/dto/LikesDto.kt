@@ -10,5 +10,8 @@ data class LikedSongOut(
     val artist: String,
     @SerializedName("cover_url") val coverUrl: String,
     // When the user liked it, in UTC, like "2026-10-22T09:09:00Z"
-    @SerializedName("liked_at") val likedAt: String
+    @SerializedName("liked_at") val likedAt: String,
+    // Author of the liked drop, null if the account was deleted (ADR-0013)
+    @SerializedName("author_id") val authorId: Int? = null,
+    @SerializedName("author_username") val authorUsername: String? = null
 )

@@ -1,6 +1,7 @@
 package com.app.melodrop.ui.discover
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,8 @@ fun DropCard(
     isPlaying: Boolean = false,
     // null: no play button (for the card waiting behind)
     onPlayPause: (() -> Unit)? = null,
+    // null: the @username cannot be tapped (for the card waiting behind)
+    onAuthorClick: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -109,6 +112,15 @@ fun DropCard(
                     text = "Déposé par @${drop.authorUsername}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Tap: opens the profile of the author
+                    modifier = if (onAuthorClick != null) {
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onAuthorClick)
+                            .padding(vertical = 4.dp)
+                    } else {
+                        Modifier
+                    },
                 )
                 Text(
                     text = likesLabel(drop.savesCount),

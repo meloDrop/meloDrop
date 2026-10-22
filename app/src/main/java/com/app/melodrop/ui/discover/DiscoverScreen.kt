@@ -57,7 +57,11 @@ private const val FLY_OUT_MS = 250
 
 // Connects the screen to its ViewModel
 @Composable
-fun DiscoverScreen(viewModel: DiscoverViewModel = viewModel()) {
+fun DiscoverScreen(
+    // Tap on the @username of a card: opens the profile of its author
+    onAuthorClick: (Int) -> Unit,
+    viewModel: DiscoverViewModel = viewModel(),
+) {
     // Leaving the Discover tab: the music stops
     DisposableEffect(Unit) {
         onDispose { viewModel.pausePreview() }
@@ -73,6 +77,7 @@ fun DiscoverScreen(viewModel: DiscoverViewModel = viewModel()) {
         onRefresh = viewModel::loadFeed,
         onSwiped = viewModel::onSwiped,
         onPlayPause = viewModel::togglePlay,
+        onAuthorClick = onAuthorClick,
     )
 }
 
@@ -83,6 +88,7 @@ private fun DiscoverContent(
     onRefresh: () -> Unit,
     onSwiped: (FeedItem, Boolean) -> Unit,
     onPlayPause: () -> Unit,
+    onAuthorClick: (Int) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -120,6 +126,7 @@ private fun DiscoverContent(
                     uiState = uiState,
                     onSwiped = onSwiped,
                     onPlayPause = onPlayPause,
+                    onAuthorClick = onAuthorClick,
                 )
             }
         }
@@ -132,6 +139,7 @@ private fun DropDeck(
     uiState: DiscoverUiState,
     onSwiped: (FeedItem, Boolean) -> Unit,
     onPlayPause: () -> Unit,
+    onAuthorClick: (Int) -> Unit,
 ) {
     val drops = uiState.drops
     // First message found wins: swipe problem, then preview problem, then the hint
@@ -165,6 +173,7 @@ private fun DropDeck(
                     isPlaying = uiState.isPlaying,
                     onSwiped = { liked -> onSwiped(top, liked) },
                     onPlayPause = onPlayPause,
+                    onAuthorClick = { onAuthorClick(top.authorId) },
                 )
             }
         }
@@ -186,6 +195,7 @@ private fun SwipeableDropCard(
     isPlaying: Boolean,
     onSwiped: (liked: Boolean) -> Unit,
     onPlayPause: () -> Unit,
+    onAuthorClick: () -> Unit,
 ) {
     // Horizontal shift of the card in pixels (0 = centered)
     val offsetX = remember { Animatable(0f) }
@@ -233,6 +243,7 @@ private fun SwipeableDropCard(
             drop = drop,
             isPlaying = isPlaying,
             onPlayPause = onPlayPause,
+            onAuthorClick = onAuthorClick,
         )
 
         // 0 at rest, 1 (or -1) at the threshold
@@ -326,6 +337,7 @@ private fun DiscoverEmptyPreview() {
             onRefresh = {},
             onSwiped = { _, _ -> },
             onPlayPause = {},
+            onAuthorClick = {},
         )
     }
 }
@@ -339,6 +351,7 @@ private fun DiscoverErrorPreview() {
             onRefresh = {},
             onSwiped = { _, _ -> },
             onPlayPause = {},
+            onAuthorClick = {},
         )
     }
 }

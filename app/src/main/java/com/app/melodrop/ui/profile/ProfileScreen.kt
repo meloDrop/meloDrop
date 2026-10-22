@@ -144,7 +144,10 @@ private fun ProfileBody(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        ProfileHeader(profile = profile, onLogout = onLogout, onEditProfile = onEditProfile)
+        // The menu is given to the header: only the user's own profile has one
+        ProfileHeader(profile = profile) {
+            ProfileMenu(onLogout = onLogout, onEditProfile = onEditProfile)
+        }
 
         StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
 
@@ -163,12 +166,13 @@ private fun ProfileBody(
     }
 }
 
-// Avatar, display name, @username, sign-up date, and the menu on the right
+// Avatar, display name, @username and sign-up date, with an optional menu on the right.
+// Shared with the profile of the other users (UserProfileScreen)
 @Composable
-private fun ProfileHeader(
+internal fun ProfileHeader(
     profile: ProfileOut,
-    onLogout: () -> Unit,
-    onEditProfile: () -> Unit,
+    // "Slot": a piece of UI given by the caller, nothing by default
+    menu: @Composable () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -196,7 +200,7 @@ private fun ProfileHeader(
             )
         }
 
-        ProfileMenu(onLogout = onLogout, onEditProfile = onEditProfile)
+        menu()
     }
 }
 
@@ -265,9 +269,10 @@ private fun ProfileMenu(onLogout: () -> Unit, onEditProfile: () -> Unit) {
     }
 }
 
-// Three tiles side by side, with the same width. The last one opens "Mes likes"
+// Three tiles side by side, with the same width. On the user's own profile,
+// the last one opens "Mes likes". Shared with UserProfileScreen
 @Composable
-private fun StatsRow(stats: StatsOut, onLikesClick: () -> Unit) {
+internal fun StatsRow(stats: StatsOut, onLikesClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -284,17 +289,27 @@ private fun StatsRow(stats: StatsOut, onLikesClick: () -> Unit) {
             color = Peach,
             modifier = Modifier.weight(1f),
         )
-        CounterTile(
-            value = stats.likesCount,
-            // The arrow shows that the tile can be tapped
-            label = if (stats.likesCount <= 1) "titre liké ›" else "titres likés ›",
-            color = Mint,
-            modifier = Modifier
-                .weight(1f)
-                // Clip first, so the ripple of the tap keeps the round corners
-                .clip(RoundedCornerShape(20.dp))
-                .clickable(onClick = onLikesClick),
-        )
+        val likesLabel = if (stats.likesCount <= 1) "titre liké" else "titres likés"
+        if (onLikesClick != null) {
+            CounterTile(
+                value = stats.likesCount,
+                // The arrow shows that the tile can be tapped
+                label = "$likesLabel ›",
+                color = Mint,
+                modifier = Modifier
+                    .weight(1f)
+                    // Clip first, so the ripple of the tap keeps the round corners
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClick = onLikesClick),
+            )
+        } else {
+            CounterTile(
+                value = stats.likesCount,
+                label = likesLabel,
+                color = Mint,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -330,9 +345,9 @@ private fun CounterTile(
     }
 }
 
-// Small grey title in capitals, above a section
+// Small grey title in capitals, above a section. Shared with UserProfileScreen
 @Composable
-private fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
@@ -342,9 +357,9 @@ private fun SectionTitle(text: String) {
 }
 
 // The covers, 3 per line. A Column of Rows, because a LazyVerticalGrid
-// cannot be placed inside a Column that scrolls
+// cannot be placed inside a Column that scrolls. Shared with UserProfileScreen
 @Composable
-private fun DropsGrid(drops: List<ProfileDropOut>, onlineDropId: Int?) {
+internal fun DropsGrid(drops: List<ProfileDropOut>, onlineDropId: Int? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         drops.chunked(COVERS_PER_ROW).forEach { line ->
             Row(

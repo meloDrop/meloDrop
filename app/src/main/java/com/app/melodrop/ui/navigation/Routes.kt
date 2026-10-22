@@ -17,6 +17,7 @@ object Routes {
     // Opened from the Profile tab, without the bottom bar
     const val EDIT_PROFILE = "edit_profile"
     const val LIKES = "likes"
+    const val ACCOUNT = "account"
 
     // Profile of another user, opened from a drop: "user/12"
     const val USER_PROFILE = "user/{userId}"

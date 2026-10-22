@@ -106,7 +106,7 @@ fun DropCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Déposé par ${drop.authorUsername}",
+                    text = "Déposé par @${drop.authorUsername}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

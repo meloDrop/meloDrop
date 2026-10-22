@@ -66,6 +66,7 @@ private const val COVERS_PER_ROW = 3
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onEditProfile: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -77,6 +78,7 @@ fun ProfileScreen(
         uiState = viewModel.uiState,
         onRetry = viewModel::load,
         onLogout = onLogout,
+        onEditProfile = onEditProfile,
     )
 }
 
@@ -86,6 +88,7 @@ private fun ProfileContent(
     uiState: ProfileUiState,
     onRetry: () -> Unit,
     onLogout: () -> Unit,
+    onEditProfile: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -99,7 +102,11 @@ private fun ProfileContent(
         val profile = uiState.profile
 
         when {
-            profile != null -> ProfileBody(profile = profile, onLogout = onLogout)
+            profile != null -> ProfileBody(
+                profile = profile,
+                onLogout = onLogout,
+                onEditProfile = onEditProfile,
+            )
 
             // First answer not there yet
             uiState.isLoading -> Box(
@@ -116,7 +123,11 @@ private fun ProfileContent(
 
 // The profile itself: header, counters and last drops
 @Composable
-private fun ProfileBody(profile: ProfileOut, onLogout: () -> Unit) {
+private fun ProfileBody(
+    profile: ProfileOut,
+    onLogout: () -> Unit,
+    onEditProfile: () -> Unit,
+) {
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
 
@@ -127,7 +138,7 @@ private fun ProfileBody(profile: ProfileOut, onLogout: () -> Unit) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        ProfileHeader(profile = profile, onLogout = onLogout)
+        ProfileHeader(profile = profile, onLogout = onLogout, onEditProfile = onEditProfile)
 
         StatsRow(stats = profile.stats)
 
@@ -146,9 +157,13 @@ private fun ProfileBody(profile: ProfileOut, onLogout: () -> Unit) {
     }
 }
 
-// Avatar, username, sign-up date, and the menu on the right
+// Avatar, display name, @username, sign-up date, and the menu on the right
 @Composable
-private fun ProfileHeader(profile: ProfileOut, onLogout: () -> Unit) {
+private fun ProfileHeader(
+    profile: ProfileOut,
+    onLogout: () -> Unit,
+    onEditProfile: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -158,8 +173,9 @@ private fun ProfileHeader(profile: ProfileOut, onLogout: () -> Unit) {
 
         // Takes all the space left, so the menu stays on the right
         Column(modifier = Modifier.weight(1f)) {
+            // The display name, or the username when none was chosen (ADR-0019)
             Text(
-                text = profile.username,
+                text = profile.displayName ?: profile.username,
                 fontFamily = Unbounded,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
@@ -168,19 +184,19 @@ private fun ProfileHeader(profile: ProfileOut, onLogout: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "Membre depuis ${memberSince(profile.createdAt)}",
+                text = "@${profile.username} · membre depuis ${memberSince(profile.createdAt)}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
-        ProfileMenu(onLogout = onLogout)
+        ProfileMenu(onLogout = onLogout, onEditProfile = onEditProfile)
     }
 }
 
-// "⋮" button with the account actions ("Mon compte" will be added here)
+// "⋮" button with the profile and account actions ("Mon compte" will be added here)
 @Composable
-private fun ProfileMenu(onLogout: () -> Unit) {
+private fun ProfileMenu(onLogout: () -> Unit, onEditProfile: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
 
@@ -201,6 +217,13 @@ private fun ProfileMenu(onLogout: () -> Unit) {
             expanded = menuOpen,
             onDismissRequest = { menuOpen = false },
         ) {
+            DropdownMenuItem(
+                text = { Text("Modifier le profil") },
+                onClick = {
+                    menuOpen = false
+                    onEditProfile()
+                },
+            )
             DropdownMenuItem(
                 text = { Text("Se déconnecter") },
                 onClick = {
@@ -438,6 +461,7 @@ private fun ProfileScreenPreview() {
                 profile = ProfileOut(
                     id = 2,
                     username = "elliot",
+                    displayName = "Elliot",
                     createdAt = "2026-08-23T10:00:00Z",
                     avatarColor = "peach",
                     avatarStyle = "simple",
@@ -453,6 +477,7 @@ private fun ProfileScreenPreview() {
             ),
             onRetry = {},
             onLogout = {},
+            onEditProfile = {},
         )
     }
 }
@@ -465,6 +490,7 @@ private fun ProfileErrorPreview() {
             uiState = ProfileUiState(isLoading = false, error = "Impossible de joindre le serveur."),
             onRetry = {},
             onLogout = {},
+            onEditProfile = {},
         )
     }
 }

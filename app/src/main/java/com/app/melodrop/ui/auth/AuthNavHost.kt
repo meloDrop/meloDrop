@@ -8,7 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.melodrop.ui.navigation.Routes
 
-// Screens shown before login: login, sign-up and email check
+// Screens shown before login: login, sign-up, email check and forgotten password
 @Composable
 fun AuthNavHost(onLoggedIn: () -> Unit) {
     val navController = rememberNavController()
@@ -19,6 +19,12 @@ fun AuthNavHost(onLoggedIn: () -> Unit) {
                 onLoggedIn = onLoggedIn,
                 onRegisterClick = { navController.navigate(Routes.REGISTER) },
                 onVerifyNeeded = { email -> navController.navigate(Routes.verifyEmail(email)) },
+                onForgotPasswordClick = { navController.navigate(Routes.FORGOT_PASSWORD) },
+            )
+        }
+        composable(Routes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                onLoginClick = { navController.popBackStack(Routes.LOGIN, inclusive = false) },
             )
         }
         composable(Routes.REGISTER) {

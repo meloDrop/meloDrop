@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.app.melodrop.data.AccountRepository
 import com.app.melodrop.network.detail
 import com.app.melodrop.network.dto.MeOut
+import com.app.melodrop.ui.auth.newPasswordProblem
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -183,16 +184,6 @@ class AccountViewModel : ViewModel() {
             }
         }
     }
-}
-
-// Returns the problem with the new password, or null if it is valid
-private fun newPasswordProblem(password: String, confirmPassword: String): String? = when {
-    password.length !in 8..128 -> "Le mot de passe doit faire entre 8 et 128 caractères."
-    password.none { it.isDigit() } -> "Le mot de passe doit contenir au moins un chiffre."
-    password.none { !it.isLetterOrDigit() && it != '_' && !it.isWhitespace() } ->
-        "Le mot de passe doit contenir au moins un caractère spécial."
-    password != confirmPassword -> "Les deux mots de passe ne correspondent pas."
-    else -> null
 }
 
 // Turns a backend error of the email change into a message for the user

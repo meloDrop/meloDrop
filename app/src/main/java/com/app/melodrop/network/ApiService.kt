@@ -28,6 +28,7 @@ import retrofit2.http.DELETE
 
 import com.app.melodrop.network.dto.EmailChangeConfirm
 import com.app.melodrop.network.dto.EmailUpdate
+import com.app.melodrop.network.dto.PasswordReset
 import com.app.melodrop.network.dto.PasswordUpdate
 
 interface ApiService {
@@ -51,6 +52,15 @@ interface ApiService {
 
     @POST("auth/resend-code")
     suspend fun resendCode(@Body body: CodeRequest)
+
+    // Forgotten password: sends a code if the email has an account.
+    // 204 with no body, the same answer for any email
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body body: CodeRequest)
+
+    // Sets the new password with the code received. 204 with no body
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body body: PasswordReset)
 
     // Up to 10 drops not seen yet, or an empty list
     @GET("feed")

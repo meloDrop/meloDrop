@@ -65,3 +65,10 @@ data class PasswordUpdate(
     @SerializedName("old_password") val oldPassword: String,
     @SerializedName("new_password") val newPassword: String
 )
+
+// Data sent to reset a forgotten password with the code received by email
+data class PasswordReset(
+    val email: String,
+    val code: String,
+    @SerializedName("new_password") val newPassword: String
+)

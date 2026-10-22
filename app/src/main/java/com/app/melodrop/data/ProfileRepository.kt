@@ -2,6 +2,7 @@ package com.app.melodrop.data
 
 import com.app.melodrop.network.RetrofitClient
 import com.app.melodrop.network.dto.ProfileOut
+import com.app.melodrop.network.dto.ProfileUpdate
 
 // Talks to the backend routes used by the profile screens
 class ProfileRepository {
@@ -16,4 +17,9 @@ class ProfileRepository {
 
     // Another user's profile, opened from a drop
     suspend fun getProfile(userId: Int): ProfileOut = api.getProfile(userId)
+
+
+    // Saves the new display name, and gives back the updated profile
+    suspend fun updateProfile(displayName: String): ProfileOut =
+        api.updateProfile(ProfileUpdate(displayName))
 }

@@ -32,7 +32,10 @@ data class ProfileDropOut(
 // A user's profile: the same for the user's own profile and for the others (ADR-0018)
 data class ProfileOut(
     val id: Int,
+    // The @handle: unique, used to log in, never changes
     val username: String,
+    // Public name chosen by the user, null if none: show the username instead
+    @SerializedName("display_name") val displayName: String? = null,
     // Sign-up date in UTC, for "membre depuis"
     @SerializedName("created_at") val createdAt: String,
     // Name of the pastel background, like "lavender"
@@ -44,4 +47,12 @@ data class ProfileOut(
     @SerializedName("current_drop") val currentDrop: ProfileDropOut? = null,
     // The 5 last expired drops, the most recent first
     @SerializedName("recent_drops") val recentDrops: List<ProfileDropOut>
+)
+
+
+
+// Data sent to change the user's own profile: everything is sent together
+data class ProfileUpdate(
+    // New display name; an empty text gives back the username
+    @SerializedName("display_name") val displayName: String
 )

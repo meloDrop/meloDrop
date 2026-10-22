@@ -51,8 +51,12 @@ data class ProfileOut(
 
 
 
-// Data sent to change the user's own profile: everything is sent together
+// Data sent to change the user's own profile: the edit screen sends everything together
 data class ProfileUpdate(
     // New display name; an empty text gives back the username
-    @SerializedName("display_name") val displayName: String
+    @SerializedName("display_name") val displayName: String,
+    // Name of one of the 5 background colors, like "mint" (AVATAR_COLORS)
+    @SerializedName("avatar_color") val avatarColor: String,
+    // Name of one of the 7 drop styles, like "rock" (AVATAR_STYLES)
+    @SerializedName("avatar_style") val avatarStyle: String
 )

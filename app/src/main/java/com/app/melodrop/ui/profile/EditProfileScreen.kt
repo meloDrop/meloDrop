@@ -1,15 +1,21 @@
 package com.app.melodrop.ui.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -35,9 +44,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
+import com.app.melodrop.ui.components.AVATAR_COLORS
+import com.app.melodrop.ui.components.AVATAR_STYLES
 import com.app.melodrop.ui.components.Avatar
 import com.app.melodrop.ui.components.Unbounded
+import com.app.melodrop.ui.components.avatarColor
 import com.app.melodrop.ui.theme.MeloDropTheme
+
+// Drop styles on each line of the style picker
+private const val STYLES_PER_ROW = 4
 
 // Connects the screen to its ViewModel
 @Composable
@@ -45,7 +60,7 @@ fun EditProfileScreen(
     onBack: () -> Unit,
     viewModel: EditProfileViewModel = viewModel(),
 ) {
-    // Saved: back to the profile, which loads the new name when it opens
+    // Saved: back to the profile, which loads the new name and avatar when it opens
     LaunchedEffect(viewModel.uiState.isSaved) {
         if (viewModel.uiState.isSaved) onBack()
     }
@@ -54,6 +69,8 @@ fun EditProfileScreen(
         uiState = viewModel.uiState,
         onBack = onBack,
         onDisplayNameChange = viewModel::onDisplayNameChange,
+        onAvatarColorChange = viewModel::onAvatarColorChange,
+        onAvatarStyleChange = viewModel::onAvatarStyleChange,
         onSave = viewModel::save,
         onRetry = viewModel::load,
     )
@@ -65,6 +82,8 @@ private fun EditProfileContent(
     uiState: EditProfileUiState,
     onBack: () -> Unit,
     onDisplayNameChange: (String) -> Unit,
+    onAvatarColorChange: (String) -> Unit,
+    onAvatarStyleChange: (String) -> Unit,
     onSave: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -104,6 +123,8 @@ private fun EditProfileContent(
                 uiState = uiState,
                 profile = profile,
                 onDisplayNameChange = onDisplayNameChange,
+                onAvatarColorChange = onAvatarColorChange,
+                onAvatarStyleChange = onAvatarStyleChange,
                 onSave = onSave,
             )
 
@@ -129,20 +150,22 @@ private fun EditProfileContent(
     }
 }
 
-// Live preview, the field and the save button
+// Live preview, the name field, the avatar choice and the save button
 @Composable
 private fun EditForm(
     uiState: EditProfileUiState,
     profile: ProfileOut,
     onDisplayNameChange: (String) -> Unit,
+    onAvatarColorChange: (String) -> Unit,
+    onAvatarStyleChange: (String) -> Unit,
     onSave: () -> Unit,
 ) {
-    // Preview of the profile header: changes while the user types
+    // Preview of the profile header: changes while the user types or taps
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Avatar(color = profile.avatarColor, style = profile.avatarStyle)
+        Avatar(color = uiState.avatarColor, style = uiState.avatarStyle)
 
         Column {
             Text(
@@ -188,6 +211,23 @@ private fun EditForm(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
+    SectionTitle("COULEUR")
+
+    ColorPicker(
+        selected = uiState.avatarColor,
+        enabled = !uiState.isSaving,
+        onSelect = onAvatarColorChange,
+    )
+
+    SectionTitle("STYLE DE GOUTTE")
+
+    StylePicker(
+        color = uiState.avatarColor,
+        selected = uiState.avatarStyle,
+        enabled = !uiState.isSaving,
+        onSelect = onAvatarStyleChange,
+    )
+
     uiState.error?.let { message ->
         Text(
             text = message,
@@ -211,6 +251,109 @@ private fun EditForm(
     }
 }
 
+// The 5 background colors: a white ring shows the chosen one
+@Composable
+private fun ColorPicker(
+    selected: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        AVATAR_COLORS.forEach { color ->
+            val isSelected = color.name == selected
+
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    // Only one color at a time, like radio buttons
+                    .selectable(
+                        selected = isSelected,
+                        enabled = enabled,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(color.name) },
+                    )
+                    .border(
+                        width = 2.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
+                        shape = CircleShape,
+                    )
+                    // Gap between the ring and the color
+                    .padding(5.dp)
+                    .background(avatarColor(color.name), CircleShape)
+                    // The color has no text: TalkBack reads its name
+                    .semantics { contentDescription = color.label },
+            )
+        }
+    }
+}
+
+// The 7 drop styles, 4 per line, drawn with the chosen color.
+// A Column of Rows, like DropsGrid, because the screen already scrolls
+@Composable
+private fun StylePicker(
+    color: String,
+    selected: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        AVATAR_STYLES.chunked(STYLES_PER_ROW).forEach { line ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                line.forEach { style ->
+                    val isSelected = style.name == selected
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .selectable(
+                                selected = isSelected,
+                                enabled = enabled,
+                                role = Role.RadioButton,
+                                onClick = { onSelect(style.name) },
+                            )
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        // White ring around the chosen style
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .border(
+                                    width = 2.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
+                                    shape = CircleShape,
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Avatar(color = color, style = style.name, avatarSize = 50.dp)
+                        }
+
+                        Text(
+                            text = style.label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.onBackground
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
+                }
+                // Empty places on the last line, so the styles keep the same width
+                repeat(STYLES_PER_ROW - line.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)
 @Composable
 private fun EditProfilePreview() {
@@ -229,9 +372,13 @@ private fun EditProfilePreview() {
                     recentDrops = emptyList(),
                 ),
                 displayName = "Lito",
+                avatarColor = "mint",
+                avatarStyle = "electro",
             ),
             onBack = {},
             onDisplayNameChange = {},
+            onAvatarColorChange = {},
+            onAvatarStyleChange = {},
             onSave = {},
             onRetry = {},
         )

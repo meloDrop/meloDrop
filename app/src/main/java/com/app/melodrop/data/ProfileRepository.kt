@@ -19,7 +19,7 @@ class ProfileRepository {
     suspend fun getProfile(userId: Int): ProfileOut = api.getProfile(userId)
 
 
-    // Saves the new display name, and gives back the updated profile
-    suspend fun updateProfile(displayName: String): ProfileOut =
-        api.updateProfile(ProfileUpdate(displayName))
+    // Saves the display name and the avatar, and gives back the updated profile
+    suspend fun updateProfile(displayName: String, avatarColor: String, avatarStyle: String): ProfileOut =
+        api.updateProfile(ProfileUpdate(displayName, avatarColor, avatarStyle))
 }

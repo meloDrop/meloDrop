@@ -1,6 +1,6 @@
 """Model of the users table."""
 
-from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, func, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, func, Boolean, text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -21,11 +21,11 @@ class User(Base):
     avatar_color = Column(String(20), nullable=False, server_default="lavender")
     avatar_style = Column(String(20), nullable=False, server_default="simple")
     created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"), onupdate=func.now())
 
     links = relationship("PlatformLink", passive_deletes=True)
     # False until the user types the code received by email
-    email_verified = Column(Boolean, nullable=False, default=False)
+    email_verified = Column(Boolean, nullable=False, server_default=text("0"))
     # New email waiting for the code sent to it, empty the rest of the time
     pending_email = Column(String(255), nullable=True)
 

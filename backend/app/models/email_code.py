@@ -1,6 +1,6 @@
 """Table email_codes: 6-digit codes sent by email."""
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func, text
 
 from app.database import Base
 
@@ -25,6 +25,6 @@ class EmailCode(Base):
     # Only the hash of the code is stored, like for passwords
     code_hash = Column(String(255), nullable=False)
     # Number of wrong codes typed
-    attempts = Column(Integer, nullable=False, default=0)
+    attempts = Column(Integer, nullable=False, server_default=text("0"))
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now())

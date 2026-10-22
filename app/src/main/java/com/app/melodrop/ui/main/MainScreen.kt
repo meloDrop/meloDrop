@@ -16,6 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.app.melodrop.ui.components.HaloBackground
 import com.app.melodrop.ui.discover.DiscoverScreen
+import com.app.melodrop.ui.likes.LikesScreen
 import com.app.melodrop.ui.drop.DropScreen
 import com.app.melodrop.ui.navigation.BottomBar
 import com.app.melodrop.ui.navigation.Routes
@@ -29,19 +30,19 @@ fun MainScreen(onLogout: () -> Unit) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    // Screens opened from the Profile tab: no bottom bar, and the halos of the Profile tab
+    val isProfileSubScreen = currentRoute == Routes.EDIT_PROFILE || currentRoute == Routes.LIKES
+
     Box(modifier = Modifier.fillMaxSize()) {
-        // Behind all the screens: the halos move when the tab changes.
-        // The edit screen keeps the halos of the Profile tab
-        HaloBackground(
-            route = if (currentRoute == Routes.EDIT_PROFILE) Routes.PROFILE else currentRoute,
-        )
+        // Behind all the screens: the halos move when the tab changes
+        HaloBackground(route = if (isProfileSubScreen) Routes.PROFILE else currentRoute)
 
         Scaffold(
             // Transparent, so the halos show through
             containerColor = Color.Transparent,
             bottomBar = {
-                // No bottom bar on the edit screen: it has its own back button
-                if (currentRoute != Routes.EDIT_PROFILE) {
+                // These screens have their own back button
+                if (!isProfileSubScreen) {
                     BottomBar(
                         currentRoute = currentRoute,
                         onTabClick = { route ->
@@ -68,11 +69,17 @@ fun MainScreen(onLogout: () -> Unit) {
                     ProfileScreen(
                         onLogout = onLogout,
                         onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
+                        onLikesClick = { navController.navigate(Routes.LIKES) },
                     )
                 }
                 composable(Routes.EDIT_PROFILE) {
                     EditProfileScreen(
                         // Back to the Profile tab, even after a double tap
+                        onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                    )
+                }
+                composable(Routes.LIKES) {
+                    LikesScreen(
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                     )
                 }

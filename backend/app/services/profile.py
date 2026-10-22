@@ -66,6 +66,8 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
     return ProfileOut(
         id=user.id,
         username=user.username,
+        username=user.username,
+        display_name=user.display_name,
         created_at=user.created_at.replace(tzinfo=timezone.utc),
         avatar_color=user.avatar_color,
         avatar_style=user.avatar_style,
@@ -73,3 +75,17 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
         current_drop=current_drop,
         recent_drops=recent_drops,
     )
+
+
+
+def update_profile(db: Session, user: User, display_name: str) -> ProfileOut:
+    """Change the editable part of the user's own profile, then return the profile."""
+    # Spaces around the name are removed; an empty name gives back the username
+    name = display_name.strip()
+    if name:
+        user.display_name = name
+    else:
+        user.display_name = None
+
+    db.commit()
+    return get_profile(db, user.id)

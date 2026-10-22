@@ -13,12 +13,12 @@ class Drop(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE", name="fk_drops_user_id"),
         nullable=False,
     )
     song_id = Column(
         Integer,
-        ForeignKey("songs.id"),
+        ForeignKey("songs.id", name="fk_drops_song_id"),
         nullable=False,
     )
     expires_at = Column(DateTime, nullable=False)

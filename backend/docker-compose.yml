@@ -11,11 +11,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ../database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      # Demo data for development and tests only, never in production
-      - ../database/demo.sql:/docker-entrypoint-initdb.d/02_demo.sql
     # Healthy once MySQL accepts network connections,
-    # which only happens after schema.sql and demo.sql have run
     healthcheck:
       test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -u root --silent"]
       interval: 5s
@@ -34,7 +30,8 @@ services:
       WATCHFILES_FORCE_POLLING: "true"
     volumes:
       - ./app:/app/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./alembic:/app/alembic
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     # Starts only once the database is ready
     depends_on:
       db:

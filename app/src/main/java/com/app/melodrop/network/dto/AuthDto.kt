@@ -22,7 +22,9 @@ data class MeOut(
     val email: String,
     val username: String,
     @SerializedName("created_at") val createdAt: String,
-    @SerializedName("linked_accounts") val linkedAccounts: List<LinkedAccountOut>
+    @SerializedName("linked_accounts") val linkedAccounts: List<LinkedAccountOut>,
+    // New email waiting for its code, null the rest of the time
+    @SerializedName("pending_email") val pendingEmail: String? = null
 )
 
 data class UserRegister(
@@ -44,4 +46,22 @@ data class EmailVerify(
 
 data class CodeRequest(
     val email: String
+)
+
+
+// Data sent to change the email: the current password and the new email
+data class EmailUpdate(
+    val password: String,
+    @SerializedName("new_email") val newEmail: String
+)
+
+// The 6-digit code received at the new email
+data class EmailChangeConfirm(
+    val code: String
+)
+
+// Data sent to change the password
+data class PasswordUpdate(
+    @SerializedName("old_password") val oldPassword: String,
+    @SerializedName("new_password") val newPassword: String
 )

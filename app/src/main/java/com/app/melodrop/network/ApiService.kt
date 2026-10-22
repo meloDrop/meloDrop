@@ -13,6 +13,7 @@ import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.PreviewOut
 import com.app.melodrop.network.dto.TrackResult
+import com.app.melodrop.network.dto.ProfileOut
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -69,4 +70,8 @@ interface ApiService {
     // Response<...>: lets us read a null body (no drop today) without an error
     @GET("drops/me")
     suspend fun getMyDrop(): Response<MyDropOut>
+
+    // A user's profile: counters, drop of the day and last drops (ADR-0018)
+    @GET("users/{user_id}/profile")
+    suspend fun getProfile(@Path("user_id") userId: Int): ProfileOut
 }

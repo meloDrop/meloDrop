@@ -1,6 +1,7 @@
 package com.app.melodrop.ui.likes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,8 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 @Composable
 fun LikesScreen(
     onBack: () -> Unit,
+    // Tap on "drop par @username": opens the profile of the author
+    onAuthorClick: (Int) -> Unit,
     viewModel: LikesViewModel = viewModel(),
 ) {
     // Leaving the screen: the music stops
@@ -66,6 +69,7 @@ fun LikesScreen(
         onPlayClick = viewModel::togglePreview,
         onRemove = viewModel::remove,
         onRetry = viewModel::load,
+        onAuthorClick = onAuthorClick,
     )
 }
 
@@ -77,6 +81,7 @@ private fun LikesContent(
     onPlayClick: (LikedSongOut) -> Unit,
     onRemove: (LikedSongOut) -> Unit,
     onRetry: () -> Unit,
+    onAuthorClick: (Int) -> Unit,
 ) {
     // Song waiting for the confirmation, null when no dialog is open
     var songToRemove by remember { mutableStateOf<LikedSongOut?>(null) }
@@ -168,6 +173,7 @@ private fun LikesContent(
                             isPlaying = uiState.isPlaying && uiState.playingSongId == song.songId,
                             onPlayClick = { onPlayClick(song) },
                             onRemoveClick = { songToRemove = song },
+                            onAuthorClick = onAuthorClick,
                             // Slides the rows below up when one is removed
                             modifier = Modifier.animateItem(),
                         )
@@ -210,6 +216,7 @@ private fun LikedSongRow(
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
     onRemoveClick: () -> Unit,
+    onAuthorClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -245,14 +252,18 @@ private fun LikedSongRow(
                 overflow = TextOverflow.Ellipsis,
             )
             // Who made the user discover the song; nothing if the author's
-            // account was deleted (ADR-0013)
-            if (song.authorUsername != null) {
+            // account was deleted (ADR-0013). Local copy: Kotlin can then
+            // treat the id as not null inside the click
+            val authorId = song.authorId
+            if (song.authorUsername != null && authorId != null) {
                 Text(
                     text = "drop par @${song.authorUsername}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    // Tap: opens the profile of the author
+                    modifier = Modifier.clickable { onAuthorClick(authorId) },
                 )
             }
         }
@@ -297,6 +308,7 @@ private fun LikesScreenPreview() {
             onPlayClick = {},
             onRemove = {},
             onRetry = {},
+            onAuthorClick = {},
         )
     }
 }
@@ -311,6 +323,7 @@ private fun LikesEmptyPreview() {
             onPlayClick = {},
             onRemove = {},
             onRetry = {},
+            onAuthorClick = {},
         )
     }
 }

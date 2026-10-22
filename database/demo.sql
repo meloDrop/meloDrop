@@ -228,3 +228,16 @@ INSERT INTO liked_songs (user_id, song_id, created_at) VALUES
 (13, 15, UTC_TIMESTAMP() - INTERVAL 2 DAY + INTERVAL 2 HOUR),  -- noah: Angèle - Balance ton quoi
 (10, 19, UTC_TIMESTAMP() - INTERVAL 5 DAY + INTERVAL 4 HOUR),  -- chloe: Dua Lipa - Levitating
 (15, 11, UTC_TIMESTAMP() - INTERVAL 7 DAY + INTERVAL 1 HOUR);  -- louis: Adele - Rolling in the Deep
+
+
+
+-- ======================================================================
+-- Avatars: a pastel background for each account, so the profiles do not
+-- all look the same. The others keep the default color (lavender):
+-- litoxam, lea, lucas and adam. The drop style stays 'simple' for everyone.
+-- ======================================================================
+
+UPDATE users SET avatar_color = 'peach'  WHERE username IN ('elliot', 'jules', 'chloe', 'louis', 'theo');
+UPDATE users SET avatar_color = 'butter' WHERE username IN ('sam', 'tom', 'emma', 'manon', 'paul');
+UPDATE users SET avatar_color = 'mint'   WHERE username IN ('nina', 'hugo', 'noah', 'camille');
+UPDATE users SET avatar_color = 'rose'   WHERE username IN ('ines', 'jade', 'sarah');

@@ -12,17 +12,13 @@ data class Token(
     @SerializedName("token_type") val tokenType: String
 )
 
-data class LinkedAccountOut(
-    val id: Int,
-    val provider: String
-)
+
 
 data class MeOut(
     val id: Int,
     val email: String,
     val username: String,
     @SerializedName("created_at") val createdAt: String,
-    @SerializedName("linked_accounts") val linkedAccounts: List<LinkedAccountOut>,
     // New email waiting for its code, null the rest of the time
     @SerializedName("pending_email") val pendingEmail: String? = null
 )

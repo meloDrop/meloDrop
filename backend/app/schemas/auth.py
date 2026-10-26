@@ -38,16 +38,8 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
-class LinkedAccountOut(BaseModel):
-    """A streaming account linked to the user."""
-
-    model_config = {"from_attributes": True}
-
-    id: int
-    provider: str
-
 class MeOut(BaseModel):
-    """Data of the logged-in account, with its linked accounts."""
+    """Data of the logged-in account"""
 
     model_config = {"from_attributes": True}
 
@@ -55,7 +47,6 @@ class MeOut(BaseModel):
     email: str
     username: str
     created_at: datetime
-    linked_accounts: list[LinkedAccountOut] = Field(validation_alias="links")
     pending_email: str | None = None
 
 

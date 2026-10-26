@@ -17,14 +17,6 @@ class Settings(BaseSettings):
     # user will have to reconnect every month, can be changed later
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 30
 
-    DEEZER_APP_ID: str
-    DEEZER_APP_SECRET: str
-    DEEZER_REDIRECT_URI: str
-
-    SPOTIFY_CLIENT_ID: str
-    SPOTIFY_CLIENT_SECRET: str
-    SPOTIFY_REDIRECT_URI: str
-
     # Sending emails with the Brevo SMTP relay (development and production)
     SMTP_HOST: str = "smtp-relay.brevo.com"
     SMTP_PORT: int = 587

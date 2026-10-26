@@ -6,7 +6,7 @@ from app.database import Base
 
 
 class Song(Base):
-    """A song from Deezer or Spotify, stored once and shared by all its drops."""
+    """A song from Deezer, stored once and shared by all its drops."""
 
     __tablename__ = "songs"
 
@@ -17,7 +17,6 @@ class Song(Base):
     cover_url = Column(String(500))
     genre = Column(String(50), nullable=True)
     deezer_track_id = Column(BigInteger)
-    spotify_track_id = Column(String(500))
     created_at = Column(DateTime, server_default=func.now())
 
     __table_args__ = (

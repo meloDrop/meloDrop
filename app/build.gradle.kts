@@ -22,8 +22,8 @@ android {
             optimization {
                 enable = false
             }
-            // Temp URL
-            buildConfigField("String", "BASE_URL", "\"https://api.melodrop.example/\"")
+            // Production backend, hosted on Scaleway
+            buildConfigField("String", "BASE_URL", "\"https://api.melodrop-app.com/\"")
         }
         debug {
             buildConfigField("String", "BASE_URL", "\"http://localhost:8000/\"")

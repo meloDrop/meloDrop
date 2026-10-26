@@ -499,7 +499,6 @@ private fun AccountScreenPreview() {
                     email = "lito@example.com",
                     username = "litoxam",
                     createdAt = "2026-09-07T12:00:00Z",
-                    linkedAccounts = emptyList(),
                     pendingEmail = "lito.new@example.com",
                 ),
                 passwordInfo = "Ton mot de passe a été changé.",

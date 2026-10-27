@@ -8,7 +8,7 @@ data class TrackResult(
     @SerializedName("deezer_track_id") val deezerTrackId: Long,
     val title: String,
     val artist: String,
-    @SerializedName("cover_url") val coverUrl: String,
+    @SerializedName("cover_url") val coverUrl: String?,
     // null when Deezer has no preview for this track
     @SerializedName("preview_url") val previewUrl: String?
 )

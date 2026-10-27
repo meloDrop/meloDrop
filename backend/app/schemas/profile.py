@@ -21,7 +21,7 @@ class ProfileDropOut(BaseModel):
     song_id: int
     title: str
     artist: str
-    cover_url: str
+    cover_url: str | None = None
     genre: str | None = None
     # When the drop was posted, in UTC
     dropped_at: datetime

@@ -11,7 +11,7 @@ class LikedSongOut(BaseModel):
     song_id: int
     title: str
     artist: str
-    cover_url: str
+    cover_url: str | None = None
     # When the user liked it, in UTC
     liked_at: datetime
     # Author of the drop the user liked: null if the account was deleted (ADR-0013)

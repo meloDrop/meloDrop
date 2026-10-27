@@ -10,7 +10,7 @@ class FeedItem(BaseModel):
     song_id: int
     title: str
     artist: str
-    cover_url: str
+    cover_url: str | None = None
     genre: str | None = None
     author_id: int
     author_username: str

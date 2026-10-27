@@ -30,15 +30,15 @@ async def log_requests(request: Request, call_next):
         response = await call_next(request)
         status_code = response.status_code
         return response
-        finally:
-            if request.url.path != "/health":
-                duration = (time.perf_counter() - start) * 1000
-                username = getattr(request.state, "username", None)
-                who = f"@{username}" if username else "anonyme"
-                logger.info(
-                    "%s %s -> %s (%s, %.0f ms)",
-                    request.method, request.url.path, status_code, who, duration,
-                )
+    finally:
+        if request.url.path != "/health":
+            duration = (time.perf_counter() - start) * 1000
+            username = getattr(request.state, "username", None)
+            who = f"@{username}" if username else "anonyme"
+            logger.info(
+                "%s %s -> %s (%s, %.0f ms)",
+                request.method, request.url.path, status_code, who, duration,
+            )
 
 
 # Health route

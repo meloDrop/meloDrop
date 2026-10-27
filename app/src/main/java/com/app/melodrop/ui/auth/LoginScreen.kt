@@ -38,6 +38,10 @@ import com.app.melodrop.R
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.WaterRippleLayer
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.VisualTransformation
+
 
 // Connects the screen to its ViewModel
 @Composable
@@ -120,6 +124,7 @@ private fun LoginContent(
                     enabled = !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                var passwordVisible by remember { mutableStateOf(false) }
 
                 OutlinedTextField(
                     value = password,
@@ -128,8 +133,28 @@ private fun LoginContent(
                     singleLine = true,
                     enabled = !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
+                    // Hides the text with dots unless the eye is on
+                    visualTransformation = if (passwordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    // Eye icon at the end of the field, toggles visibility
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                painter = painterResource(
+                                    if (passwordVisible) R.drawable.ic_visibility_off else R.drawable.ic_visibility
+                                ),
+                                contentDescription = if (passwordVisible) {
+                                    "Masquer le mot de passe"
+                                } else {
+                                    "Afficher le mot de passe"
+                                },
+                            )
+                        }
+                    },
                 )
 
                 uiState.error?.let { message ->

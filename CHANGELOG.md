@@ -2,6 +2,18 @@
 
 All notable changes to Melodrop are documented in this file.
 
+
+## [0.2.1] - 2026-10-27
+
+### Added
+- Drops without any cover shows a Tear with Sad face "Pas d'image dispo !"
+
+### Changed
+- 
+
+### Fixed
+- 
+
 ## [0.2.0] - 2026-10-27
 
 ### Added

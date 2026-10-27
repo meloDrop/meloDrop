@@ -89,6 +89,7 @@ fun DropScreen(viewModel: DropViewModel = viewModel()) {
         onSubmit = viewModel::submitDrop,
         onChangeTrack = viewModel::clearSelection,
         onRefresh = viewModel::loadMyDrop,
+        onMyDropPlayClick = viewModel::toggleMyDropPreview,
     )
 }
 
@@ -102,6 +103,7 @@ private fun DropContent(
     onSubmit: () -> Unit,
     onChangeTrack: () -> Unit,
     onRefresh: () -> Unit,
+    onMyDropPlayClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -127,6 +129,9 @@ private fun DropContent(
             myDrop != null -> MyDropView(
                 drop = myDrop,
                 justDropped = uiState.justDropped,
+                isPlaying = uiState.isPlaying && uiState.playingSongId == myDrop.songId,
+                previewError = uiState.previewError,
+                onPlayClick = onMyDropPlayClick,
                 onRefresh = onRefresh,
             )
 
@@ -294,11 +299,14 @@ private fun ConfirmStep(
     }
 }
 
-// Shown while a drop is online: the drop, its likes and the time left
+// Shown while a drop is online: the drop, its preview, its likes and the time left
 @Composable
 private fun MyDropView(
     drop: MyDropOut,
     justDropped: Boolean,
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: () -> Unit,
     onRefresh: () -> Unit,
 ) {
     // Current time, refreshed every minute for the countdown
@@ -346,6 +354,15 @@ private fun MyDropView(
                         .padding(12.dp),
                 )
             }
+
+            // Play button in the bottom right corner, like on the Discover cards
+            PlayPauseButton(
+                isPlaying = isPlaying,
+                onClick = onPlayClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp),
+            )
         }
 
         Text(
@@ -359,6 +376,15 @@ private fun MyDropView(
             text = drop.artist,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        // Preview link missing or unreadable
+        if (previewError != null) {
+            Text(
+                text = previewError,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
+        }
 
         // Two tiles side by side, with the same width
         Row(
@@ -530,6 +556,7 @@ private fun DropConfirmStepPreview() {
             onSubmit = {},
             onChangeTrack = {},
             onRefresh = {},
+            onMyDropPlayClick = {},
         )
     }
 }
@@ -559,6 +586,7 @@ private fun MyDropPreview() {
             onSubmit = {},
             onChangeTrack = {},
             onRefresh = {},
+            onMyDropPlayClick = {},
         )
     }
 }

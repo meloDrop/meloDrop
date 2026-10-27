@@ -26,4 +26,7 @@ class DropRepository {
         if (!response.isSuccessful) throw HttpException(response)
         return response.body()
     }
+
+    // Fresh preview link of my drop: Deezer links expire after about 15 minutes
+    suspend fun getPreviewUrl(songId: Int): String? = api.getPreview(songId).previewUrl
 }

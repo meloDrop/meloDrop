@@ -9,5 +9,5 @@ class TrackResult(BaseModel):
     deezer_track_id: int
     title: str
     artist: str
-    cover_url: str
+    cover_url: str | None = None
     preview_url: str | None = None

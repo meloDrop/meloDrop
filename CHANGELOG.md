@@ -9,6 +9,8 @@ All notable changes to Melodrop are documented in this file.
 
 ### Changed
 - Updated some texts, such as the reminder to check spam folder during sign-up.
+- Added a player button on the "Ton drop du jour" screen
+- Like and Skip button on the Discover Screen
 
 ### Fixed
 - 

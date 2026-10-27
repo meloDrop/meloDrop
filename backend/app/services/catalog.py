@@ -20,7 +20,7 @@ def search_tracks(query: str) -> list[TrackResult]:
                 deezer_track_id=track["id"],
                 title=track["title"],
                 artist=track["artist"]["name"],
-                cover_url=track["album"]["cover_medium"],
+                cover_url=track["album"].get("cover_medium") or None,
                 # No preview for this track: None instead of an empty string
                 preview_url=track.get("preview") or None,
             )

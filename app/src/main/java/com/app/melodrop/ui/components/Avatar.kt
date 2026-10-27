@@ -118,7 +118,8 @@ fun Avatar(
 }
 
 // A drop: pointed at the top, round at the bottom, in the middle of the grid
-private fun dropPath() = Path().apply {
+// internal: also used by CoverImage for the sad drop
+internal fun dropPath() = Path().apply {
     moveTo(50f, 22f)
     cubicTo(55.24f, 33.2f, 71.84f, 45.52f, 71.84f, 58.96f)
     cubicTo(71.84f, 70.16f, 62.23f, 78f, 50f, 78f)

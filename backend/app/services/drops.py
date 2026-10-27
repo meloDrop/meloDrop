@@ -59,7 +59,7 @@ def find_or_create_song(db: Session, deezer_track_id: int) -> Song:
         isrc=isrc,
         title=track["title"],
         artist_name=track["artist"]["name"],
-        cover_url=track["album"]["cover_big"],
+        cover_url=track["album"].get("cover_big") or None,
         genre=get_album_genre(track["album"]["id"]),
         deezer_track_id=track["id"],
     )

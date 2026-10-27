@@ -23,7 +23,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -32,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
@@ -178,14 +177,12 @@ private fun CurrentDropCard(drop: ProfileDropOut) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Downloads the image from its URL, grey square while it loads
-            AsyncImage(
-                model = drop.coverUrl,
+            CoverImage(
+                url = drop.coverUrl,
                 contentDescription = "Pochette de ${drop.title}",
-                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.outline),
+                    .clip(RoundedCornerShape(14.dp)),
             )
 
             Column(

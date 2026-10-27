@@ -1,6 +1,8 @@
 package com.app.melodrop.ui.discover
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -9,12 +11,16 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,6 +29,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -32,13 +39,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.melodrop.R
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.theme.MeloDropTheme
@@ -133,7 +143,7 @@ private fun DiscoverContent(
     }
 }
 
-// The card on top, the next one waiting behind it, and a hint below
+// The card on top, the next one waiting behind it, the two buttons and a hint below
 @Composable
 private fun DropDeck(
     uiState: DiscoverUiState,
@@ -142,9 +152,36 @@ private fun DropDeck(
     onAuthorClick: (Int) -> Unit,
 ) {
     val drops = uiState.drops
+    val top = drops.first()
     // First message found wins: swipe problem, then preview problem, then the hint
     val message = uiState.swipeError ?: uiState.previewError
     val hint = message ?: "Glisse à droite pour garder, à gauche pour passer"
+
+    val scope = rememberCoroutineScope()
+    // Horizontal shift of the card on top in pixels (0 = centered).
+    // remember(top.id): each new card starts again from the center
+    val offsetX = remember(top.id) { Animatable(0f) }
+    // True once the card on top flies away: a second choice on it is ignored
+    var isLeaving by remember(top.id) { mutableStateOf(false) }
+    // Card width in pixels, known after the first layout
+    var cardWidth by remember { mutableFloatStateOf(1f) }
+
+    // Sends the card on top off the screen, then the choice counts.
+    // Used by the swipe and by the two buttons, so both look the same
+    val flyOut: (Boolean) -> Unit = { liked ->
+        if (!isLeaving) {
+            isLeaving = true
+            scope.launch {
+                val target = if (liked) cardWidth * 1.5f else -cardWidth * 1.5f
+                try {
+                    offsetX.animateTo(target, tween(FLY_OUT_MS))
+                } finally {
+                    // Even if the animation is cut short, the choice is made
+                    onSwiped(top, liked)
+                }
+            }
+        }
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -165,17 +202,46 @@ private fun DropDeck(
                 )
             }
 
-            val top = drops.first()
-            // New drop = new key: the swipe position starts again from 0
+            // New drop = new key: the gestures start again for the new card
             key(top.id) {
                 SwipeableDropCard(
                     drop = top,
                     isPlaying = uiState.isPlaying,
-                    onSwiped = { liked -> onSwiped(top, liked) },
+                    offsetX = offsetX,
+                    width = cardWidth,
+                    isLeaving = isLeaving,
+                    onWidthChange = { cardWidth = it },
+                    onFlyOut = flyOut,
                     onPlayPause = onPlayPause,
                     onAuthorClick = { onAuthorClick(top.authorId) },
                 )
             }
+        }
+
+        // Same choices as the swipe, for those who prefer to tap
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(32.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ChoiceButton(
+                iconRes = R.drawable.ic_close,
+                description = "Passer",
+                containerColor = MaterialTheme.colorScheme.surface,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                buttonSize = 56.dp,
+                enabled = !isLeaving,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                onClick = { flyOut(false) },
+            )
+            ChoiceButton(
+                iconRes = R.drawable.ic_favorite,
+                description = "J'aime",
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                iconColor = MaterialTheme.colorScheme.onTertiary,
+                buttonSize = 64.dp,
+                enabled = !isLeaving,
+                onClick = { flyOut(true) },
+            )
         }
 
         Text(
@@ -188,25 +254,30 @@ private fun DropDeck(
     }
 }
 
-// A card that follows the finger, then flies away or comes back to the center
+// The card on top: follows the finger, then flies away or comes back to the center.
+// Its shift is kept by DropDeck, so the buttons can move it too
 @Composable
 private fun SwipeableDropCard(
     drop: FeedItem,
     isPlaying: Boolean,
-    onSwiped: (liked: Boolean) -> Unit,
+    offsetX: Animatable<Float, AnimationVector1D>,
+    width: Float,
+    isLeaving: Boolean,
+    onWidthChange: (Float) -> Unit,
+    onFlyOut: (liked: Boolean) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: () -> Unit,
 ) {
-    // Horizontal shift of the card in pixels (0 = centered)
-    val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    // Card width in pixels, known after the first layout
-    var width by remember { mutableFloatStateOf(1f) }
 
     Box(
         modifier = Modifier
-            .onSizeChanged { width = it.width.toFloat() }
-            .pointerInput(Unit) {
+            .onSizeChanged { onWidthChange(it.width.toFloat()) }
+            // Starts again when the width is known, and when the card starts leaving
+            .pointerInput(width, isLeaving) {
+                // Already leaving (swipe or button): the finger can no longer move it
+                if (isLeaving) return@pointerInput
+
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
                         change.consume()
@@ -214,16 +285,13 @@ private fun SwipeableDropCard(
                         scope.launch { offsetX.snapTo(offsetX.value + dragAmount) }
                     },
                     onDragEnd = {
-                        scope.launch {
-                            val progress = offsetX.value / width
-                            if (abs(progress) > SWIPE_THRESHOLD) {
-                                // Far enough: the card flies off the screen, then the swipe counts
-                                val liked = progress > 0
-                                val target = if (liked) width * 1.5f else -width * 1.5f
-                                offsetX.animateTo(target, tween(FLY_OUT_MS))
-                                onSwiped(liked)
-                            } else {
-                                // Not far enough: back to the center with a small bounce
+                        val progress = offsetX.value / width
+                        if (abs(progress) > SWIPE_THRESHOLD) {
+                            // Far enough: same exit as the buttons
+                            onFlyOut(progress > 0)
+                        } else {
+                            // Not far enough: back to the center with a small bounce
+                            scope.launch {
                                 offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                             }
                         }
@@ -299,6 +367,37 @@ private fun SwipeLabel(
     }
 }
 
+// Round button under the card, with an icon in its middle
+@Composable
+private fun ChoiceButton(
+    @DrawableRes iconRes: Int,
+    description: String,
+    containerColor: Color,
+    iconColor: Color,
+    buttonSize: Dp,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    border: BorderStroke? = null,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(buttonSize),
+        shape = CircleShape,
+        color = containerColor,
+        border = border,
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            // Read aloud by TalkBack, since the button has no text
+            contentDescription = description,
+            tint = iconColor,
+            // The icon takes the middle half of the button
+            modifier = Modifier.padding(buttonSize / 4),
+        )
+    }
+}
+
 // Centered message with a button: used for errors and the empty feed
 @Composable
 private fun FeedMessage(
@@ -348,6 +447,36 @@ private fun DiscoverErrorPreview() {
     MeloDropTheme {
         DiscoverContent(
             uiState = DiscoverUiState(error = "Impossible de joindre le serveur."),
+            onRefresh = {},
+            onSwiped = { _, _ -> },
+            onPlayPause = {},
+            onAuthorClick = {},
+        )
+    }
+}
+
+// Fixed height: the cover shrinks to the space left, so it needs a limited height
+@Preview(showBackground = true, backgroundColor = 0xFF0C0C10, heightDp = 800)
+@Composable
+private fun DiscoverDeckPreview() {
+    MeloDropTheme {
+        DiscoverContent(
+            uiState = DiscoverUiState(
+                drops = listOf(
+                    FeedItem(
+                        id = 1,
+                        songId = 1,
+                        title = "Numb",
+                        artist = "Linkin Park",
+                        // No network in the preview: the grey square shows instead
+                        coverUrl = "",
+                        genre = "Rock",
+                        authorId = 2,
+                        authorUsername = "elliot",
+                        savesCount = 3,
+                    ),
+                ),
+            ),
             onRefresh = {},
             onSwiped = { _, _ -> },
             onPlayPause = {},

@@ -101,7 +101,7 @@ private fun VerifyEmailContent(
                 )
 
                 Text(
-                    text = "On t'a envoyé un code à 6 chiffres. Il est valable 15 minutes.",
+                    text = "Code à 6 chiffres envoyé. Il est valable 15 minutes. Pense à vérifier tes spams !",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 

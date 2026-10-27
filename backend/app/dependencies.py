@@ -30,5 +30,5 @@ def current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="invalid_token")
 
-    request.state.user_id = user.id
+    request.state.username = user.username
     return user

@@ -17,11 +17,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PlayPauseButton
@@ -56,15 +55,13 @@ fun DropCard(
                     .align(Alignment.CenterHorizontally),
             ) {
                 // Downloads the image from its URL, grey square while it loads
-                AsyncImage(
-                    model = drop.coverUrl,
+                CoverImage(
+                    url = drop.coverUrl,
                     contentDescription = "Pochette de ${drop.title}",
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         // Square, sized from the height left first, then from the width
                         .aspectRatio(1f, matchHeightConstraintsFirst = true)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.outline),
+                        .clip(RoundedCornerShape(20.dp)),
                 )
 
                 // Genre of the album, hidden when Deezer has none

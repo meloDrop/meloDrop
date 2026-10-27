@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -46,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.ui.components.GenreChip
@@ -334,15 +333,13 @@ private fun MyDropView(
 
         // The cover, with the genre in its top left corner
         Box(modifier = Modifier.fillMaxWidth(0.6f)) {
-            AsyncImage(
-                model = drop.coverUrl,
+            CoverImage(
+                url = drop.coverUrl,
                 contentDescription = "Pochette de ${drop.title}",
-                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.outline),
+                    .clip(RoundedCornerShape(24.dp)),
             )
 
             // Genre of the album, hidden when Deezer has none
@@ -488,14 +485,12 @@ private fun TrackRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AsyncImage(
-                model = track.coverUrl,
+            CoverImage(
+                url = track.coverUrl,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(56.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.outline),
+                    .clip(RoundedCornerShape(10.dp)),
             )
 
             // weight(1f): the texts take the room left, the button keeps its size

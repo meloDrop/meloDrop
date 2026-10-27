@@ -29,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
@@ -225,14 +224,12 @@ private fun LikedSongRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Downloads the image from its URL, grey square while it loads
-        AsyncImage(
-            model = song.coverUrl,
+        CoverImage(
+            url = song.coverUrl,
             contentDescription = "Pochette de ${song.title}",
-            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(56.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.outline),
+                .clip(RoundedCornerShape(12.dp)),
         )
 
         // Takes the space left, so the buttons stay on the right

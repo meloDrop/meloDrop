@@ -1,7 +1,7 @@
 """Shared dependencies for the routes."""
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ security = HTTPBearer(auto_error=False)
 
 
 def current_user(
+    request: Request,
     token_header: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
@@ -29,4 +30,5 @@ def current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="invalid_token")
 
+    request.state.user_id = user.id
     return user

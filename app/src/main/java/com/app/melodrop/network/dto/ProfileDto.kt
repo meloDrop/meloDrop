@@ -20,7 +20,7 @@ data class ProfileDropOut(
     @SerializedName("song_id") val songId: Int,
     val title: String,
     val artist: String,
-    @SerializedName("cover_url") val coverUrl: String,
+    @SerializedName("cover_url") val coverUrl: String?,
     // Genre of the song's Deezer album, null when Deezer has none
     val genre: String? = null,
     // Date and time in UTC, like "2026-10-22T09:09:00Z"

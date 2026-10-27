@@ -41,6 +41,10 @@ data class DropUiState(
     // Preview player: track loaded, and play or pause icon
     val playingTrackId: Long? = null,
     val isPlaying: Boolean = false,
+    // Song of my drop loaded in the player (meloDrop id), null if none
+    val playingSongId: Int? = null,
+    // Short message under my drop when its preview cannot be played
+    val previewError: String? = null,
     // Step 2: the chosen track, before dropping it
     val selectedTrack: TrackResult? = null,
     val isSubmitting: Boolean = false,
@@ -74,9 +78,10 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Link expired or file unreadable: just stop
+            // Link expired or file unreadable: stop and tell the user
             override fun onPlayerError(error: PlaybackException) {
                 player.pause()
+                uiState = uiState.copy(previewError = "Extrait indisponible pour ce titre.")
             }
         })
     }
@@ -87,6 +92,8 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             uiState = try {
                 val myDrop = repository.getMyDrop()
+                // My drop has expired: its preview stops
+                if (myDrop == null && uiState.playingSongId != null) stopPreview()
                 uiState.copy(
                     isCheckingDrop = false,
                     myDrop = myDrop,
@@ -185,6 +192,43 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
         uiState = uiState.copy(playingTrackId = track.deezerTrackId)
     }
 
+    // Play button of my drop: asks the backend for a fresh link, then plays it.
+    // Same steps as in "Mes likes", since MyDropOut has no preview link
+    fun toggleMyDropPreview() {
+        val drop = uiState.myDrop ?: return
+
+        // Already loaded: play or pause
+        if (drop.songId == uiState.playingSongId) {
+            if (player.playWhenReady) player.pause() else player.play()
+            return
+        }
+
+        uiState = uiState.copy(playingSongId = drop.songId, playingTrackId = null, previewError = null)
+
+        viewModelScope.launch {
+            // try used as a value: the link, or null if the call failed
+            val url = try {
+                repository.getPreviewUrl(drop.songId)
+            } catch (e: HttpException) {
+                null
+            } catch (e: IOException) {
+                null
+            }
+
+            // The drop changed while we were waiting: too late for this one
+            if (uiState.playingSongId != drop.songId) return@launch
+
+            if (url == null) {
+                uiState = uiState.copy(playingSongId = null, previewError = "Extrait indisponible pour ce titre.")
+                return@launch
+            }
+
+            player.setMediaItem(MediaItem.fromUri(url))
+            player.prepare()
+            player.play()
+        }
+    }
+
     // Leaving the tab or the app: the music must stop
     fun pausePreview() {
         player.pause()
@@ -193,7 +237,7 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
     private fun stopPreview() {
         player.pause()
         player.clearMediaItems()
-        uiState = uiState.copy(playingTrackId = null)
+        uiState = uiState.copy(playingTrackId = null, playingSongId = null)
     }
 
     // The ViewModel is destroyed (logout): free the player

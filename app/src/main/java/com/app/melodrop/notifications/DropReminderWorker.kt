@@ -31,9 +31,10 @@ class DropReminderWorker(context: Context, params: WorkerParameters) : Worker(co
 
         val manager = NotificationManagerCompat.from(applicationContext)
 
-        // Every notification belongs to a channel. Creating an existing channel does nothing
+        // Every notification belongs to a channel. Creating an existing channel does nothing.
+        // HIGH: sound, and the notification pops up at the top of the screen
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Rappels de drop", NotificationManager.IMPORTANCE_DEFAULT)
+            NotificationChannel(CHANNEL_ID, "Rappels de drop", NotificationManager.IMPORTANCE_HIGH)
         )
 
         // A tap opens the app

@@ -9,6 +9,7 @@ from app.providers.base import StreamingProvider
 BASE_URL = "https://api.deezer.com"
 TIMEOUT = 5
 NOT_FOUND_CODE = 800
+HEADERS = {"Accept-Language": "fr"}
 
 # V2 only: used by the OAuth and playlist methods below
 OAUTH_URL = "https://connect.deezer.com/oauth"
@@ -18,7 +19,7 @@ PLAYLIST_NAME = "meloDrop"
 def call_public_api(path: str, params: dict | None = None) -> dict:
     """Call a public Deezer endpoint and raise an error if Deezer reports one."""
     try:
-        response = requests.get(f"{BASE_URL}{path}", params=params, timeout=TIMEOUT)
+        response = requests.get(f"{BASE_URL}{path}", params=params, headers=HEADERS, timeout=TIMEOUT)
         response.raise_for_status()
         data = response.json()
     except requests.RequestException:

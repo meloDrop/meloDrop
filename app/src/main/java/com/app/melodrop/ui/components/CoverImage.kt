@@ -84,7 +84,7 @@ private fun NoCover(modifier: Modifier = Modifier) {
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             // Bigger drop when it is alone in a small square
-            Canvas(modifier = Modifier.size(maxWidth * if (showText) 0.45f else 0.8f)) {
+            Canvas(modifier = Modifier.size(this@BoxWithConstraints.maxWidth * if (showText) 0.45f else 0.8f)) {
                 // Same 100 x 100 grid as the Avatar
                 scale(scale = size.width / 100f, pivot = Offset.Zero) {
                     drawSadDrop()

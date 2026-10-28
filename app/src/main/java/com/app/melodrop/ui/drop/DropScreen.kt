@@ -1,6 +1,11 @@
 package com.app.melodrop.ui.drop
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,12 +41,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,6 +80,28 @@ fun DropScreen(viewModel: DropViewModel = viewModel()) {
     // Each time the tab opens: is a drop online, and how many likes does it have?
     LaunchedEffect(Unit) {
         viewModel.loadMyDrop()
+    }
+
+    // Used to check if notifications are already allowed
+    val context = LocalContext.current
+
+    // Shows the Android window "Allow meloDrop to send notifications?".
+    // Nothing to do with the answer: the reminder is already planned,
+    // and the worker checks the permission when it runs
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
+    // Right after a drop: ask for notifications, so the user gets the reminder
+    // 15 min before it expires. Only Android 13+ needs to ask
+    LaunchedEffect(viewModel.uiState.justDropped) {
+        if (viewModel.uiState.justDropped &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     // Back button on the confirm step: back to the results, not out of the tab

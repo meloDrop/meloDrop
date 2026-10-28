@@ -18,6 +18,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.app.melodrop.notifications.DropReminderWorker
+import java.time.Duration
+import java.time.Instant
+import java.time.OffsetDateTime
 
 // Waiting time after the last key before searching (ms)
 private const val SEARCH_DELAY_MS = 400L
@@ -94,6 +101,8 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
                 val myDrop = repository.getMyDrop()
                 // My drop has expired: its preview stops
                 if (myDrop == null && uiState.playingSongId != null) stopPreview()
+                // NEW: a drop is online, plan its reminder (replaces the old one, nothing doubles)
+                if (myDrop != null) scheduleReminder(myDrop)
                 uiState.copy(
                     isCheckingDrop = false,
                     myDrop = myDrop,
@@ -158,6 +167,8 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
                 repository.createDrop(track.deezerTrackId)
                 // Asks for the new drop again: this answer has its id and its stats
                 val myDrop = repository.getMyDrop()
+                // NEW: the drop is online, plan its reminder
+                if (myDrop != null) scheduleReminder(myDrop)
                 // Online: the music stops, the search is cleared for the next time
                 stopPreview()
                 uiState.copy(
@@ -232,6 +243,25 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
     // Leaving the tab or the app: the music must stop
     fun pausePreview() {
         player.pause()
+    }
+
+    // NEW: plans the "Ton drop expire dans 15 min" notification for this drop
+    private fun scheduleReminder(drop: MyDropOut) {
+        // Time left before the drop expires, minus 15 minutes
+        val expiresAt = OffsetDateTime.parse(drop.expiresAt).toInstant()
+        val delay = Duration.between(Instant.now(), expiresAt).minusMinutes(15)
+
+        // Less than 15 minutes left: too late for a reminder
+        if (delay.isNegative) return
+
+        // "Run DropReminderWorker once, after this delay"
+        val request = OneTimeWorkRequestBuilder<DropReminderWorker>()
+            .setInitialDelay(delay)
+            .build()
+
+        // Only one reminder at a time: a new one replaces the one already planned
+        WorkManager.getInstance(getApplication<Application>())
+            .enqueueUniqueWork("drop_reminder", ExistingWorkPolicy.REPLACE, request)
     }
 
     private fun stopPreview() {

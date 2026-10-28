@@ -11,8 +11,8 @@ android {
         applicationId = "com.app.melodrop"
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
-        versionName = "v.0.2.1"
+        versionCode = 4
+        versionName = "v.0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -115,5 +115,9 @@ dependencies {
 
 // Lifecycle events in Compose: stops the music when the app goes to the background
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+
+    // Background work: shows the reminder 15 min before the drop expires,
+    // even if the app is closed or the phone has restarted
+    implementation("androidx.work:work-runtime:2.12.0")
 
 }

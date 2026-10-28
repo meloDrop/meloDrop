@@ -116,4 +116,8 @@ dependencies {
 // Lifecycle events in Compose: stops the music when the app goes to the background
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
 
+    // Background work: shows the reminder 15 min before the drop expires,
+    // even if the app is closed or the phone has restarted
+    implementation("androidx.work:work-runtime:2.12.0")
+
 }

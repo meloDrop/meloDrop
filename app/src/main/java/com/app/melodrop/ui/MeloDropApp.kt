@@ -13,6 +13,7 @@ import com.app.melodrop.network.AuthEvents
 import com.app.melodrop.ui.auth.AuthNavHost
 import com.app.melodrop.ui.main.MainScreen
 import kotlinx.coroutines.launch
+import androidx.work.WorkManager
 
 // Root of the app: shows the login part or the main area
 @Composable
@@ -32,6 +33,8 @@ fun MeloDropApp() {
     fun logout() {
         scope.launch {
             TokenStore.clear(context)
+            // NEW: the planned reminder belongs to the account that leaves
+            WorkManager.getInstance(context).cancelAllWork()
             isLoggedIn = false
         }
     }

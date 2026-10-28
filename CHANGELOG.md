@@ -2,6 +2,20 @@
 
 All notable changes to Melodrop are documented in this file.
 
+## [0.3.0] - 2026-10-28
+
+### Added
+- Reminder notification "Ton drop expire dans 15 min", sent 15 minutes before the daily drop expires, even when the app is closed.
+- The app asks for the notification permission right after a drop (Android 13 and above).
+- The reminder is cancelled when the user logs out or deletes their account.
+
+### Changed
+- Server logs show the username of each request.
+
+### Fixed
+- Song genres are shown in French (Deezer sent them in English).
+- One-off script to refresh the genre of the songs already saved.
+
 
 ## [0.2.1] - 2026-10-27
 
@@ -13,6 +27,7 @@ All notable changes to Melodrop are documented in this file.
 
 ### Fixed
 - 
+
 
 ## [0.2.0] - 2026-10-27
 

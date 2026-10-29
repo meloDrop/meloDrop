@@ -17,3 +17,5 @@ class LikedSongOut(BaseModel):
     # Author of the drop the user liked: null if the account was deleted (ADR-0013)
     author_id: int | None = None
     author_username: str | None = None
+    # True when rescued from "Mes skips" after the drop expired: "Récupéré dans les skips"
+    liked_late: bool = False

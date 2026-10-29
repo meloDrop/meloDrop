@@ -229,7 +229,17 @@ INSERT INTO liked_songs (user_id, song_id, created_at) VALUES
 (10, 19, UTC_TIMESTAMP() - INTERVAL 5 DAY + INTERVAL 4 HOUR),  -- chloe: Dua Lipa - Levitating
 (15, 11, UTC_TIMESTAMP() - INTERVAL 7 DAY + INTERVAL 1 HOUR);  -- louis: Adele - Rolling in the Deep
 
+-- ======================================================================
+-- Skips of litoxam on expired drops: they fill his "Mes skips" list.
+-- Rescuing one adds the song to "Mes likes" as "Récupéré dans les skips",
+-- with no like for the author. litoxam skips no drop of the day,
+-- so his feed stays full.
+-- ======================================================================
 
+INSERT INTO skips (user_id, drop_id, created_at) VALUES
+(1, 27, UTC_TIMESTAMP() - INTERVAL 5 DAY + INTERVAL 2 HOUR),  -- litoxam skips the drop of elliot: Fleetwood Mac - Dreams (2004 Remaster)
+(1, 31, UTC_TIMESTAMP() - INTERVAL 4 DAY + INTERVAL 1 HOUR),  -- litoxam skips the drop of sam: Dua Lipa - Levitating
+(1, 35, UTC_TIMESTAMP() - INTERVAL 5 DAY + INTERVAL 3 HOUR);  -- litoxam skips the drop of ines: Edith Piaf - La Vie en Rose
 
 -- ======================================================================
 -- Avatars: a pastel background and a drop style for each account, so the

@@ -62,6 +62,12 @@ fun LikesScreen(
         viewModel.pausePreview()
     }
 
+    // Screen shown again, back from a profile or from the background:
+    // the list is reloaded quietly
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh()
+    }
+
     LikesContent(
         uiState = viewModel.uiState,
         onBack = onBack,
@@ -252,7 +258,16 @@ private fun LikedSongRow(
             // account was deleted (ADR-0013). Local copy: Kotlin can then
             // treat the id as not null inside the click
             val authorId = song.authorId
-            if (song.authorUsername != null && authorId != null) {
+            if (song.likedLate) {
+                // Rescued from "Mes skips" after the drop expired: no author shown
+                Text(
+                    text = "Récupéré dans les skips",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else if (song.authorUsername != null && authorId != null) {
                 Text(
                     text = "drop par @${song.authorUsername}",
                     style = MaterialTheme.typography.bodySmall,
@@ -288,6 +303,8 @@ private val previewSongs = listOf(
     LikedSongOut(12, "Enter Sandman (Remastered 2021)", "Metallica", "", "2026-10-20T14:00:00Z"),
     LikedSongOut(9, "Bohemian Rhapsody", "Queen", "", "2026-10-19T11:00:00Z"),
     LikedSongOut(7, "So What", "Miles Davis", "", "2026-10-19T10:00:00Z"),
+    // Rescued from "Mes skips" after the drop expired
+    LikedSongOut(17, "Dreams (2004 Remaster)", "Fleetwood Mac", "", "2026-10-18T09:00:00Z", likedLate = true),
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)

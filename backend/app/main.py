@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, profile
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, profile
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -66,6 +66,9 @@ app.include_router(swipes.router)
 
 # "Mes likes" list
 app.include_router(likes.router)
+
+# "Mes skips" list and rescue of a skipped song
+app.include_router(skips.router)
 
 
 # Profiles: the user's own and the others'

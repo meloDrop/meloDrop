@@ -13,5 +13,8 @@ data class LikedSongOut(
     @SerializedName("liked_at") val likedAt: String,
     // Author of the liked drop, null if the account was deleted (ADR-0013)
     @SerializedName("author_id") val authorId: Int? = null,
-    @SerializedName("author_username") val authorUsername: String? = null
+    @SerializedName("author_username") val authorUsername: String? = null,
+    // True when rescued from "Mes skips" after the drop expired:
+    // "Récupéré dans les skips" is shown instead of the author
+    @SerializedName("liked_late") val likedLate: Boolean = false
 )

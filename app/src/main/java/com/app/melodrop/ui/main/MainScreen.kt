@@ -26,6 +26,7 @@ import com.app.melodrop.ui.navigation.Routes
 import com.app.melodrop.ui.profile.EditProfileScreen
 import com.app.melodrop.ui.profile.ProfileScreen
 import com.app.melodrop.ui.profile.UserProfileScreen
+import com.app.melodrop.ui.skips.SkipsScreen
 import com.app.melodrop.ui.theme.MeloDropTheme
 
 @Composable
@@ -36,9 +37,10 @@ fun MainScreen(onLogout: () -> Unit) {
 
     // Screens opened from a tab: no bottom bar, and the halos of the Profile tab
     val isSubScreen = currentRoute == Routes.EDIT_PROFILE ||
-        currentRoute == Routes.LIKES ||
-        currentRoute == Routes.ACCOUNT ||
-        currentRoute == Routes.USER_PROFILE
+            currentRoute == Routes.LIKES ||
+            currentRoute == Routes.SKIPS ||
+            currentRoute == Routes.ACCOUNT ||
+            currentRoute == Routes.USER_PROFILE
 
     // Opens the profile of the author of a drop. launchSingleTop: a double tap
     // does not open the same profile twice
@@ -97,6 +99,15 @@ fun MainScreen(onLogout: () -> Unit) {
                 composable(Routes.LIKES) {
                     LikesScreen(
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                        onAuthorClick = ::openUserProfile,
+                        // launchSingleTop: a double tap does not open the list twice
+                        onSkipsClick = { navController.navigate(Routes.SKIPS) { launchSingleTop = true } },
+                    )
+                }
+                composable(Routes.SKIPS) {
+                    SkipsScreen(
+                        // Back to "Mes likes", even after a double tap
+                        onBack = { navController.popBackStack(Routes.LIKES, inclusive = false) },
                         onAuthorClick = ::openUserProfile,
                     )
                 }

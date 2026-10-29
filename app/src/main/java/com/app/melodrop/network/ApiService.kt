@@ -30,6 +30,8 @@ import com.app.melodrop.network.dto.EmailChangeConfirm
 import com.app.melodrop.network.dto.EmailUpdate
 import com.app.melodrop.network.dto.PasswordReset
 import com.app.melodrop.network.dto.PasswordUpdate
+import com.app.melodrop.network.dto.RescueOut
+import com.app.melodrop.network.dto.SkippedSongOut
 
 interface ApiService {
 
@@ -105,6 +107,14 @@ interface ApiService {
     // Removes a song from "Mes likes". 204 with no body: nothing to read back
     @DELETE("me/likes/{song_id}")
     suspend fun removeLike(@Path("song_id") songId: Int)
+
+    // The songs skipped in the last 7 days and not liked since (or an empty list)
+    @GET("me/skips")
+    suspend fun getSkips(): List<SkippedSongOut>
+
+    // Rescues a skipped song into "Mes likes". The author gets a like only if the drop is still active
+    @POST("me/skips/{drop_id}/rescue")
+    suspend fun rescueSkip(@Path("drop_id") dropId: Int): RescueOut
 
 
     // Asks to change the email: a code is sent to the new one. 204 with no body

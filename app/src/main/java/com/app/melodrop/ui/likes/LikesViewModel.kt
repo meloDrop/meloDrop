@@ -81,6 +81,23 @@ class LikesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Reloads the list quietly, without the spinner: used when the screen
+    // comes back, for example after a rescue in "Mes skips"
+    fun refresh() {
+        // First load still running: nothing to do
+        if (uiState.isLoading) return
+
+        viewModelScope.launch {
+            try {
+                uiState = uiState.copy(likes = repository.getLikes(), error = null)
+            } catch (e: HttpException) {
+                // The list stays as it was
+            } catch (e: IOException) {
+                // The list stays as it was
+            }
+        }
+    }
+
     // Play button of a song: plays its preview, or pauses it if it is the one loaded
     fun togglePreview(song: LikedSongOut) {
         if (song.songId == uiState.playingSongId) {

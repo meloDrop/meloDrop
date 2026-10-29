@@ -41,8 +41,13 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
     # Turn each line into a LikedSongOut
     likes = []
     for liked, song in rows:
-        # None when the author deleted their account: the song stays (ADR-0013)
-        author = find_author(db, user_id, song.id)
+        # Rescued from "Mes skips" after the drop expired: no author shown,
+        # the app writes "Récupéré dans les skips" instead
+        if liked.liked_late:
+            author = None
+        else:
+            # None when the author deleted their account: the song stays (ADR-0013)
+            author = find_author(db, user_id, song.id)
         likes.append(
             LikedSongOut(
                 song_id=song.id,
@@ -52,6 +57,7 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
                 liked_at=liked.created_at.replace(tzinfo=timezone.utc),
                 author_id=author.id if author else None,
                 author_username=author.username if author else None,
+                liked_late=liked.liked_late,
             )
         )
     return likes
@@ -71,6 +77,7 @@ def remove_like(db: Session, user_id: int, song_id: int) -> None:
         raise LikeNotFoundError("like_not_found")
 
     # Only the line in liked_songs goes. The line in saves stays,
-    # so the author keeps the like received (ADR-0013)
+    # so the author keeps the like received (ADR-0013).
+    # A song rescued late goes back to "Mes skips": its skip is still there
     db.delete(liked)
     db.commit()

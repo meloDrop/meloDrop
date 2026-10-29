@@ -23,7 +23,7 @@ class LikedSong(Base):
     )
     created_at = Column(DateTime, server_default=func.now())
     # True when the song was rescued from "Mes skips" after its drop expired:
-    # it goes to the "Likés plus tard" tab and the author gets no like
+    # the author gets no like and the app shows "Récupéré dans les skips"
     liked_late = Column(Boolean, nullable=False, server_default=text("0"))
 
     __table_args__ = (

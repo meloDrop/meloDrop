@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -44,7 +43,6 @@ import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
-import com.app.melodrop.ui.theme.Butter
 
 // Connects the screen to its ViewModel
 @Composable
@@ -52,8 +50,6 @@ fun LikesScreen(
     onBack: () -> Unit,
     // Tap on "drop par @username": opens the profile of the author
     onAuthorClick: (Int) -> Unit,
-    // Tap on "Mes skips": opens the list of the skipped songs
-    onSkipsClick: () -> Unit,
     viewModel: LikesViewModel = viewModel(),
 ) {
     // Leaving the screen: the music stops
@@ -66,8 +62,8 @@ fun LikesScreen(
         viewModel.pausePreview()
     }
 
-    // Screen shown again, for example back from "Mes skips":
-    // a rescued song may have joined the list
+    // Screen shown again, back from a profile or from the background:
+    // the list is reloaded quietly
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
@@ -79,7 +75,6 @@ fun LikesScreen(
         onRemove = viewModel::remove,
         onRetry = viewModel::load,
         onAuthorClick = onAuthorClick,
-        onSkipsClick = onSkipsClick,
     )
 }
 
@@ -92,7 +87,6 @@ private fun LikesContent(
     onRemove: (LikedSongOut) -> Unit,
     onRetry: () -> Unit,
     onAuthorClick: (Int) -> Unit,
-    onSkipsClick: () -> Unit,
 ) {
     // Song waiting for the confirmation, null when no dialog is open
     var songToRemove by remember { mutableStateOf<LikedSongOut?>(null) }
@@ -119,14 +113,6 @@ private fun LikesContent(
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            // Pushes "Mes skips" to the right edge
-            Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = onSkipsClick) {
-                Text(
-                    text = "Mes skips ›",
-                    color = Butter,
-                )
-            }
         }
 
         uiState.message?.let { message ->
@@ -337,7 +323,6 @@ private fun LikesScreenPreview() {
             onRemove = {},
             onRetry = {},
             onAuthorClick = {},
-            onSkipsClick = {},
         )
     }
 }
@@ -353,7 +338,6 @@ private fun LikesEmptyPreview() {
             onRemove = {},
             onRetry = {},
             onAuthorClick = {},
-            onSkipsClick = {},
         )
     }
 }

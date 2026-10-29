@@ -17,12 +17,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.app.melodrop.ui.components.CREATOR_USERNAME
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.GenreChip
+import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
 
@@ -105,10 +109,11 @@ fun DropCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "Déposé par @${drop.authorUsername}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                // Little treat: the creator of meloDrop wears the logo gradient
+                val isCreator = drop.authorUsername.equals(CREATOR_USERNAME, ignoreCase = true)
+
+                // Two Text side by side: the gradient only covers the @username
+                Row(
                     // Tap: opens the profile of the author
                     modifier = if (onAuthorClick != null) {
                         Modifier
@@ -118,7 +123,20 @@ fun DropCard(
                     } else {
                         Modifier
                     },
-                )
+                ) {
+                    Text(
+                        text = "Déposé par ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "@${drop.authorUsername}",
+                        style = if (isCreator) MaterialTheme.typography.bodyMedium.merge(TextStyle(brush = PastelGradient))
+                        else MaterialTheme.typography.bodyMedium,
+                        // Unspecified: the letters take the gradient of the style instead
+                        color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     text = likesLabel(drop.savesCount),
                     style = MaterialTheme.typography.labelLarge,

@@ -58,6 +58,10 @@ import com.app.melodrop.ui.theme.Peach
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.text.TextStyle
+import com.app.melodrop.ui.components.PastelGradient
+import com.app.melodrop.ui.components.CREATOR_USERNAME
 
 // Number of covers on each line of "Mes derniers drops"
 private const val COVERS_PER_ROW = 3
@@ -68,6 +72,8 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    // Tap on "Mes skips": opens the list of the skipped songs
+    onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
@@ -82,6 +88,7 @@ fun ProfileScreen(
         onLogout = onLogout,
         onEditProfile = onEditProfile,
         onLikesClick = onLikesClick,
+        onSkipsClick = onSkipsClick,
         onAccountClick = onAccountClick,
     )
 }
@@ -94,6 +101,7 @@ private fun ProfileContent(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
 ) {
     Column(
@@ -113,6 +121,7 @@ private fun ProfileContent(
                 onLogout = onLogout,
                 onEditProfile = onEditProfile,
                 onLikesClick = onLikesClick,
+                onSkipsClick = onSkipsClick,
                 onAccountClick = onAccountClick,
             )
 
@@ -136,6 +145,7 @@ private fun ProfileBody(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
 ) {
     // The drop of the day first, then the past ones
@@ -157,7 +167,22 @@ private fun ProfileBody(
             )
         }
 
-        StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
+        // No gap inside: the link stays close to the counters
+        Column {
+            StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
+
+            // Discreet link under "titres likés", on the user's own profile only
+            TextButton(
+                onClick = onSkipsClick,
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text(
+                    text = "Mes skips ›",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Butter,
+                )
+            }
+        }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("MES DERNIERS DROPS")
@@ -182,6 +207,9 @@ internal fun ProfileHeader(
     // "Slot": a piece of UI given by the caller, nothing by default
     menu: @Composable () -> Unit = {},
 ) {
+    // Little treat: the creator of meloDrop wears the logo gradient
+    val isCreator = profile.username.equals(CREATOR_USERNAME, ignoreCase = true)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -197,7 +225,10 @@ internal fun ProfileHeader(
                 fontFamily = Unbounded,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.onBackground,
+                // Unspecified: the letters take the gradient of the style instead
+                color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onBackground,
+                style = if (isCreator) LocalTextStyle.current.merge(TextStyle(brush = PastelGradient))
+                else LocalTextStyle.current,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -503,7 +534,7 @@ private fun ProfileScreenPreview() {
                 isLoading = false,
                 profile = ProfileOut(
                     id = 2,
-                    username = "elliot",
+                    username = "Litoxam",
                     displayName = "Elliot",
                     createdAt = "2026-08-23T10:00:00Z",
                     avatarColor = "peach",
@@ -522,6 +553,7 @@ private fun ProfileScreenPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onSkipsClick = {},
             onAccountClick = {},
         )
     }
@@ -537,6 +569,7 @@ private fun ProfileErrorPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onSkipsClick = {},
             onAccountClick = {},
         )
     }

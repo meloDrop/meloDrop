@@ -15,27 +15,34 @@ from app.models.user import User
 from app.schemas.skips import RescueOut, SkippedSongOut
 from app.utils.time import utc_now
 
-# The list is there to catch a mistake: only the most recent skips are shown
-SKIPS_LIMIT = 50
+from datetime import timedelta, timezone
+
+# The list is there to catch a mistake: only the skips of the last 7 days are shown
+SKIPS_DAYS = 7
 
 
 def get_skips(db: Session, user_id: int) -> list[SkippedSongOut]:
-    """Return the user's skipped songs, the most recent first."""
+    """Return the songs the user skipped in the last 7 days, the most recent first."""
+    now = utc_now()
+
     # Songs already in the user's likes: their skips are hidden
     liked = select(LikedSong.song_id).where(LikedSong.user_id == user_id)
 
-    # Each skip with its drop, its song and the author of the drop
+    # Each recent skip with its drop, its song and the author of the drop
     rows = (
         db.query(Skip, Drop, Song, User)
         .join(Drop, Drop.id == Skip.drop_id)
         .join(Song, Song.id == Drop.song_id)
         .join(User, User.id == Drop.user_id)
-        .filter(Skip.user_id == user_id, Drop.song_id.not_in(liked))
+        .filter(
+            Skip.user_id == user_id,
+            Skip.created_at >= now - timedelta(days=SKIPS_DAYS),
+            Drop.song_id.not_in(liked),
+        )
         .order_by(Skip.created_at.desc(), Skip.id.desc())
         .all()
     )
 
-    now = utc_now()
     skips = []
     song_ids = set()
     for skip, drop, song, author in rows:
@@ -57,8 +64,6 @@ def get_skips(db: Session, user_id: int) -> list[SkippedSongOut]:
                 drop_active=drop.expires_at > now,
             )
         )
-        if len(skips) == SKIPS_LIMIT:
-            break
     return skips
 
 

@@ -20,6 +20,9 @@ object Routes {
     const val LIKES = "likes"
     const val ACCOUNT = "account"
 
+    // Opened from "Mes likes"
+    const val SKIPS = "skips"
+
     // Profile of another user, opened from a drop: "user/12"
     const val USER_PROFILE = "user/{userId}"
 

@@ -46,6 +46,9 @@ def save_drop(db: Session, user_id: int, drop_id: int) -> None:
     )
     if liked is None:
         db.add(LikedSong(user_id=user_id, song_id=drop.song_id))
+    else:
+        # Rescued late before, from an expired drop: this like makes it a normal like
+        liked.liked_late = False
 
     # Save both rows together
     db.commit()

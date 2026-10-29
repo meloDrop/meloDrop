@@ -87,6 +87,8 @@ fun MainScreen(onLogout: () -> Unit) {
                         onLogout = onLogout,
                         onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
                         onLikesClick = { navController.navigate(Routes.LIKES) },
+                        // launchSingleTop: a double tap does not open the list twice
+                        onSkipsClick = { navController.navigate(Routes.SKIPS) { launchSingleTop = true } },
                         onAccountClick = { navController.navigate(Routes.ACCOUNT) },
                     )
                 }
@@ -100,14 +102,12 @@ fun MainScreen(onLogout: () -> Unit) {
                     LikesScreen(
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                         onAuthorClick = ::openUserProfile,
-                        // launchSingleTop: a double tap does not open the list twice
-                        onSkipsClick = { navController.navigate(Routes.SKIPS) { launchSingleTop = true } },
                     )
                 }
                 composable(Routes.SKIPS) {
                     SkipsScreen(
-                        // Back to "Mes likes", even after a double tap
-                        onBack = { navController.popBackStack(Routes.LIKES, inclusive = false) },
+                        // Back to the Profile tab, even after a double tap
+                        onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                         onAuthorClick = ::openUserProfile,
                     )
                 }

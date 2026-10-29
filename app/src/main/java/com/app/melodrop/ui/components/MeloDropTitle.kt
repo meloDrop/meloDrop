@@ -22,8 +22,9 @@ import com.app.melodrop.ui.theme.Rose
 // App name font: Unbounded Bold (file res/font/unbounded_bold.ttf)
 val Unbounded = FontFamily(Font(R.font.unbounded_bold, FontWeight.Bold))
 
-// The five logo pastels, in the order of the drop's stripes
-private val PastelGradient = Brush.horizontalGradient(
+// The five logo pastels, in the order of the drop's stripes.
+// Also used on the name of the creator of meloDrop
+internal val PastelGradient = Brush.horizontalGradient(
     listOf(
         Lavender,
         Rose,
@@ -32,6 +33,9 @@ private val PastelGradient = Brush.horizontalGradient(
         Mint
     )
 )
+
+// Username of the creator of meloDrop: his name wears the logo gradient
+internal const val CREATOR_USERNAME = "litoxam"
 
 @Composable
 fun MeloDropTitle(modifier: Modifier = Modifier) {

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>meloDrop · Une chanson par jour</title>
+  <meta name="description" content="Une chanson par jour, choisie par quelqu'un, pas par un algorithme. meloDrop arrive bientôt sur Android.">
+  <meta name="theme-color" content="#0c0c10">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="meloDrop">
+  <meta property="og:description" content="Une chanson par jour, choisie par quelqu'un, pas par un algorithme.">
+  <meta property="og:url" content="https://melodrop-app.com">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4C32 4 12 28 12 41a20 20 0 0 0 40 0C52 28 32 4 32 4z' fill='%23b9a6ff'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0c0c10;
+      --text: #f4f2f8;
+      --muted: #a9a6b4;
+      --lavande: #b9a6ff;
+      --peche: #ffb48c;
+      --beurre: #ffe28f;
+      --menthe: #92e6c4;
+      --rose: #ffa3c8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { color-scheme: dark; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.55;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Halos pastel en arrière-plan */
+    .aurora {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .aurora span {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      animation: drift 24s ease-in-out infinite alternate;
+    }
+    .aurora .a1 { width: 46vmax; height: 46vmax; top: -18vmax; left: -14vmax; background: var(--lavande); opacity: 0.30; }
+    .aurora .a2 { width: 38vmax; height: 38vmax; top: -12vmax; right: -16vmax; background: var(--rose); opacity: 0.22; animation-delay: -6s; }
+    .aurora .a3 { width: 40vmax; height: 40vmax; bottom: -24vmax; left: 18%; background: var(--peche); opacity: 0.18; animation-delay: -12s; }
+    .aurora .a4 { width: 30vmax; height: 30vmax; bottom: -12vmax; right: -8vmax; background: var(--menthe); opacity: 0.14; animation-delay: -18s; }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(4vmax, 3vmax) scale(1.08); }
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .logo {
+      width: 92px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: "Unbounded", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: clamp(2.4rem, 8vw, 4rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      margin-top: 14px;
+      max-width: 32ch;
+      font-size: clamp(1.05rem, 2.6vw, 1.25rem);
+      font-weight: 500;
+    }
+
+    .lead {
+      margin-top: 12px;
+      max-width: 46ch;
+      color: var(--muted);
+    }
+
+    /* Bouton store */
+    .store { margin-top: 36px; }
+
+    .store-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px 12px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(244, 242, 248, 0.45);
+      cursor: not-allowed;
+      user-select: none;
+    }
+    .store-btn svg { width: 24px; height: 24px; flex-shrink: 0; }
+    .store-btn .label {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      line-height: 1.15;
+    }
+    .store-btn small {
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .store-btn strong {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    /* Style prévu pour le jour où le bouton devient un vrai lien */
+    a.store-btn {
+      color: var(--text);
+      background: rgba(185, 166, 255, 0.14);
+      border-color: rgba(185, 166, 255, 0.45);
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    a.store-btn:hover { background: rgba(185, 166, 255, 0.22); transform: translateY(-1px); }
+
+    .badge {
+      margin-left: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--lavande);
+      color: #1a1530;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 14px rgba(185, 166, 255, 0.35);
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 24px 16px 32px;
+      text-align: center;
+      color: rgba(169, 166, 180, 0.7);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 720px) {
+      .logo { width: 80px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .aurora span { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="aurora" aria-hidden="true">
+    <span class="a1"></span>
+    <span class="a2"></span>
+    <span class="a3"></span>
+    <span class="a4"></span>
+  </div>
+
+  <main>
+    <!-- Logo provisoire : goutte à bandes pastel au-dessus d'ondes -->
+    <svg class="logo" viewBox="0 0 120 132" role="img" aria-label="Logo meloDrop">
+      <defs>
+        <clipPath id="drop-clip">
+          <path d="M60 6 C60 6 28 44 28 66 a32 32 0 0 0 64 0 C92 44 60 6 60 6 Z"/>
+        </clipPath>
+        <linearGradient id="waves" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#b9a6ff"/>
+          <stop offset="0.35" stop-color="#ffa3c8"/>
+          <stop offset="0.65" stop-color="#ffb48c"/>
+          <stop offset="1" stop-color="#92e6c4"/>
+        </linearGradient>
+      </defs>
+
+      <ellipse cx="60" cy="112" rx="26" ry="6" fill="#b9a6ff" opacity="0.18"/>
+      <g fill="none" stroke="url(#waves)" stroke-linecap="round">
+        <ellipse cx="60" cy="117" rx="54" ry="12" stroke-width="2" opacity="0.35"/>
+        <ellipse cx="60" cy="114.5" rx="38" ry="8.5" stroke-width="2.5" opacity="0.6"/>
+        <ellipse cx="60" cy="112" rx="22" ry="5" stroke-width="3" opacity="0.9"/>
+      </g>
+
+      <g clip-path="url(#drop-clip)">
+        <rect x="20" y="0"    width="80" height="36"   fill="#ffa3c8"/>
+        <rect x="20" y="38.5" width="80" height="13.5" fill="#ffb48c"/>
+        <rect x="20" y="54.5" width="80" height="13.5" fill="#ffe28f"/>
+        <rect x="20" y="70.5" width="80" height="13.5" fill="#92e6c4"/>
+        <rect x="20" y="86.5" width="80" height="14"   fill="#b9a6ff"/>
+      </g>
+    </svg>
+
+    <h1>meloDrop</h1>
+
+    <p class="tagline">Une chanson par jour, choisie par quelqu'un, pas par un algorithme.</p>
+
+    <p class="lead">
+      Pas d'algorithme ni de flux sans fin : chaque jour, chacun partage le titre
+      qui compte pour lui, et toi, tu découvres ceux des autres.
+    </p>
+
+    <div class="store">
+      <!--
+        Le jour où l'appli est en ligne : remplacer ce <span> par
+        <a class="store-btn" href="https://play.google.com/store/apps/details?id=TON_PACKAGE">
+        (même contenu, sans le badge). Le style du lien est déjà prêt.
+      -->
+      <span class="store-btn" aria-disabled="true" aria-label="Google Play, bientôt disponible">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="6" y="2.5" width="12" height="19" rx="2.5"/>
+          <path d="M10.5 18.5h3"/>
+        </svg>
+        <span class="label">
+          <small>Télécharger sur</small>
+          <strong>Google Play</strong>
+        </span>
+        <span class="badge">Bientôt</span>
+      </span>
+    </div>
+
+  </main>
+
+  <footer>
+    © 2026 meloDrop<br>
+    Un projet de Maxime BERNIER.
+  </footer>
+
+</body>
+</html>

@@ -167,6 +167,100 @@
       box-shadow: 0 4px 14px rgba(185, 166, 255, 0.35);
     }
 
+    /* Lien vers le groupe WhatsApp des testeurs */
+    .testers {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .testers a {
+      display: inline-block;
+      color: var(--menthe);
+      font-weight: 600;
+      text-decoration: underline;
+      text-decoration-color: rgba(146, 230, 196, 0.4);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.2s;
+    }
+    .testers a:hover { text-decoration-color: var(--menthe); }
+
+    /* Diaporama */
+    .tour {
+      width: 100%;
+      margin-top: 80px;
+    }
+    .tour-title {
+      margin-bottom: 20px;
+      font-family: "Unbounded", system-ui, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    /* The track scrolls sideways, one slide at a time (scroll-snap) */
+    .tour-track {
+      position: relative;
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      border-radius: 18px;
+    }
+    .tour-track::-webkit-scrollbar { display: none; }
+    .tour-track:focus-visible { outline: 2px solid var(--lavande); outline-offset: 4px; }
+
+    .slide {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+    }
+    .slide a { display: block; }
+    .slide img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #121117;
+    }
+
+    .tour-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .tour-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    .tour-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .tour-btn:disabled { opacity: 0.3; cursor: default; }
+    .tour-count {
+      min-width: 3.5em;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Only useful on phones, where the slide text is small */
+    .tour-hint {
+      display: none;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
     footer {
       position: relative;
       z-index: 1;
@@ -178,10 +272,22 @@
 
     @media (max-width: 720px) {
       .logo { width: 80px; }
+      .tour { margin-top: 64px; }
+      .tour-track, .slide img { border-radius: 12px; }
+      .tour-hint { display: block; }
+    }
+
+    /* Petits écrans : on resserre un peu pour que tout tienne sur un écran */
+    @media (max-height: 700px) {
+      main { padding: 28px 16px 20px; }
+      .logo { width: 68px; margin-bottom: 14px; }
+      .store { margin-top: 26px; }
+      footer { padding: 12px 16px 20px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .aurora span { animation: none; }
+      .tour-track { scroll-behavior: auto; }
     }
   </style>
 </head>
@@ -253,12 +359,118 @@
       </span>
     </div>
 
+    <p class="testers">
+      Envie de tester l'appli avant sa sortie ?
+      <a href="https://chat.whatsapp.com/Dj7H72SprBACMKc4X1BQMz" target="_blank" rel="noopener">Rejoins les testeurs sur WhatsApp ›</a>
+    </p>
+
+    <!-- Diaporama : les images sont dans le dossier "slides" à côté de index.html -->
+    <section class="tour" aria-label="Présentation de l'appli">
+      <h2 class="tour-title">Comment ça marche</h2>
+
+      <div class="tour-track" tabindex="0">
+        <figure class="slide">
+          <a href="slides/pourquoi.webp" target="_blank">
+            <img src="slides/pourquoi.webp" width="1600" height="900"
+                 alt="Pourquoi meloDrop ? Sur les plateformes, un algorithme choisit pour toi à partir de ce que tu écoutes déjà. Sur meloDrop, chaque jour, une vraie personne partage un son qu'elle aime.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/trois-gestes.webp" target="_blank">
+            <img src="slides/trois-gestes.webp" width="1600" height="900" loading="lazy"
+                 alt="L'appli en trois gestes : dépose ta chanson du jour, découvre les drops des autres en swipant, garde ceux qui te plaisent dans Mes likes. Pas besoin de compte Spotify ou Deezer.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/compte.webp" target="_blank">
+            <img src="slides/compte.webp" width="1600" height="900" loading="lazy"
+                 alt="Crée ton compte : choisis un pseudo, ajoute ton e-mail et un mot de passe, valide ton adresse avec un code à 6 chiffres, puis connecte-toi.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/depose.webp" target="_blank">
+            <img src="slides/depose.webp" width="1600" height="900" loading="lazy"
+                 alt="Dépose ta chanson du jour : cherche un titre dans le catalogue Deezer et dépose-le. Il reste en ligne 24 heures, et tu suis les likes reçus et le temps restant.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/decouvre.webp" target="_blank">
+            <img src="slides/decouvre.webp" width="1600" height="900" loading="lazy"
+                 alt="Découvre les drops des autres : écoute un extrait de 30 secondes, glisse à droite pour garder le titre, à gauche pour le passer. Les drops arrivent au hasard, sans algorithme.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/likes.webp" target="_blank">
+            <img src="slides/likes.webp" width="1600" height="900" loading="lazy"
+                 alt="Retrouve tout dans Mes likes : chaque titre gardé, avec le pseudo de la personne qui l'a déposé. Tu peux réécouter l'extrait ou retirer le titre.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/profil.webp" target="_blank">
+            <img src="slides/profil.webp" width="1600" height="900" loading="lazy"
+                 alt="Un profil à ton image : tes compteurs, tes derniers drops et ton avatar, avec une couleur pastel et un style de goutte.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/ensuite.webp" target="_blank">
+            <img src="slides/ensuite.webp" width="1600" height="900" loading="lazy"
+                 alt="Et ensuite ? Social : chercher et suivre des profils. Profil : avatar plus perso, chansons de profil, le mot du drop. Stats : drop et genre du jour, badges à gagner.">
+          </a>
+        </figure>
+      </div>
+
+      <div class="tour-nav">
+        <button class="tour-btn" type="button" data-step="-1" aria-label="Slide précédente">‹</button>
+        <span class="tour-count" aria-live="polite">1 / 8</span>
+        <button class="tour-btn" type="button" data-step="1" aria-label="Slide suivante">›</button>
+      </div>
+      <p class="tour-hint">Touche une slide pour l'agrandir.</p>
+    </section>
+
   </main>
 
   <footer>
     © 2026 meloDrop<br>
     Un projet de Maxime BERNIER.
   </footer>
+
+  <script>
+    // Slideshow: arrows and "n / total" counter. Swipe and scroll work without this script.
+    const track = document.querySelector(".tour-track");
+    const slides = track.querySelectorAll(".slide");
+    const buttons = document.querySelectorAll(".tour-btn");
+    const count = document.querySelector(".tour-count");
+
+    // Index of the slide closest to the current scroll position
+    function currentIndex() {
+      let best = 0;
+      slides.forEach((slide, i) => {
+        if (Math.abs(slide.offsetLeft - track.scrollLeft) < Math.abs(slides[best].offsetLeft - track.scrollLeft)) {
+          best = i;
+        }
+      });
+      return best;
+    }
+
+    function update() {
+      const i = currentIndex();
+      count.textContent = `${i + 1} / ${slides.length}`;
+      buttons[0].disabled = i === 0;
+      buttons[1].disabled = i === slides.length - 1;
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const next = currentIndex() + Number(button.dataset.step);
+        if (next >= 0 && next < slides.length) {
+          track.scrollTo({ left: slides[next].offsetLeft });
+        }
+      });
+    });
+
+    track.addEventListener("scroll", () => requestAnimationFrame(update));
+    update();
+  </script>
 
 </body>
 </html>

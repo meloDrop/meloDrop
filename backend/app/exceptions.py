@@ -58,3 +58,9 @@ class OwnAccountError(Exception):
 
 class UsernameMismatchError(Exception):
     """Raised when the typed username does not match the account to delete."""
+
+class CoverNotAllowedError(Exception):
+    """Raised when a cover link does not point to the Deezer image servers."""
+
+class CoverNotFoundError(Exception):
+    """Raised when a Deezer cover can't be downloaded, or is not a small image."""

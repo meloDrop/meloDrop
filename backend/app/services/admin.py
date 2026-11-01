@@ -10,8 +10,10 @@ from app.exceptions import (
     UsernameMismatchError,
 )
 from app.models.user import User
+from app.schemas.profile import ProfileOut, ProfileUpdate
 from app.services.auth import delete_user
 from app.services.drops import get_active_drop
+from app.services.profile import update_profile
 
 
 def list_users(db: Session) -> list[User]:
@@ -47,6 +49,12 @@ def set_email(db: Session, user_id: int, new_email: str) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def update_user_profile(db: Session, user_id: int, changes: ProfileUpdate) -> ProfileOut:
+    """Change the display name or the avatar of a user, with the rules of PATCH /me/profile."""
+    user = find_user(db, user_id)
+    return update_profile(db, user, changes)
 
 
 def verify_email(db: Session, user_id: int) -> User:

@@ -19,6 +19,8 @@ class User(Base):
     # Avatar: a pastel background and a drop style, from closed lists
     avatar_color = Column(String(20), nullable=False, server_default="lavender")
     avatar_style = Column(String(20), nullable=False, server_default="simple")
+    # "user" for everyone, "admin" for the app owner
+    role = Column(String(20), nullable=False, server_default="user")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"), onupdate=func.now())
 

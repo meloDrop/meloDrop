@@ -14,7 +14,11 @@ from app.exceptions import (
 )
 from app.models.user import User
 from app.schemas import admin as schemas
+from app.schemas.profile import ProfileOut, ProfileUpdate
+
 from app.services import admin as services
+from app.services.admin_overview import get_overview
+from app.services.admin_user import get_user_detail
 
 # Every route needs an admin: 401 if not logged in, 403 if not admin
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(current_admin)])
@@ -28,6 +32,52 @@ router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(curren
 def list_users(db: Session = Depends(get_db)):
     """List every account, to find the id of the one to manage."""
     return services.list_users(db)
+
+@router.get(
+    "/overview",
+    responses={200: {"description": "Numbers of the overview tab of the dashboard"}},
+)
+def overview(db: Session = Depends(get_db)):
+    """Counters, curves, activity, drops online and users, for the dashboard."""
+    return get_overview(db)
+
+
+@router.get(
+    "/users/{user_id}",
+    responses={
+        200: {"description": "Everything about the user, for the Utilisateurs tab"},
+        404: {"description": "No user with this id"},
+    },
+)
+def user_detail(
+    user_id: int = Path(description="meloDrop user id (id in GET /admin/users)"),
+    db: Session = Depends(get_db),
+):
+    """Account, profile, counters, history and affinities of one user."""
+    try:
+        return get_user_detail(db, user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.patch(
+    "/users/{user_id}/profile",
+    response_model=ProfileOut,
+    responses={
+        200: {"description": "Display name or avatar changed"},
+        404: {"description": "No user with this id"},
+    },
+)
+def update_user_profile(
+    body: ProfileUpdate,
+    user_id: int = Path(description="meloDrop user id (id in GET /admin/users)"),
+    db: Session = Depends(get_db),
+):
+    """Change the display name or the avatar of a user, like PATCH /me/profile."""
+    try:
+        return services.update_user_profile(db, user_id, body)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.patch(

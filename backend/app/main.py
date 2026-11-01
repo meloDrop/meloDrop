@@ -76,3 +76,4 @@ app.include_router(profile.me_router)
 
 # Admin: actions on the accounts, admin role needed
 app.include_router(admin.router)
+app.include_router(admin.page_router)

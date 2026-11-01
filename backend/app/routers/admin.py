@@ -1,6 +1,9 @@
 """Routes of the admin module."""
 
+from pathlib import Path as FilePath
+
 from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,7 +18,6 @@ from app.exceptions import (
 from app.models.user import User
 from app.schemas import admin as schemas
 from app.schemas.profile import ProfileOut, ProfileUpdate
-
 from app.services import admin as services
 from app.services.admin_overview import get_overview
 from app.services.admin_user import get_user_detail
@@ -23,7 +25,36 @@ from app.services.admin_user import get_user_detail
 # Every route needs an admin: 401 if not logged in, 403 if not admin
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(current_admin)])
 
+page_router = APIRouter(prefix="/admin", include_in_schema=False)
 
+ADMIN_PAGE_DIR = FilePath(__file__).resolve().parent.parent / "static" / "admin"
+
+PAGE_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; "
+        "img-src 'self' data: blob: https://*.dzcdn.net; "
+        "media-src https://*.dzcdn.net; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    ),
+    "Referrer-Policy": "no-referrer",
+    "Cache-Control": "no-store",
+}
+
+
+@page_router.get("")
+def admin_page():
+    """The admin dashboard: a login screen, then the tabs."""
+    return FileResponse(ADMIN_PAGE_DIR / "index.html", headers=PAGE_HEADERS)
+
+
+@page_router.get("/login-background.png")
+def login_background():
+    """Background image of the login screen, the same as in the app."""
+    return FileResponse(ADMIN_PAGE_DIR / "login-background.png")
 @router.get(
     "/users",
     response_model=list[schemas.AdminUserOut],

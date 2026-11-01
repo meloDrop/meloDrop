@@ -566,6 +566,9 @@
   }
   /* ---------- Phone: one column, bigger text and buttons, tabs at the bottom ---------- */
   .phone-only { display: none !important; }
+  .tab-icon, .tab-short { display: none; }
+  .tab-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .catalog-detail { scroll-margin-top: calc(var(--header-h, 70px) + 12px); }
   .btn-icon { display: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   .source { white-space: nowrap; }
   .back-link, .users-link { color: var(--lavender); font-weight: 600; text-decoration: none; }
@@ -594,7 +597,11 @@
       padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
       background: rgb(12 12 16 / .92); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
     }
-    .tabs a { flex: 1; text-align: center; font-size: 14px; padding: 14px 8px; }
+    .tabs a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 11px; padding: 8px 2px; border-radius: 12px; }
+    .tab-icon { display: block; }
+    .tab-long { display: none; }
+    .tab-short { display: inline; }
     /* Bigger text and touch targets (44 px is the size of a finger) */
     h2 { font-size: 16px; }
     .card { padding: 14px; border-radius: 16px; }
@@ -622,6 +629,21 @@
     table.stack td:first-child { grid-column: 1 / -1; }
     table.stack td:not(:first-child)::before { content: attr(data-label); display: block; color: var(--muted); font-size: 12px; }
     table.stack .rate { justify-content: flex-start; }
+    table.stack td { min-width: 0; overflow-wrap: anywhere; }
+    table.stack td.rank-cell { display: none; }
+    table.stack td.title-cell { grid-column: 1 / -1; }
+    table.stack tr.drop-row.open { background: rgb(255 255 255 / .04); border-radius: 12px; }
+    table.stack tr.drop-detail td { grid-column: 1 / -1; padding: 12px; border-radius: 12px; }
+    .phone-only.sort-menu { display: flex !important; align-items: center; gap: 8px; margin: 0 0 4px; }
+    .sort-menu select { flex: 1; min-width: 0; }
+    .sort-menu button { flex: none; width: 44px; }
+    /* Filters: two per line, the search on its own line */
+    .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .filters .field.grow, .filters > form { grid-column: 1 / -1; }
+    .filters select, .filters input { width: 100%; }
+    .catalog-form { flex-wrap: wrap; }
+    .catalog-form button { flex: 1; min-height: 44px; }
+    .recap-buttons button { min-height: 40px; }
     /* Users tab: the list, then one user on the whole screen with a way back */
     body.user-open .user-picker { display: none; }
     body:not(.user-open) .user-pane { display: none; }
@@ -671,8 +693,12 @@
     </div>
     <span id="source" class="source" hidden></span>
     <nav class="tabs" id="tabs" hidden>
-      <a href="#overview" data-tab="overview">Vue d'ensemble</a>
-      <a href="#users" data-tab="users">Utilisateurs</a>
+      <a href="#overview" data-tab="overview"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8.5a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z"/></svg><span class="tab-long">Vue d'ensemble</span><span class="tab-short">Accueil</span></a>
+      <a href="#drops" data-tab="drops"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-3.2 4.2-6 7.3-6 10.8a6 6 0 0 0 12 0C18 10.3 15.2 7.2 12 3z"/></svg><span class="tab-long">Drops</span><span class="tab-short">Drops</span></a>
+      <a href="#songs" data-tab="songs"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span class="tab-long">Sons</span><span class="tab-short">Sons</span></a>
+      <a href="#catalog" data-tab="catalog"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="tab-long">Catalogue</span><span class="tab-short">Deezer</span></a>
+      <a href="#users" data-tab="users"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-long">Utilisateurs</span><span class="tab-short">Comptes</span></a>
+      <a href="#recap" data-tab="recap"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg><span class="tab-long">Récap</span><span class="tab-short">Récap</span></a>
     </nav>
     <div class="status" id="status" hidden>
       <span id="updated">Chargement…</span>
@@ -742,7 +768,7 @@
 
     <section class="card table-card">
       <h2>Drops en ligne</h2>
-      <p class="subtitle">Les plus likés en premier</p>
+      <p class="subtitle">Les plus likés en premier · <a class="user-link" href="#drops">voir tous les drops</a></p>
       <div class="table-wrap" id="online"></div>
     </section>
 
@@ -806,6 +832,7 @@
         <button type="button" data-format="portrait">Portrait</button>
       </div>
       <div class="recap-buttons">
+        <button type="button" id="recap-share" class="small" hidden>Partager</button>
         <button type="button" id="recap-copy-image" class="small">Copier l'image</button>
         <button type="button" id="recap-download" class="ghost small">Télécharger l'image</button>
         <button type="button" id="recap-copy" class="ghost small">Copier le message</button>
@@ -898,8 +925,8 @@ const REFRESH_SECONDS = 20;
 
 // The token is kept in sessionStorage: it survives a refresh, and is gone when the tab closes
 const TOKEN_KEY = "melodrop_admin_token";
-// Tabs open in production; Drops, Sons, Catalogue and Récap come in the next version
-const ENABLED_TABS = ["overview", "users"];
+// Tabs open in production: everything but Logs, which stays in the local dashboard
+const ENABLED_TABS = ["overview", "drops", "songs", "catalog", "users", "recap"];
 
 // Error codes of the API (the "detail" field), as messages for the admin
 const ERROR_MESSAGES = {
@@ -918,6 +945,9 @@ const ERROR_MESSAGES = {
   track_not_found: "Ce titre n'est plus sur Deezer.",
   deezer_error: "Deezer ne répond pas pour le moment.",
   validation_error: "Valeur refusée : vérifie ce que tu as tapé.",
+  deezer_unavailable: "Deezer ne répond pas pour le moment.",
+  cover_not_allowed: "Cette pochette ne vient pas de Deezer.",
+  cover_not_found: "Pochette introuvable sur Deezer.",
 };
 
 // Series of the daily chart, in this order (checked for color blindness)
@@ -1080,7 +1110,7 @@ function dayKey(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-// UTC hour of a date, written like the keys sent by dashboard_data.py
+// UTC hour of a date, written like the keys sent by the API
 function hourKey(date) {
   return date.toISOString().slice(0, 13) + ":00:00Z";
 }
@@ -1827,8 +1857,8 @@ function avatar(color, style, size) {
 
 function cover(url, className = "") {
   const empty = () => el("span", { className: `cover ${className}` });
-  // A Deezer link, or the same image through dashboard.py (/cover?url=...)
-  if (!url || !(url.startsWith("https://") || url.startsWith("/cover?"))) return empty();
+  // A Deezer link, or the same image downloaded through the API (blob: link)
+  if (!url || !(url.startsWith("https://") || url.startsWith("blob:"))) return empty();
   const image = Object.assign(el("img"), { src: url, alt: "", loading: "lazy", className });
   image.addEventListener("error", () => image.replaceWith(empty()));
   return image;
@@ -2271,6 +2301,36 @@ function headerRow(columns, sort, onSort) {
   }));
 }
 
+// On a phone the header of the table is hidden: this menu sorts instead
+function sortMenu(columns, sort, onSort) {
+  const select = el("select");
+  select.setAttribute("aria-label", "Trier par");
+  for (const [key, title, sortable] of columns) {
+    if (sortable) select.append(Object.assign(el("option", { text: title }), { value: key }));
+  }
+  select.value = sort.key;
+  select.addEventListener("change", () => onSort({ key: select.value, dir: "desc" }));
+  const flip = actionButton(sort.dir === "desc" ? "↓" : "↑", "ghost small",
+    () => onSort({ key: sort.key, dir: sort.dir === "desc" ? "asc" : "desc" }));
+  flip.setAttribute("aria-label", sort.dir === "desc" ? "Du plus grand au plus petit" : "Du plus petit au plus grand");
+  return el("div", { className: "sort-menu phone-only" }, [el("span", { className: "muted", text: "Trier par" }), select, flip]);
+}
+
+// Sortable table that turns into cards on a phone, each value with the name of its column
+function stackTable(columns, sort, onSort, rows) {
+  rows.forEach((row) => {
+    if (row.classList.contains("drop-detail")) return;
+    [...row.children].forEach((cell, i) => {
+      const [key, title] = columns[i];
+      if (key === "rank") cell.classList.add("rank-cell");
+      else if (key === "title") cell.classList.add("title-cell");
+      else cell.dataset.label = title;
+    });
+  });
+  const table = el("table", { className: "stack" }, [el("thead", {}, [headerRow(columns, sort, onSort)]), el("tbody", {}, rows)]);
+  return [sortMenu(columns, sort, onSort), table];
+}
+
 const NUMBER_COLUMNS = new Set(["rank", "drops", "saves", "skips", "swipes", "rate", "in_likes"]);
 
 function rateCell(saves, skips) {
@@ -2326,10 +2386,6 @@ function perItem(total, count) {
   return count ? (total / count).toFixed(1).replace(".", ",") : "0";
 }
 
-async function getJson(url) {
-  return api(url);
-}
-
 // ---------- Drops tab ----------
 
 let dropsData = null;
@@ -2346,7 +2402,7 @@ const DROP_COLUMNS = [
 
 async function loadDrops() {
   try {
-    const data = await getJson("/drops");
+    const data = await api("/admin/drops");
     if (!data) return;
     dropsData = data.drops;
     fillGenres(document.getElementById("drop-genre"), dropsData);
@@ -2446,7 +2502,7 @@ function renderDrops() {
   } else {
     const onSort = (sort) => { dropSort = sort; dropLimit = 100; renderDrops(); };
     const body = rows.slice(0, dropLimit).flatMap((d, i) => dropRow(d, i + 1));
-    box.replaceChildren(el("table", {}, [el("thead", {}, [headerRow(DROP_COLUMNS, dropSort, onSort)]), el("tbody", {}, body)]));
+    box.replaceChildren(...stackTable(DROP_COLUMNS, dropSort, onSort, body));
   }
   const more = document.getElementById("drops-more");
   more.hidden = rows.length <= dropLimit;
@@ -2455,7 +2511,7 @@ function renderDrops() {
 
 async function loadDropSwipes(dropId) {
   try {
-    const data = await getJson(`/drop?id=${dropId}`);
+    const data = await api(`/admin/drops/${dropId}/swipes`);
     const cell = document.getElementById("drop-detail");
     if (!data || !cell || openDropId !== dropId) return;
     const drop = dropsData.find((d) => d.drop_id === dropId);
@@ -2513,7 +2569,7 @@ const SONG_COLUMNS = [
 
 async function loadSongs() {
   try {
-    const data = await getJson("/songs");
+    const data = await api("/admin/songs");
     if (!data) return;
     songsData = data.songs;
     fillGenres(document.getElementById("song-genre"), songsData);
@@ -2581,7 +2637,7 @@ function renderSongs() {
   } else {
     const onSort = (sort) => { songSort = sort; songLimit = 100; renderSongs(); };
     const body = rows.slice(0, songLimit).map((s, i) => songRow(s, i + 1));
-    box.replaceChildren(el("table", {}, [el("thead", {}, [headerRow(SONG_COLUMNS, songSort, onSort)]), el("tbody", {}, body)]));
+    box.replaceChildren(...stackTable(SONG_COLUMNS, songSort, onSort, body));
   }
   const more = document.getElementById("songs-more");
   more.hidden = rows.length <= songLimit;
@@ -2668,7 +2724,7 @@ async function togglePreview(song) {
   loadingKey = playKey(song);
   updatePlayer();
   try {
-    // A track of the catalog brings its own link; a song of the base asks /song
+    // A track of the catalog brings its own link; a song of the base asks /songs/{id}/preview
     const url = song.getPreview ? await song.getPreview() : await previewLink(song.song_id);
     // Another song was chosen in the meantime
     if (!playingSong || playKey(playingSong) !== playKey(song)) return;
@@ -2729,9 +2785,7 @@ function catalogSong(track, fetchedAt) {
     cover_url: track.cover_url,
     getPreview: async () => {
       if (Date.now() - fetchedAt < CATALOG_PREVIEW_MS) return track.preview_url;
-      const data = await getJson(`/catalog?track=${track.deezer_track_id}`);
-      if (!data) return null;
-      if (data.error) throw new Error(data.error);
+      const data = await api(`/admin/catalog/${track.deezer_track_id}`);
       return data.track.preview_url;
     },
   };
@@ -2751,9 +2805,8 @@ async function searchCatalog(text) {
   if (id) return openCatalogTrack(id);
   box.classList.add("loading");
   try {
-    const data = await getJson(`/catalog?q=${encodeURIComponent(text)}`);
-    if (!data || request !== catalogRequest) return;
-    if (data.error) throw new Error(data.error);
+    const data = await api(`/admin/catalog?q=${encodeURIComponent(text)}`);
+    if (request !== catalogRequest) return;
     const fetchedAt = Date.now();
     catalogResults = data.results.map((track) => ({ ...track, fetchedAt }));
     renderCatalogResults(data.query);
@@ -2802,13 +2855,11 @@ async function openCatalogTrack(trackId) {
   panel.hidden = false;
   panel.classList.add("loading");
   try {
-    const data = await getJson(`/catalog?track=${trackId}`);
-    if (!data || catalogTrackId !== trackId) return;
-    if (data.error) {
-      panel.replaceChildren(el("p", { className: "empty", text: data.error }));
-      return;
-    }
+    const data = await api(`/admin/catalog/${trackId}`);
+    if (catalogTrackId !== trackId) return;
     renderCatalogTrack(data, Date.now());
+    // On a phone the track is under the results: scroll down to it
+    if (matchMedia("(max-width: 900px)").matches) panel.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     panel.replaceChildren(el("p", { className: "empty", text: error.message }));
   } finally {
@@ -2943,8 +2994,9 @@ async function loadRecap() {
   const card = document.getElementById("recap-card");
   card.classList.add("loading");
   try {
-    const data = await getJson(`/stats?days=${recapDays}`);
-    if (!data || request !== recapRequest) return;
+    const data = await api(`/admin/recap?days=${recapDays}`);
+    await loadRecapCovers(data);
+    if (request !== recapRequest) return;
     recapData = data;
     renderRecap();
   } catch (error) {
@@ -2956,9 +3008,28 @@ async function loadRecap() {
 
 // ---- Pieces of the card ----
 
-// Deezer cover through dashboard.py: the image of the card can then include it
-function coverThroughDashboard(url) {
-  return url && url.startsWith("https://") ? `/cover?url=${encodeURIComponent(url)}` : null;
+// Covers of the card, downloaded through the API: a picture can only include
+// images of its own site, and blob: links count as such
+const recapCovers = new Map();
+
+async function loadRecapCovers(data) {
+  const urls = [...data.podium, data.tube, data.unanimity]
+    .map((drop) => drop?.cover_url)
+    .filter((url) => url && url.startsWith("https://") && !recapCovers.has(url));
+  await Promise.all(urls.map(async (url) => {
+    try {
+      const response = await fetch(`/admin/cover?url=${encodeURIComponent(url)}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (response.ok) recapCovers.set(url, URL.createObjectURL(await response.blob()));
+    } catch {
+      // Not downloaded: the card shows the Deezer link, without it in the picture
+    }
+  }));
+}
+
+function recapCover(url) {
+  return recapCovers.get(url) || url;
 }
 
 function rcSection(title, children) {
@@ -2974,7 +3045,7 @@ function rcDropRow(drop, side, rank, showAuthor = true) {
   const row = el("div", { className: "rc-row" });
   if (rank) row.append(el("span", { className: `rc-rank r${rank}`, text: rank }));
   row.append(
-    cover(coverThroughDashboard(drop.cover_url), "rc-cover"),
+    cover(recapCover(drop.cover_url), "rc-cover"),
     el("div", { className: "rc-what" }, [
       el("b", { text: drop.title }),
       el("small", {}, showAuthor ? [`${drop.artist} · par `, rcName(drop.author)] : [drop.artist]),
@@ -3253,6 +3324,23 @@ document.getElementById("recap-copy-image").addEventListener("click", (event) =>
   // The image is promised right away: the browser keeps the right to write in the clipboard
   await navigator.clipboard.write([new ClipboardItem({ "image/png": recapImage() })]);
   showToast("Image copiée : colle-la dans le groupe des testeurs (Ctrl+V).", true);
+}));
+
+// Only shown when the browser can share an image (phones, mostly)
+const shareButton = document.getElementById("recap-share");
+try {
+  shareButton.hidden = !navigator.canShare?.({ files: [new File([""], "test.png", { type: "image/png" })] });
+} catch {
+  shareButton.hidden = true;
+}
+shareButton.addEventListener("click", (event) => withBusy(event.target, async () => {
+  const file = new File([await recapImage()], recapFileName(), { type: "image/png" });
+  try {
+    await navigator.share({ files: [file], title: `meloDrop · ${RECAP_TITLES[recapDays]}` });
+  } catch (error) {
+    // Closed without choosing an app: nothing to say
+    if (error.name !== "AbortError") throw error;
+  }
 }));
 
 document.getElementById("recap-copy").addEventListener("click", async () => {

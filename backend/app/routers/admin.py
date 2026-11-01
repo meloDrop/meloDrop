@@ -1,16 +1,21 @@
 """Routes of the admin module."""
 
 from pathlib import Path as FilePath
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import current_admin
 from app.exceptions import (
+    CoverNotAllowedError,
+    CoverNotFoundError,
+    DeezerError,
     DropNotFoundError,
     OwnAccountError,
+    TrackNotFoundError,
     UserAlreadyExistsError,
     UserNotFoundError,
     UsernameMismatchError,
@@ -19,7 +24,12 @@ from app.models.user import User
 from app.schemas import admin as schemas
 from app.schemas.profile import ProfileOut, ProfileUpdate
 from app.services import admin as services
+from app.services.admin_catalog import get_catalog_track, search_catalog
+from app.services.admin_cover import get_cover
+from app.services.admin_drops import get_drop_swipes, get_drops
 from app.services.admin_overview import get_overview
+from app.services.admin_recap import get_recap
+from app.services.admin_songs import get_songs
 from app.services.admin_user import get_user_detail
 
 # Every route needs an admin: 401 if not logged in, 403 if not admin
@@ -197,3 +207,103 @@ def delete_account(
         raise HTTPException(status_code=403, detail=str(e))
     except UsernameMismatchError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get(
+    "/drops",
+    responses={200: {"description": "Every drop, the newest first, for the Drops tab"}},
+)
+def drops(db: Session = Depends(get_db)):
+    """Every drop with its song, its author, its likes and skips."""
+    return get_drops(db)
+
+
+@router.get(
+    "/drops/{drop_id}/swipes",
+    responses={200: {"description": "Who liked or skipped the drop (empty for an unknown drop)"}},
+)
+def drop_swipes(
+    drop_id: int = Path(description="meloDrop drop id (drop_id in GET /admin/drops)"),
+    db: Session = Depends(get_db),
+):
+    """Who liked or skipped one drop, the most recent first."""
+    return get_drop_swipes(db, drop_id)
+
+
+@router.get(
+    "/songs",
+    responses={200: {"description": "Every song stored in meloDrop, for the Sons tab"}},
+)
+def songs(db: Session = Depends(get_db)):
+    """Every song with its drops, likes, skips and place in "Mes likes"."""
+    return get_songs(db)
+
+
+@router.get(
+    "/catalog",
+    responses={
+        200: {"description": "Tracks found on Deezer, with those already in meloDrop"},
+        502: {"description": "Deezer returned an error or did not answer"},
+    },
+)
+def catalog_search(
+    q: str = Query(min_length=1, max_length=100, description="Same search as the app"),
+    db: Session = Depends(get_db),
+):
+    """Search tracks on Deezer, like the app, with the meloDrop counters."""
+    try:
+        return search_catalog(db, q)
+    except DeezerError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get(
+    "/catalog/{track_id}",
+    responses={
+        200: {"description": "Everything about the Deezer track"},
+        404: {"description": "No Deezer track with this id"},
+        502: {"description": "Deezer returned an error or did not answer"},
+    },
+)
+def catalog_track(
+    track_id: int = Path(description="Deezer track id"),
+    db: Session = Depends(get_db),
+):
+    """One Deezer track, and what meloDrop would store at its first drop."""
+    try:
+        return get_catalog_track(db, track_id)
+    except TrackNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except DeezerError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get(
+    "/recap",
+    responses={200: {"description": "Stats of the period, to share with the testers"}},
+)
+def recap(
+    days: Literal["1", "7", "30", "all"] = Query("7", description="1, 7 or 30 days, or all since the start"),
+    db: Session = Depends(get_db),
+):
+    """Podium, rankings and totals of a period, without any email."""
+    return get_recap(db, None if days == "all" else int(days))
+
+
+@router.get(
+    "/cover",
+    response_class=Response,
+    responses={
+        200: {"description": "The Deezer cover image", "content": {"image/jpeg": {}}},
+        400: {"description": "Not a link to the Deezer image servers"},
+        404: {"description": "Cover not found on Deezer, or too big"},
+    },
+)
+def cover(url: str = Query(description="Deezer cover link (cover_url)")):
+    """A Deezer cover sent through the API, for the image of the Récap card."""
+    try:
+        content_type, body = get_cover(url)
+    except CoverNotAllowedError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except CoverNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return Response(content=body, media_type=content_type, headers={"Cache-Control": "private, max-age=86400"})

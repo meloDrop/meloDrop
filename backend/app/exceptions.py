@@ -50,3 +50,11 @@ class SkipNotFoundError(Exception):
 
 class UserNotFoundError(Exception):
     """Raised when no user has this id."""
+
+# Admin actions
+
+class OwnAccountError(Exception):
+    """Raised when the admin tries to delete their own account from the admin routes."""
+
+class UsernameMismatchError(Exception):
+    """Raised when the typed username does not match the account to delete."""

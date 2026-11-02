@@ -1,6 +1,7 @@
 package com.app.melodrop.data
 
 import com.app.melodrop.network.RetrofitClient
+import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.ProfileUpdate
 
@@ -17,6 +18,12 @@ class ProfileRepository {
 
     // Another user's profile, opened from a drop or from the search
     suspend fun getProfile(userId: Int): ProfileOut = api.getProfile(userId)
+
+    // All the logged-in user's drops, for "Mes drops": GET /me gives the id, then the drops route
+    suspend fun getMyDrops(): List<ProfileDropOut> {
+        val me = api.getMe()
+        return api.getUserDrops(me.id)
+    }
 
 
     // Saves the display name and the avatar, and gives back the updated profile

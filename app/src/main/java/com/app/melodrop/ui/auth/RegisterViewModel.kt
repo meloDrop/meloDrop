@@ -56,6 +56,8 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
         uiState = RegisterUiState()
     }
 }
+// Same rule as the backend: letters without accents, digits, _ and -
+private val USERNAME_REGEX = Regex("^[A-Za-z0-9_-]+$")
 
 // Returns the first problem in the fields, or null if they are valid
 private fun checkFields(
@@ -65,7 +67,8 @@ private fun checkFields(
     confirmPassword: String,
 ): String? = when {
     username.length !in 3..30 -> "Le pseudo doit faire entre 3 et 30 caractères."
-    '@' in username -> "Le pseudo ne peut pas contenir de @."
+    !USERNAME_REGEX.matches(username) ->
+        "Le pseudo ne peut contenir que des lettres sans accent, des chiffres, _ et -."
     !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "L'adresse e-mail n'est pas valide."
     password.length !in 8..128 -> "Le mot de passe doit faire entre 8 et 128 caractères."
     password.none { it.isDigit() } -> "Le mot de passe doit contenir au moins un chiffre."

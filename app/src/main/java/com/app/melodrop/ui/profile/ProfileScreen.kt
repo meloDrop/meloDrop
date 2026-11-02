@@ -76,6 +76,8 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    // Tap on the "drops" counter: opens "Mes drops"
+    onDropsClick: () -> Unit,
     // Tap on "Mes skips": opens the list of the skipped songs
     onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
@@ -102,6 +104,7 @@ fun ProfileScreen(
         onLogout = onLogout,
         onEditProfile = onEditProfile,
         onLikesClick = onLikesClick,
+        onDropsClick = onDropsClick,
         onSkipsClick = onSkipsClick,
         onAccountClick = onAccountClick,
         onPlayClick = viewModel::togglePreview,
@@ -116,6 +119,7 @@ private fun ProfileContent(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onDropsClick: () -> Unit,
     onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
     // Tap on a cover: plays or pauses its preview
@@ -138,6 +142,7 @@ private fun ProfileContent(
                 onLogout = onLogout,
                 onEditProfile = onEditProfile,
                 onLikesClick = onLikesClick,
+                onDropsClick = onDropsClick,
                 onSkipsClick = onSkipsClick,
                 onAccountClick = onAccountClick,
                 playingDropId = uiState.playingDropId,
@@ -166,6 +171,7 @@ private fun ProfileBody(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onDropsClick: () -> Unit,
     onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
     playingDropId: Int?,
@@ -194,7 +200,11 @@ private fun ProfileBody(
 
         // No gap inside: the link stays close to the counters
         Column {
-            StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
+            StatsRow(
+                stats = profile.stats,
+                onLikesClick = onLikesClick,
+                onDropsClick = onDropsClick,
+            )
 
             // Discreet link under "titres likés", on the user's own profile only
             TextButton(
@@ -360,19 +370,38 @@ private fun ProfileMenu(
 }
 
 // Three tiles side by side, with the same width. On the user's own profile,
-// the last one opens "Mes likes". Shared with UserProfileScreen
+// the first one opens "Mes drops" and the last one "Mes likes". Shared with UserProfileScreen
 @Composable
-internal fun StatsRow(stats: StatsOut, onLikesClick: (() -> Unit)? = null) {
+internal fun StatsRow(
+    stats: StatsOut,
+    onLikesClick: (() -> Unit)? = null,
+    onDropsClick: (() -> Unit)? = null,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CounterTile(
-            value = stats.dropsCount,
-            label = if (stats.dropsCount <= 1) "drop" else "drops",
-            color = Butter,
-            modifier = Modifier.weight(1f),
-        )
+        val dropsLabel = if (stats.dropsCount <= 1) "drop" else "drops"
+        if (onDropsClick != null) {
+            CounterTile(
+                value = stats.dropsCount,
+                // The arrow shows that the tile can be tapped
+                label = "$dropsLabel ›",
+                color = Butter,
+                modifier = Modifier
+                    .weight(1f)
+                    // Clip first, so the ripple of the tap keeps the round corners
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClick = onDropsClick),
+            )
+        } else {
+            CounterTile(
+                value = stats.dropsCount,
+                label = dropsLabel,
+                color = Butter,
+                modifier = Modifier.weight(1f),
+            )
+        }
         CounterTile(
             value = stats.likesReceived,
             label = if (stats.likesReceived <= 1) "like reçu" else "likes reçus",
@@ -619,6 +648,7 @@ private fun ProfileScreenPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onDropsClick = {},
             onSkipsClick = {},
             onAccountClick = {},
             onPlayClick = {},
@@ -636,6 +666,7 @@ private fun ProfileErrorPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onDropsClick = {},
             onSkipsClick = {},
             onAccountClick = {},
             onPlayClick = {},

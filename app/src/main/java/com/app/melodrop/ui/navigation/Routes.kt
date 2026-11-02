@@ -19,6 +19,8 @@ object Routes {
     const val EDIT_PROFILE = "edit_profile"
     const val LIKES = "likes"
     const val ACCOUNT = "account"
+    // All the user's drops, opened from the "drops" counter
+    const val MY_DROPS = "my_drops"
 
     // Opened from "Mes likes"
     const val SKIPS = "skips"

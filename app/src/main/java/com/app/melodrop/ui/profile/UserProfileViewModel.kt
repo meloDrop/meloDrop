@@ -120,4 +120,13 @@ class UserProfileViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-// Leaving the screen or the app: the music
+    // Leaving the screen or the app: the music must stop
+    fun pausePreview() {
+        player.pause()
+    }
+
+    // The ViewModel is destroyed (the profile is closed): free the player
+    override fun onCleared() {
+        player.release()
+    }
+}

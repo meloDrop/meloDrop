@@ -14,6 +14,7 @@ import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.PreviewOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.network.dto.ProfileOut
+import com.app.melodrop.network.dto.ProfileDropOut
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -95,6 +96,10 @@ interface ApiService {
     // A user's profile: counters, drop of the day and last drops (ADR-0018)
     @GET("users/{user_id}/profile")
     suspend fun getProfile(@Path("user_id") userId: Int): ProfileOut
+
+    // All the drops of a user, the drop of the day included, the most recent first
+    @GET("users/{user_id}/drops")
+    suspend fun getUserDrops(@Path("user_id") userId: Int): List<ProfileDropOut>
 
     // Changes the logged-in user's profile, sends back the updated profile
     @PATCH("me/profile")

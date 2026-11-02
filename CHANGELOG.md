@@ -2,6 +2,19 @@
 
 All notable changes to Melodrop are documented in this file.
 
+## [0.5.0] - 2026-11-02
+
+### Added
+- User search: a magnifying glass at the top right of Discover, to find another user by the start of their @username and open their profile.
+- Play button on every song of a profile (the drop of the day and the last drops), on your own profile and on the others'.
+- "Mes drops" screen: all your drops, the most recent first, with their preview. It opens from the "drops" counter of the profile.
+- Backend: `GET /users/search` and `GET /users/{user_id}/drops` routes.
+
+### Changed
+- The drop notification is now sent when the drop expires, with a new text: "Ton drop a expiré, dépose ta prochaine chanson !". It stays until the user taps or swipes it.
+- Sign-up: the username can only contain letters without accents, digits, `_` and `-`. A hint under the field gives the rule, and the keyboard no longer adds accents.
+
+
 ## [0.4.1] - 2026-10-29
 
 ### Changed
@@ -14,8 +27,8 @@ All notable changes to Melodrop are documented in this file.
 ### Added
 - "Mes skips" screen: the songs skipped in the last 7 days, with their preview, their author and whether their drop is still online.
 - Heart button to rescue a skipped song into "Mes likes":
-    - drop still online: the author gets a like;
-    - drop expired: no like for the author, and the song shows "Récupéré dans les skips" in "Mes likes".
+  - drop still online: the author gets a like;
+  - drop expired: no like for the author, and the song shows "Récupéré dans les skips" in "Mes likes".
 - "Mes skips ›" button at the top of "Mes likes".
 - Backend: `GET /me/skips` and `POST /me/skips/{drop_id}/rescue` routes, new `liked_late` column in `liked_songs` (Alembic migration).
 - Demo data: three skips on expired drops for the `litoxam` account.
@@ -67,29 +80,29 @@ First release of Melodrop, sent to the first testers.
 
 ### Added
 - Account
-    - Sign-up with a username, an email and a password (at least 8 characters, a digit and a special character).
-    - Email confirmed with a 6-digit code sent by email.
-    - Login with the username or the email.
-    - Forgotten password: a code sent by email to choose a new one.
+  - Sign-up with a username, an email and a password (at least 8 characters, a digit and a special character).
+  - Email confirmed with a 6-digit code sent by email.
+  - Login with the username or the email.
+  - Forgotten password: a code sent by email to choose a new one.
 - Discover
-    - Random feed of the drops of the day from the other users.
-    - Swipe right to like a drop, left to skip it.
-    - 30-second preview of each song.
-    - Genre of the song, taken from its Deezer album.
-    - Tap on the author to open their profile.
-    - "Plus de drop à découvrir" message once everything has been seen.
+  - Random feed of the drops of the day from the other users.
+  - Swipe right to like a drop, left to skip it.
+  - 30-second preview of each song.
+  - Genre of the song, taken from its Deezer album.
+  - Tap on the author to open their profile.
+  - "Plus de drop à découvrir" message once everything has been seen.
 - Drop
-    - Search for a song on Deezer by title or artist.
-    - One drop at a time, online for 24 hours from the moment it is dropped.
-    - "Ton drop du jour": the current drop, its preview, its likes and the time left.
+  - Search for a song on Deezer by title or artist.
+  - One drop at a time, online for 24 hours from the moment it is dropped.
+  - "Ton drop du jour": the current drop, its preview, its likes and the time left.
 - Mes likes
-    - The liked songs, with their preview and their author.
-    - Remove a song from the list.
+  - The liked songs, with their preview and their author.
+  - Remove a song from the list.
 - Profile
-    - Counters: drops, likes received, songs liked.
-    - Last drops, with the drop of the day marked "EN LIGNE".
-    - Public display name and avatar (pastel color and drop style).
-    - Profile of the other users.
+  - Counters: drops, likes received, songs liked.
+  - Last drops, with the drop of the day marked "EN LIGNE".
+  - Public display name and avatar (pastel color and drop style).
+  - Profile of the other users.
 - Account settings: change the email (confirmed with a code sent to the new address), change the password, log out, delete the account.
 - Visual identity: dark theme with pastel colors, light halos that move between the tabs, water ripple animation on the login screen.
 - Backend: FastAPI and MySQL, hosted on Scaleway at api.melodrop-app.com, database schema managed with Alembic migrations.

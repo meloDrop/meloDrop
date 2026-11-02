@@ -2,6 +2,19 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.5.0] - 02-11-2026
+
+### Ajouté
+- Recherche d'utilisateurs : une loupe en haut à droite de Discover, pour retrouver un autre utilisateur par le début de son @pseudo et ouvrir son profil.
+- Bouton lecture sur chaque titre d'un profil (drop du jour et derniers drops), sur son propre profil comme sur celui des autres.
+- Écran « Mes drops » : tous tes drops, du plus récent au plus ancien, avec leur extrait. Il s'ouvre depuis le compteur « drops » du profil.
+- Backend : routes `GET /users/search` et `GET /users/{user_id}/drops`.
+
+### Modifié
+- La notification de drop est maintenant envoyée à l'expiration du drop, avec un nouveau texte : « Ton drop a expiré, dépose ta prochaine chanson ! ». Elle reste affichée jusqu'à ce que l'utilisateur la touche ou la balaie.
+- Inscription : le pseudo ne peut contenir que des lettres sans accent, des chiffres, `_` et `-`. Un texte d'aide sous le champ rappelle la règle, et le clavier n'ajoute plus d'accents.
+
+
 ## [0.4.1] - 29-10-2026
 
 ### Modifié
@@ -14,8 +27,8 @@ Toutes les modifications notables apportées à Melodrop sont documentées dans 
 ### Ajouté
 - Écran « Mes skips » : les morceaux ignorés au cours des 7 derniers jours, avec leur extrait, leur auteur et l'indication si leur drop est toujours en ligne.
 - Bouton cœur pour récupérer un morceau ignoré dans « Mes likes » :
-    - drop toujours en ligne : l'auteur reçoit un like ;
-    - drop expiré : pas de like pour l'auteur, et le morceau affiche « Récupéré dans les skips » dans « Mes likes ».
+  - drop toujours en ligne : l'auteur reçoit un like ;
+  - drop expiré : pas de like pour l'auteur, et le morceau affiche « Récupéré dans les skips » dans « Mes likes ».
 - Bouton « Mes skips › » en haut de « Mes likes ».
 - Backend : routes `GET /me/skips` et `POST /me/skips/{drop_id}/rescue`, nouvelle colonne `liked_late` dans `liked_songs` (migration Alembic).
 - Données de démonstration : trois skips sur des drops expirés pour le compte `litoxam`.
@@ -67,29 +80,29 @@ Première version de Melodrop, envoyée aux premiers testeurs.
 
 ### Ajouté
 - Compte
-    - Inscription avec un nom d'utilisateur, un e-mail et un mot de passe (au moins 8 caractères, un chiffre et un caractère spécial).
-    - E-mail confirmé avec un code à 6 chiffres envoyé par e-mail.
-    - Connexion avec le nom d'utilisateur ou l'e-mail.
-    - Mot de passe oublié : un code envoyé par e-mail pour en choisir un nouveau.
+  - Inscription avec un nom d'utilisateur, un e-mail et un mot de passe (au moins 8 caractères, un chiffre et un caractère spécial).
+  - E-mail confirmé avec un code à 6 chiffres envoyé par e-mail.
+  - Connexion avec le nom d'utilisateur ou l'e-mail.
+  - Mot de passe oublié : un code envoyé par e-mail pour en choisir un nouveau.
 - Découvrir
-    - Fil d'actualité aléatoire des drops du jour des autres utilisateurs.
-    - Swipe vers la droite pour liker un drop, vers la gauche pour l'ignorer (skip).
-    - Extrait de 30 secondes pour chaque morceau.
-    - Genre du morceau, récupéré depuis son album Deezer.
-    - Appui sur l'auteur pour ouvrir son profil.
-    - Message « Plus de drop à découvrir » une fois que tout a été vu.
+  - Fil d'actualité aléatoire des drops du jour des autres utilisateurs.
+  - Swipe vers la droite pour liker un drop, vers la gauche pour l'ignorer (skip).
+  - Extrait de 30 secondes pour chaque morceau.
+  - Genre du morceau, récupéré depuis son album Deezer.
+  - Appui sur l'auteur pour ouvrir son profil.
+  - Message « Plus de drop à découvrir » une fois que tout a été vu.
 - Drop
-    - Recherche d'un morceau sur Deezer par titre ou artiste.
-    - Un seul drop à la fois, en ligne pendant 24 heures à compter du moment où il est publié.
-    - « Ton drop du jour » : le drop actuel, son extrait, ses likes et le temps restant.
+  - Recherche d'un morceau sur Deezer par titre ou artiste.
+  - Un seul drop à la fois, en ligne pendant 24 heures à compter du moment où il est publié.
+  - « Ton drop du jour » : le drop actuel, son extrait, ses likes et le temps restant.
 - Mes likes
-    - Les morceaux likés, avec leur extrait et leur auteur.
-    - Supprimer un morceau de la liste.
+  - Les morceaux likés, avec leur extrait et leur auteur.
+  - Supprimer un morceau de la liste.
 - Profil
-    - Compteurs : drops, likes reçus, morceaux likés.
-    - Derniers drops, avec le drop du jour marqué « EN LIGNE ».
-    - Nom d'affichage public et avatar (couleur pastel et style goutte).
-    - Profil des autres utilisateurs.
+  - Compteurs : drops, likes reçus, morceaux likés.
+  - Derniers drops, avec le drop du jour marqué « EN LIGNE ».
+  - Nom d'affichage public et avatar (couleur pastel et style goutte).
+  - Profil des autres utilisateurs.
 - Paramètres du compte : modifier l'e-mail (confirmé avec un code envoyé à la nouvelle adresse), modifier le mot de passe, se déconnecter, supprimer le compte.
 - Identité visuelle : thème sombre avec des couleurs pastel, halos lumineux qui se déplacent entre les onglets, animation d'ondulation d'eau sur l'écran de connexion.
 - Backend : FastAPI et MySQL, hébergé sur Scaleway à l'adresse api.melodrop-app.com, schéma de base de données géré avec des migrations Alembic.

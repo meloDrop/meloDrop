@@ -76,6 +76,26 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
     )
 
 
+def get_drops(db: Session, user_id: int) -> list[ProfileDropOut]:
+    """Return all the drops of a user, the drop of the day included, the most recent first."""
+    # The user must exist
+    user = db.get(User, user_id)
+    if user is None:
+        raise UserNotFoundError("user_not_found")
+
+    # No limit: every drop the user ever shared
+    drops = (
+        db.query(Drop)
+        .filter(Drop.user_id == user_id)
+        .order_by(Drop.created_at.desc())
+        .all()
+    )
+    all_drops = []
+    for drop in drops:
+        all_drops.append(build_drop(db, drop))
+
+    return all_drops
+
 
 def update_profile(db: Session, user: User, changes: ProfileUpdate) -> ProfileOut:
     """Change the editable part of the user's own profile, then return the profile."""

@@ -70,4 +70,5 @@ def update_profile(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    """Change the logged-in user's display name and avatar. A field left out stays the
+    """Change the logged-in user's display name and avatar. A field left out stays the same."""
+    return services.update_profile(db, user, body)

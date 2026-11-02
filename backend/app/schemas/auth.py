@@ -10,7 +10,7 @@ class UserRegister(BaseModel):
     """Data needed to create an account."""
 
     email: EmailStr
-    username: str = Field(min_length=3, max_length=30, pattern=r"^[^@]+$")
+    username: str = Field(min_length=3, max_length=30, pattern=r"^[A-Za-z0-9_-]+$")
     password: str = Field(min_length=8, max_length=128)
 
 

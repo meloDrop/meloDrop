@@ -33,6 +33,25 @@ def get_profile(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get(
+    "/{user_id}/drops",
+    response_model=list[schemas.ProfileDropOut],
+    responses={
+        200: {"description": "All the drops of the user, the most recent first, or an empty list"},
+        404: {"description": "No user has this id"},
+    },
+)
+def get_drops(
+    user_id: int = Path(description="meloDrop user id (id in GET /me, author_id in GET /feed)"),
+    db: Session = Depends(get_db),
+):
+    """Get all the drops of a user, the drop of the day included."""
+    try:
+        return services.get_drops(db, user_id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 
 # Routes on the logged-in user's own profile
 me_router = APIRouter(prefix="/me/profile", tags=["profile"])
@@ -51,5 +70,4 @@ def update_profile(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    """Change the logged-in user's display name and avatar. A field left out stays the same."""
-    return services.update_profile(db, user, body)
+    """Change the logged-in user's display name and avatar. A field left out stays the

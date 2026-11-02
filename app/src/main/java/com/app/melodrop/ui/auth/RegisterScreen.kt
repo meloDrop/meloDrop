@@ -101,6 +101,15 @@ private fun RegisterContent(
                 singleLine = true,
                 enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth(),
+                // No autocorrect: the keyboard must not add accents to the username
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrectEnabled = false,
+                ),
+                // Small help text under the field, same rule as the backend
+                supportingText = {
+                    Text("3 à 30 caractères : lettres sans accent, chiffres, _ et - acceptés.")
+                },
             )
 
             OutlinedTextField(

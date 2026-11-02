@@ -32,6 +32,7 @@ import com.app.melodrop.network.dto.PasswordReset
 import com.app.melodrop.network.dto.PasswordUpdate
 import com.app.melodrop.network.dto.RescueOut
 import com.app.melodrop.network.dto.SkippedSongOut
+import com.app.melodrop.network.dto.UserSearchOut
 
 interface ApiService {
 
@@ -132,4 +133,8 @@ interface ApiService {
     // Deletes the account and all its data. 204 with no body
     @DELETE("me")
     suspend fun deleteMe()
+
+    // Other users whose @username starts with the query, 20 max (or an empty list)
+    @GET("users/search")
+    suspend fun searchUsers(@Query("q") query: String): List<UserSearchOut>
 }

@@ -245,13 +245,13 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
         player.pause()
     }
 
-    // NEW: plans the "Ton drop expire dans 15 min" notification for this drop
+    // Plans the "Ton drop a expiré" notification, at the expiry time of this drop
     private fun scheduleReminder(drop: MyDropOut) {
-        // Time left before the drop expires, minus 15 minutes
+        // Time left before the drop expires
         val expiresAt = OffsetDateTime.parse(drop.expiresAt).toInstant()
-        val delay = Duration.between(Instant.now(), expiresAt).minusMinutes(15)
+        val delay = Duration.between(Instant.now(), expiresAt)
 
-        // Less than 15 minutes left: too late for a reminder
+        // Already expired: too late for a notification
         if (delay.isNegative) return
 
         // "Run DropReminderWorker once, after this delay"

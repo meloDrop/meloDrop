@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.ProfileDropOut
@@ -50,6 +53,7 @@ import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.Avatar
 import com.app.melodrop.ui.components.MeloDropTitle
+import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.Unbounded
 import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
@@ -72,6 +76,8 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    // Tap on the "drops" counter: opens "Mes drops"
+    onDropsClick: () -> Unit,
     // Tap on "Mes skips": opens the list of the skipped songs
     onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
@@ -82,14 +88,26 @@ fun ProfileScreen(
         viewModel.load()
     }
 
+    // Leaving the Profile tab (other tab or sub-screen): the music stops
+    DisposableEffect(Unit) {
+        onDispose { viewModel.pausePreview() }
+    }
+
+    // App sent to the background (home button, screen off): the music stops too
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.pausePreview()
+    }
+
     ProfileContent(
         uiState = viewModel.uiState,
         onRetry = viewModel::load,
         onLogout = onLogout,
         onEditProfile = onEditProfile,
         onLikesClick = onLikesClick,
+        onDropsClick = onDropsClick,
         onSkipsClick = onSkipsClick,
         onAccountClick = onAccountClick,
+        onPlayClick = viewModel::togglePreview,
     )
 }
 
@@ -101,8 +119,11 @@ private fun ProfileContent(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onDropsClick: () -> Unit,
     onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
+    // Tap on a cover: plays or pauses its preview
+    onPlayClick: (ProfileDropOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -121,8 +142,13 @@ private fun ProfileContent(
                 onLogout = onLogout,
                 onEditProfile = onEditProfile,
                 onLikesClick = onLikesClick,
+                onDropsClick = onDropsClick,
                 onSkipsClick = onSkipsClick,
                 onAccountClick = onAccountClick,
+                playingDropId = uiState.playingDropId,
+                isPlaying = uiState.isPlaying,
+                previewError = uiState.previewError,
+                onPlayClick = onPlayClick,
             )
 
             // First answer not there yet
@@ -145,8 +171,13 @@ private fun ProfileBody(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit,
     onLikesClick: () -> Unit,
+    onDropsClick: () -> Unit,
     onSkipsClick: () -> Unit,
     onAccountClick: () -> Unit,
+    playingDropId: Int?,
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: (ProfileDropOut) -> Unit,
 ) {
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
@@ -169,7 +200,11 @@ private fun ProfileBody(
 
         // No gap inside: the link stays close to the counters
         Column {
-            StatsRow(stats = profile.stats, onLikesClick = onLikesClick)
+            StatsRow(
+                stats = profile.stats,
+                onLikesClick = onLikesClick,
+                onDropsClick = onDropsClick,
+            )
 
             // Discreet link under "titres likés", on the user's own profile only
             TextButton(
@@ -187,13 +222,28 @@ private fun ProfileBody(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("MES DERNIERS DROPS")
 
+            // A preview could not be played
+            if (previewError != null) {
+                Text(
+                    text = previewError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
             if (drops.isEmpty()) {
                 Text(
                     text = "Tu n'as encore déposé aucun titre. Ton premier drop apparaîtra ici.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                DropsGrid(drops = drops, onlineDropId = profile.currentDrop?.id)
+                DropsGrid(
+                    drops = drops,
+                    playingDropId = playingDropId,
+                    isPlaying = isPlaying,
+                    onPlayClick = onPlayClick,
+                    onlineDropId = profile.currentDrop?.id,
+                )
             }
         }
     }
@@ -320,19 +370,38 @@ private fun ProfileMenu(
 }
 
 // Three tiles side by side, with the same width. On the user's own profile,
-// the last one opens "Mes likes". Shared with UserProfileScreen
+// the first one opens "Mes drops" and the last one "Mes likes". Shared with UserProfileScreen
 @Composable
-internal fun StatsRow(stats: StatsOut, onLikesClick: (() -> Unit)? = null) {
+internal fun StatsRow(
+    stats: StatsOut,
+    onLikesClick: (() -> Unit)? = null,
+    onDropsClick: (() -> Unit)? = null,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CounterTile(
-            value = stats.dropsCount,
-            label = if (stats.dropsCount <= 1) "drop" else "drops",
-            color = Butter,
-            modifier = Modifier.weight(1f),
-        )
+        val dropsLabel = if (stats.dropsCount <= 1) "drop" else "drops"
+        if (onDropsClick != null) {
+            CounterTile(
+                value = stats.dropsCount,
+                // The arrow shows that the tile can be tapped
+                label = "$dropsLabel ›",
+                color = Butter,
+                modifier = Modifier
+                    .weight(1f)
+                    // Clip first, so the ripple of the tap keeps the round corners
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClick = onDropsClick),
+            )
+        } else {
+            CounterTile(
+                value = stats.dropsCount,
+                label = dropsLabel,
+                color = Butter,
+                modifier = Modifier.weight(1f),
+            )
+        }
         CounterTile(
             value = stats.likesReceived,
             label = if (stats.likesReceived <= 1) "like reçu" else "likes reçus",
@@ -406,10 +475,19 @@ internal fun SectionTitle(text: String) {
     )
 }
 
-// The covers, 3 per line. A Column of Rows, because a LazyVerticalGrid
-// cannot be placed inside a Column that scrolls. Shared with UserProfileScreen
+// The covers, 3 per line, each one with a play button. A Column of Rows, because a
+// LazyVerticalGrid cannot be placed inside a Column that scrolls. Shared with UserProfileScreen
 @Composable
-internal fun DropsGrid(drops: List<ProfileDropOut>, onlineDropId: Int? = null) {
+internal fun DropsGrid(
+    drops: List<ProfileDropOut>,
+    // Drop whose preview is loaded in the player, null if none
+    playingDropId: Int?,
+    // True when the loaded preview plays
+    isPlaying: Boolean,
+    // Tap on a cover: plays or pauses its preview
+    onPlayClick: (ProfileDropOut) -> Unit,
+    onlineDropId: Int? = null,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         drops.chunked(COVERS_PER_ROW).forEach { line ->
             Row(
@@ -420,6 +498,9 @@ internal fun DropsGrid(drops: List<ProfileDropOut>, onlineDropId: Int? = null) {
                     DropThumbnail(
                         drop = drop,
                         isOnline = drop.id == onlineDropId,
+                        // Pause icon only on the cover whose preview plays
+                        isPlaying = isPlaying && drop.id == playingDropId,
+                        onPlayClick = { onPlayClick(drop) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -432,11 +513,13 @@ internal fun DropsGrid(drops: List<ProfileDropOut>, onlineDropId: Int? = null) {
     }
 }
 
-// One past drop: its cover and its title
+// One drop: its cover with a play button, and its title
 @Composable
 private fun DropThumbnail(
     drop: ProfileDropOut,
     isOnline: Boolean,
+    isPlaying: Boolean,
+    onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -451,7 +534,19 @@ private fun DropThumbnail(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clip(RoundedCornerShape(16.dp)),
+                    .clip(RoundedCornerShape(16.dp))
+                    // The whole cover can be tapped, not only the small button
+                    .clickable(onClick = onPlayClick),
+            )
+
+            // Small play button in the bottom right corner of the cover
+            PlayPauseButton(
+                isPlaying = isPlaying,
+                onClick = onPlayClick,
+                buttonSize = 32.dp,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp),
             )
 
             // The drop of the day is marked on its cover
@@ -553,8 +648,10 @@ private fun ProfileScreenPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onDropsClick = {},
             onSkipsClick = {},
             onAccountClick = {},
+            onPlayClick = {},
         )
     }
 }
@@ -569,8 +666,10 @@ private fun ProfileErrorPreview() {
             onLogout = {},
             onEditProfile = {},
             onLikesClick = {},
+            onDropsClick = {},
             onSkipsClick = {},
             onAccountClick = {},
+            onPlayClick = {},
         )
     }
 }

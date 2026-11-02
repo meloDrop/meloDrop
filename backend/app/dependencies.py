@@ -32,3 +32,10 @@ def current_user(
 
     request.state.username = user.username
     return user
+
+def current_admin(user: User = Depends(current_user)) -> User:
+    """Return the logged-in user if admin, or answer 403."""
+    # current_user already answers 401 if the token is missing or invalid
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="admin_only")
+    return user

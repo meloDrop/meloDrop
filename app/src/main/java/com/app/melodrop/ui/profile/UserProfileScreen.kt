@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,12 +31,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.GenreChip
+import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
 
 // Connects the screen to its ViewModel
@@ -51,10 +55,21 @@ fun UserProfileScreen(
         viewModel.load(userId)
     }
 
+    // Leaving the profile: the music stops
+    DisposableEffect(Unit) {
+        onDispose { viewModel.pausePreview() }
+    }
+
+    // App sent to the background (home button, screen off): the music stops too
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.pausePreview()
+    }
+
     UserProfileContent(
         uiState = viewModel.uiState,
         onBack = onBack,
         onRetry = { viewModel.load(userId) },
+        onPlayClick = viewModel::togglePreview,
     )
 }
 
@@ -64,6 +79,8 @@ private fun UserProfileContent(
     uiState: UserProfileUiState,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    // Tap on a cover: plays or pauses its preview
+    onPlayClick: (ProfileDropOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -87,7 +104,13 @@ private fun UserProfileContent(
         val error = uiState.error
 
         when {
-            profile != null -> UserProfileBody(profile = profile)
+            profile != null -> UserProfileBody(
+                profile = profile,
+                playingDropId = uiState.playingDropId,
+                isPlaying = uiState.isPlaying,
+                previewError = uiState.previewError,
+                onPlayClick = onPlayClick,
+            )
 
             uiState.isLoading -> Box(
                 modifier = Modifier.fillMaxSize(),
@@ -120,7 +143,15 @@ private fun UserProfileContent(
 // The profile: the same header and counters as the user's own profile,
 // then the drop of the day and the last drops
 @Composable
-private fun UserProfileBody(profile: ProfileOut) {
+private fun UserProfileBody(
+    profile: ProfileOut,
+    // Drop whose preview is loaded in the player, null if none
+    playingDropId: Int?,
+    // True when the loaded preview plays
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: (ProfileDropOut) -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -134,12 +165,25 @@ private fun UserProfileBody(profile: ProfileOut) {
         // No click on the likes: the "Mes likes" list of the others is private
         StatsRow(stats = profile.stats)
 
+        // A preview could not be played
+        if (previewError != null) {
+            Text(
+                text = previewError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionTitle("DROP DU JOUR")
 
             val currentDrop = profile.currentDrop
             if (currentDrop != null) {
-                CurrentDropCard(drop = currentDrop)
+                CurrentDropCard(
+                    drop = currentDrop,
+                    isPlaying = isPlaying && currentDrop.id == playingDropId,
+                    onPlayClick = { onPlayClick(currentDrop) },
+                )
             } else {
                 Text(
                     text = "Pas de drop en ligne aujourd'hui.",
@@ -157,15 +201,24 @@ private fun UserProfileBody(profile: ProfileOut) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                DropsGrid(drops = profile.recentDrops)
+                DropsGrid(
+                    drops = profile.recentDrops,
+                    playingDropId = playingDropId,
+                    isPlaying = isPlaying,
+                    onPlayClick = onPlayClick,
+                )
             }
         }
     }
 }
 
-// The drop of the day: cover, song, genre and number of likes
+// The drop of the day: cover, song, genre, number of likes and a play button
 @Composable
-private fun CurrentDropCard(drop: ProfileDropOut) {
+private fun CurrentDropCard(
+    drop: ProfileDropOut,
+    isPlaying: Boolean,
+    onPlayClick: () -> Unit,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -216,6 +269,12 @@ private fun CurrentDropCard(drop: ProfileDropOut) {
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
+
+            PlayPauseButton(
+                isPlaying = isPlaying,
+                onClick = onPlayClick,
+                buttonSize = 44.dp,
+            )
         }
     }
 }
@@ -265,6 +324,7 @@ private fun UserProfilePreview() {
             ),
             onBack = {},
             onRetry = {},
+            onPlayClick = {},
         )
     }
 }

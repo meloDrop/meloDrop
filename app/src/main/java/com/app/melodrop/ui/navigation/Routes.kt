@@ -19,9 +19,14 @@ object Routes {
     const val EDIT_PROFILE = "edit_profile"
     const val LIKES = "likes"
     const val ACCOUNT = "account"
+    // All the user's drops, opened from the "drops" counter
+    const val MY_DROPS = "my_drops"
 
     // Opened from "Mes likes"
     const val SKIPS = "skips"
+
+    // Opened from the magnifying glass of Discover, without the bottom bar
+    const val SEARCH_USERS = "search_users"
 
     // Profile of another user, opened from a drop: "user/12"
     const val USER_PROFILE = "user/{userId}"

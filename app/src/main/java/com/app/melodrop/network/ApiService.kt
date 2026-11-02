@@ -14,6 +14,7 @@ import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.PreviewOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.network.dto.ProfileOut
+import com.app.melodrop.network.dto.ProfileDropOut
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -32,6 +33,7 @@ import com.app.melodrop.network.dto.PasswordReset
 import com.app.melodrop.network.dto.PasswordUpdate
 import com.app.melodrop.network.dto.RescueOut
 import com.app.melodrop.network.dto.SkippedSongOut
+import com.app.melodrop.network.dto.UserSearchOut
 
 interface ApiService {
 
@@ -95,6 +97,10 @@ interface ApiService {
     @GET("users/{user_id}/profile")
     suspend fun getProfile(@Path("user_id") userId: Int): ProfileOut
 
+    // All the drops of a user, the drop of the day included, the most recent first
+    @GET("users/{user_id}/drops")
+    suspend fun getUserDrops(@Path("user_id") userId: Int): List<ProfileDropOut>
+
     // Changes the logged-in user's profile, sends back the updated profile
     @PATCH("me/profile")
     suspend fun updateProfile(@Body body: ProfileUpdate): ProfileOut
@@ -132,4 +138,8 @@ interface ApiService {
     // Deletes the account and all its data. 204 with no body
     @DELETE("me")
     suspend fun deleteMe()
+
+    // Other users whose @username starts with the query, 20 max (or an empty list)
+    @GET("users/search")
+    suspend fun searchUsers(@Query("q") query: String): List<UserSearchOut>
 }

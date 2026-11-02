@@ -20,12 +20,14 @@ import com.app.melodrop.ui.account.AccountScreen
 import com.app.melodrop.ui.components.HaloBackground
 import com.app.melodrop.ui.discover.DiscoverScreen
 import com.app.melodrop.ui.likes.LikesScreen
+import com.app.melodrop.ui.mydrops.MyDropsScreen
 import com.app.melodrop.ui.drop.DropScreen
 import com.app.melodrop.ui.navigation.BottomBar
 import com.app.melodrop.ui.navigation.Routes
 import com.app.melodrop.ui.profile.EditProfileScreen
 import com.app.melodrop.ui.profile.ProfileScreen
 import com.app.melodrop.ui.profile.UserProfileScreen
+import com.app.melodrop.ui.search.UserSearchScreen
 import com.app.melodrop.ui.skips.SkipsScreen
 import com.app.melodrop.ui.theme.MeloDropTheme
 
@@ -35,22 +37,32 @@ fun MainScreen(onLogout: () -> Unit) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // Screens opened from a tab: no bottom bar, and the halos of the Profile tab
+    // Screens opened from a tab: no bottom bar, they have their own back button
     val isSubScreen = currentRoute == Routes.EDIT_PROFILE ||
             currentRoute == Routes.LIKES ||
             currentRoute == Routes.SKIPS ||
             currentRoute == Routes.ACCOUNT ||
-            currentRoute == Routes.USER_PROFILE
+            currentRoute == Routes.USER_PROFILE ||
+            currentRoute == Routes.SEARCH_USERS ||
+            currentRoute == Routes.MY_DROPS
 
-    // Opens the profile of the author of a drop. launchSingleTop: a double tap
-    // does not open the same profile twice
+    // Halos to show: the search is opened from Discover, so it keeps the Discover halos.
+    // The other sub-screens take the halos of the Profile tab
+    val haloRoute = when {
+        currentRoute == Routes.SEARCH_USERS -> Routes.DISCOVER
+        isSubScreen -> Routes.PROFILE
+        else -> currentRoute
+    }
+
+    // Opens the profile of a user (author of a drop, or search result).
+    // launchSingleTop: a double tap does not open the same profile twice
     fun openUserProfile(userId: Int) {
         navController.navigate(Routes.userProfile(userId)) { launchSingleTop = true }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Behind all the screens: the halos move when the tab changes
-        HaloBackground(route = if (isSubScreen) Routes.PROFILE else currentRoute)
+        HaloBackground(route = haloRoute)
 
         Scaffold(
             // Transparent, so the halos show through
@@ -79,7 +91,11 @@ fun MainScreen(onLogout: () -> Unit) {
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(Routes.DISCOVER) {
-                    DiscoverScreen(onAuthorClick = ::openUserProfile)
+                    DiscoverScreen(
+                        onAuthorClick = ::openUserProfile,
+                        // launchSingleTop: a double tap does not open the search twice
+                        onSearchClick = { navController.navigate(Routes.SEARCH_USERS) { launchSingleTop = true } },
+                    )
                 }
                 composable(Routes.DROP) { DropScreen() }
                 composable(Routes.PROFILE) {
@@ -87,7 +103,8 @@ fun MainScreen(onLogout: () -> Unit) {
                         onLogout = onLogout,
                         onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
                         onLikesClick = { navController.navigate(Routes.LIKES) },
-                        // launchSingleTop: a double tap does not open the list twice
+                        // launchSingleTop: a double tap does not open these lists twice
+                        onDropsClick = { navController.navigate(Routes.MY_DROPS) { launchSingleTop = true } },
                         onSkipsClick = { navController.navigate(Routes.SKIPS) { launchSingleTop = true } },
                         onAccountClick = { navController.navigate(Routes.ACCOUNT) },
                     )
@@ -104,6 +121,12 @@ fun MainScreen(onLogout: () -> Unit) {
                         onAuthorClick = ::openUserProfile,
                     )
                 }
+                composable(Routes.MY_DROPS) {
+                    MyDropsScreen(
+                        // Back to the Profile tab, even after a double tap
+                        onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                    )
+                }
                 composable(Routes.SKIPS) {
                     SkipsScreen(
                         // Back to the Profile tab, even after a double tap
@@ -116,6 +139,13 @@ fun MainScreen(onLogout: () -> Unit) {
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                         // Account deleted: same as a logout, back to the login screen
                         onAccountDeleted = onLogout,
+                    )
+                }
+                composable(Routes.SEARCH_USERS) {
+                    UserSearchScreen(
+                        // Closes the search only: back to Discover
+                        onBack = { navController.popBackStack(Routes.SEARCH_USERS, inclusive = true) },
+                        onUserClick = ::openUserProfile,
                     )
                 }
                 composable(

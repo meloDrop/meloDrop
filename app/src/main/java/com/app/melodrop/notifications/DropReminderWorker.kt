@@ -17,7 +17,7 @@ import com.app.melodrop.R
 
 private const val CHANNEL_ID = "drop_reminder"
 
-// Shows the "your drop expires in 15 min" notification.
+// Shows the "your drop has expired" notification.
 // WorkManager runs it at the planned time, even if the app is closed
 class DropReminderWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
 
@@ -46,11 +46,10 @@ class DropReminderWorker(context: Context, params: WorkerParameters) : Worker(co
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle("IT'S..... TIIIIIIIIME !!")
-            .setContentText("15 min avant ton prochain Drop !")
+            .setContentText("Ton drop a expiré, dépose ta prochaine chanson !")
             .setContentIntent(openApp)
-            // Goes away after the tap, or by itself when the drop expires
+            // Goes away after the tap
             .setAutoCancel(true)
-            .setTimeoutAfter(15 * 60_000L)
             .build()
 
         manager.notify(1, notification)

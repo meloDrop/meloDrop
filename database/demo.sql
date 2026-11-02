@@ -271,3 +271,9 @@ UPDATE users SET display_name = 'Elliot' WHERE username = 'elliot';
 UPDATE users SET display_name = 'Sam D.' WHERE username = 'sam';
 UPDATE users SET display_name = 'Inès'   WHERE username = 'ines';
 UPDATE users SET display_name = 'Jade'   WHERE username = 'jade';
+
+-- ======================================================================
+-- Roles: every account is "user" by default, litoxam is the admin.
+-- ======================================================================
+
+UPDATE users SET role = 'admin' WHERE username = 'litoxam';

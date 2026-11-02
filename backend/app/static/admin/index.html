@@ -1,0 +1,3546 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>meloDrop admin</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0c10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&display=swap" rel="stylesheet">
+<!-- Chart.js, with its hash: the browser refuses the file if it was changed -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.min.js"
+        integrity="sha384-Emf5ZVIUiarAdhkgtqK+5/Z5qIvM6QoVrS+qAVtfyZVuD5lIHrac0me485+Antp0"
+        crossorigin="anonymous"></script>
+<style>
+  /* Colors of the app (ui/theme/Color.kt) */
+  :root {
+    color-scheme: dark;
+    --night: #0c0c10;
+    --card: #18181f;
+    --outline: #2a2a33;
+    --text: #f2f2f5;
+    --muted: #8e8e9a;
+    --danger: #f04848;
+    --lavender: #b4a7f5;
+    --peach: #ffb38a;
+    --mint: #9ee0b8;
+    --butter: #ffe08a;
+    --rose: #f5a8c8;
+    /* Series: deeper steps of the pastels, checked for color blindness on --card */
+    --likes: #2fa875;
+    --drops: #8f7fea;
+    --signups: #b5860f;
+    --skips: #d45a8e;
+    --swipes: #d46e3a;
+  }
+
+  * { box-sizing: border-box; }
+  /* "hidden" always wins, even on elements styled with display: flex */
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    padding: 0 0 48px;
+    background: var(--night);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* Background: four halos (lavender, butter, mint, rose), like HaloBackground.kt.
+     Each tab has its own layout; the halos glide to it in 1.2 s, then drift slowly. */
+  @property --a { syntax: "<number>"; inherits: true; initial-value: 0; }
+  .background { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--night); }
+  .halo {
+    /* Radius as a share of the width, like in the app, capped on big screens */
+    --ref: min(100vw, 900px);
+    position: absolute;
+    left: calc(var(--x, .5) * 100%);
+    top: calc(var(--y, .5) * 100%);
+    width: calc(var(--r, .5) * 2 * var(--ref));
+    height: calc(var(--r, .5) * 2 * var(--ref));
+    translate: -50% -50%;
+    transition: left 1.2s, top 1.2s, width 1.2s, height 1.2s, --a 1.2s;
+    transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  }
+  .glow {
+    width: 100%; height: 100%; border-radius: 50%;
+    /* Same falloff as FalloffStrengths: 1, .8, .48, .2, .05, 0 */
+    background: radial-gradient(closest-side,
+      rgb(var(--c) / calc(var(--a) * 1)) 0%,
+      rgb(var(--c) / calc(var(--a) * .8)) 20%,
+      rgb(var(--c) / calc(var(--a) * .48)) 40%,
+      rgb(var(--c) / calc(var(--a) * .2)) 60%,
+      rgb(var(--c) / calc(var(--a) * .05)) 80%,
+      rgb(var(--c) / 0) 100%);
+    animation: drift 20s linear infinite;
+  }
+  .halo:nth-child(even) .glow { animation-direction: reverse; }
+  .halo:nth-child(2) .glow { animation-delay: -5s; }
+  .halo:nth-child(3) .glow { animation-delay: -10s; }
+  .halo:nth-child(4) .glow { animation-delay: -15s; }
+  /* Slow loop on a small circle (DRIFT = 4 % of the width) */
+  @keyframes drift {
+    0%    { transform: translate(calc(var(--ref) * .04), 0); }
+    12.5% { transform: translate(calc(var(--ref) * .028), calc(var(--ref) * .028)); }
+    25%   { transform: translate(0, calc(var(--ref) * .04)); }
+    37.5% { transform: translate(calc(var(--ref) * -.028), calc(var(--ref) * .028)); }
+    50%   { transform: translate(calc(var(--ref) * -.04), 0); }
+    62.5% { transform: translate(calc(var(--ref) * -.028), calc(var(--ref) * -.028)); }
+    75%   { transform: translate(0, calc(var(--ref) * -.04)); }
+    87.5% { transform: translate(calc(var(--ref) * .028), calc(var(--ref) * -.028)); }
+    100%  { transform: translate(calc(var(--ref) * .04), 0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .glow { animation: none; } .halo { transition: none; } }
+  /* Login screen: the image of the app (res/drawable-nodpi/login_background.png) */
+  .login-image {
+    position: absolute; inset: 0; opacity: 0; transition: opacity .6s;
+    background: url("/admin/login-background.png") bottom center / cover no-repeat;
+  }
+  body.on-login .login-image { opacity: 1; }
+
+  /* Logo and title, like MeloDropTitle.kt */
+  .logo { width: 40px; height: 30px; flex: none; }
+  .wordmark { font: 700 22px "Unbounded", system-ui, sans-serif; letter-spacing: -.02em; }
+  .wordmark span {
+    background: linear-gradient(90deg, var(--lavender), #f5a8c8, var(--peach), #ffe08a, var(--mint));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .wordmark.big { font-size: 28px; margin: 0; }
+
+  .page { padding: 20px 16px 0; max-width: 1240px; margin: 0 auto; }
+
+  /* Header */
+  /* Top bar: sticky, see-through, the halos stay visible behind it */
+  .topbar {
+    position: sticky; top: 0; z-index: 4;
+    background: rgb(12 12 16 / .72);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgb(42 42 51 / .7);
+  }
+  /* Full width: brand on the left, actions on the right */
+  header {
+    padding: 12px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .chip {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--outline); border-radius: 999px; padding: 2px 9px;
+  }
+  .source {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    border-radius: 999px; padding: 5px 12px; border: 1px solid var(--outline);
+  }
+  .source::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .source.local { color: var(--mint); }
+  .source.server { color: var(--peach); border-color: rgb(255 179 138 / .5); background: rgb(255 179 138 / .08); }
+
+  .status { margin-left: auto; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  .status button { padding: 6px 14px; font-size: 13px; }
+  #countdown { font-variant-numeric: tabular-nums; display: inline-block; min-width: 3.4em; }
+  .status label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .status input { accent-color: var(--lavender); }
+  button {
+    font: inherit; font-weight: 600; color: var(--night); background: var(--lavender);
+    border: 0; border-radius: 999px; padding: 7px 16px; cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: progress; }
+
+  .error {
+    border: 1px solid rgb(240 72 72 / .5); background: rgb(240 72 72 / .1); color: var(--text);
+    border-radius: 14px; padding: 12px 16px; margin-bottom: 20px;
+  }
+  .error pre { margin: 6px 0 0; white-space: pre-wrap; color: var(--muted); font-size: 12px; }
+
+  /* While data reloads, the page keeps its content, a bit faded */
+  .loading main { opacity: .6; transition: opacity .2s; }
+
+  /* Cards */
+  .card {
+    background: rgb(24 24 31 / .9);
+    border: 1px solid var(--outline);
+    border-radius: 18px;
+    padding: 18px 20px;
+    min-width: 0;
+  }
+  h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .subtitle { color: var(--muted); font-size: 12px; margin: 2px 0 14px; }
+
+  /* Stat tiles */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .tile .label { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .tile .value { font-size: 32px; font-weight: 650; line-height: 1.2; margin: 4px 0 2px; }
+  .tile .sub { color: var(--muted); font-size: 12px; }
+  .key-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+  /* Charts and activity */
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas: "daily feed" "hourly feed";
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .daily { grid-area: daily; }
+  .hourly { grid-area: hourly; }
+  .feed { grid-area: feed; display: flex; flex-direction: column; }
+  .chart-box { position: relative; height: 260px; }
+  .hourly .chart-box { height: 200px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; padding: 0; list-style: none; }
+  .legend li { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .legend b { color: var(--text); font-weight: 600; }
+  .line-key { width: 14px; height: 2px; border-radius: 2px; }
+
+  details { margin-top: 12px; color: var(--muted); font-size: 12px; }
+  summary { cursor: pointer; }
+
+  /* Activity list */
+  .events { list-style: none; margin: 0; padding: 0; overflow-y: auto; max-height: 560px; flex: 1; }
+  .events li { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--outline); }
+  .events li:first-child { border-top: 0; }
+  .events .key-dot { margin-top: 6px; }
+  .events p { margin: 0; overflow-wrap: anywhere; }
+  .events time { color: var(--muted); font-size: 12px; }
+  .events li.new { animation: flash 2.5s ease-out; }
+  @keyframes flash { from { background: rgb(180 167 245 / .14); } to { background: transparent; } }
+
+  /* Tables */
+  .table-card { margin-bottom: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; font-weight: 500; color: var(--muted); font-size: 12px;
+    padding: 6px 10px; border-bottom: 1px solid var(--outline); white-space: nowrap;
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--outline); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .muted { color: var(--muted); }
+  .song { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+  .song img, .song .cover { width: 36px; height: 36px; border-radius: 8px; flex: none; background: var(--outline); }
+  .song small { display: block; color: var(--muted); }
+  .badge { font-size: 11px; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--outline); white-space: nowrap; }
+  .badge.no { color: var(--peach); border-color: rgb(255 179 138 / .4); }
+  .empty { color: var(--muted); padding: 12px 0; }
+
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--outline); }
+  button.small { padding: 4px 12px; font-size: 12px; }
+  button.danger { background: var(--danger); color: #fff; }
+  input[type="password"], input[type="email"], input[type="text"], input[type="search"] {
+    font: inherit; color: var(--text); background: var(--night);
+    border: 1px solid var(--outline); border-radius: 12px; padding: 9px 12px; width: 100%;
+  }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--lavender); outline-offset: 2px; }
+
+  /* Login */
+  .login { max-width: 380px; margin: 6vh auto 0; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .login-logo { width: 200px; height: 149px; }
+  .login form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+  .form-error { color: #ff8a8a; font-size: 13px; margin: 0; min-height: 1em; }
+
+  /* Account dialog */
+  dialog {
+    width: min(480px, calc(100vw - 32px)); padding: 0;
+    color: var(--text); background: var(--card);
+    border: 1px solid var(--outline); border-radius: 18px;
+  }
+  dialog::backdrop { background: rgb(0 0 0 / .6); backdrop-filter: blur(3px); }
+  .dialog-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: 18px 20px 0; }
+  .dialog-part { padding: 14px 20px; border-top: 1px solid var(--outline); }
+  .dialog-head + .dialog-part { border-top: 0; }
+  .dialog-part h3 { font-size: 13px; font-weight: 600; margin: 0 0 8px; }
+  .dialog-part p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .danger-part h3 { color: #ff8a8a; }
+
+  /* Message after an action */
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 12px;
+    background: #22222b; border: 1px solid var(--outline); box-shadow: 0 8px 30px rgb(0 0 0 / .4);
+  }
+  .toast.ok { border-color: rgb(47 168 117 / .6); }
+  .toast.fail { border-color: rgb(240 72 72 / .6); }
+
+  /* Links to a user: same color as the text, underlined on hover */
+  a.user-link { color: var(--text); font-weight: 600; text-decoration: none; }
+  a.user-link:hover { text-decoration: underline; color: var(--lavender); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: rgb(24 24 31 / .9); border: 1px solid var(--outline); border-radius: 999px; padding: 3px; }
+  .tabs a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+  .tabs a[aria-current="page"] { background: var(--lavender); color: var(--night); }
+
+  /* Récap tab: a card made for a screenshot */
+  .recap-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 16px; }
+  .recap-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+  .segmented { display: flex; border: 1px solid var(--outline); border-radius: 12px; overflow: hidden; }
+  .segmented button { border-radius: 0; background: var(--night); color: var(--muted); padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+  .segmented button[aria-pressed="true"] { background: var(--lavender); color: var(--night); }
+  /* Block + auto margins: centered, and scrollable when wider than the screen */
+  .recap-wrap { overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
+  .recap {
+    width: min(560px, 100%); margin: 0 auto; position: relative; overflow: hidden;
+    padding: 28px 26px 22px; border-radius: 28px; border: 1px solid var(--outline);
+    background:
+      radial-gradient(420px 320px at 0% 0%, rgb(180 167 245 / .22), transparent 70%),
+      radial-gradient(380px 300px at 100% 12%, rgb(245 168 200 / .14), transparent 70%),
+      radial-gradient(420px 360px at 50% 105%, rgb(158 224 184 / .12), transparent 70%),
+      #111117;
+    box-shadow: 0 20px 60px rgb(0 0 0 / .45);
+  }
+  .recap.loading { opacity: .6; transition: opacity .2s; }
+  .rc-header { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 14px; }
+  .rc-heading { grid-column: 1 / -1; }
+  .rc-head { display: flex; align-items: center; gap: 10px; }
+  .rc-logo { width: 44px; height: 33px; }
+  .rc-wordmark i { font-style: normal; }
+  .rc-beta { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    border: 1px solid var(--outline); border-radius: 999px; padding: 2px 8px; grid-row: 1; grid-column: 2; }
+  .rc-title { font: 700 26px/1.15 "Unbounded", system-ui, sans-serif; margin: 22px 0 4px; letter-spacing: -.02em; }
+  .rc-range { color: var(--muted); margin: 0 0 18px; }
+  .rc-empty { color: var(--muted); text-align: center; padding: 30px 0; }
+  .rc-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rc-kpi { background: rgb(255 255 255 / .04); border: 1px solid rgb(255 255 255 / .07); border-radius: 18px; padding: 14px 16px; }
+  .rc-kpi b { display: block; font: 700 28px/1.1 "Unbounded", system-ui, sans-serif; }
+  .rc-kpi span { color: var(--muted); font-size: 13px; }
+  .rc-section { margin-top: 24px; }
+  .rc-section h3 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--lavender); margin: 0 0 8px; }
+  .rc-note { color: var(--muted); font-size: 12px; margin: -4px 0 6px; }
+  .rc-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; }
+  .rc-row.compact { padding: 4px 0; }
+  .rc-rank { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%;
+    font-size: 13px; font-weight: 800; color: var(--night); background: var(--outline); }
+  .rc-rank.r1 { background: #ffe08a; }
+  .rc-rank.r2 { background: #b4a7f5; }
+  .rc-rank.r3 { background: #ffb38a; }
+  .rc-cover, img.rc-cover { width: 48px; height: 48px; border-radius: 10px; flex: none; background: var(--outline); object-fit: cover; }
+  .rc-what { flex: 1; min-width: 0; }
+  .rc-what > b { display: block; overflow-wrap: anywhere; }
+  .rc-what small { color: var(--muted); font-size: 12px; }
+  .rc-name { color: var(--text); font-weight: 700; }
+  .rc-num { text-align: right; white-space: nowrap; }
+  .rc-num b { display: block; font: 700 18px/1.1 "Unbounded", system-ui, sans-serif; }
+  .rc-num small { color: var(--muted); font-size: 11px; }
+  .rc-duo { display: flex; align-items: center; gap: 14px; }
+  .rc-duo-avatars { display: flex; flex: none; }
+  /* Same width for one or two avatars: the names stay aligned */
+  .rc-mention .rc-duo-avatars { width: 68px; }
+  .rc-duo-avatars .avatar + .avatar { margin-left: -12px; box-shadow: 0 0 0 3px #111117; }
+  .rc-bar { display: grid; grid-template-columns: 9ch 1fr 5ch; align-items: center; gap: 10px; padding: 3px 0; font-size: 13px; }
+  .rc-bar b { text-align: right; }
+  .rc-track { height: 8px; border-radius: 4px; background: rgb(255 255 255 / .06); overflow: hidden; }
+  .rc-track i { display: block; height: 100%; border-radius: 4px; background: var(--lavender); }
+  .rc-hours { display: flex; align-items: flex-end; gap: 3px; height: 64px; }
+  .rc-hours i { flex: 1; border-radius: 3px 3px 0 0; background: rgb(180 167 245 / .35); }
+  .rc-hours i.peak { background: #ffe08a; }
+  .rc-hours-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin: 4px 0 8px; }
+  .rc-label { display: block; font-size: 11px !important; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--lavender) !important; }
+
+  /* Landscape: one row of numbers, then three columns */
+  .recap.landscape { width: 1200px; max-width: none; padding: 22px 30px 14px; border-radius: 26px;
+    background:
+      radial-gradient(520px 340px at 0% 0%, rgb(180 167 245 / .22), transparent 70%),
+      radial-gradient(520px 340px at 100% 0%, rgb(245 168 200 / .14), transparent 70%),
+      radial-gradient(640px 360px at 50% 110%, rgb(158 224 184 / .12), transparent 70%),
+      #111117; }
+  .recap.landscape .rc-header { grid-template-columns: auto 1fr auto; }
+  .recap.landscape .rc-heading { grid-column: 2; grid-row: 1; padding-left: 18px; margin-left: 4px; border-left: 1px solid rgb(255 255 255 / .1); }
+  .recap.landscape .rc-beta { grid-column: 3; }
+  .recap.landscape .rc-title { font-size: 22px; margin: 0; }
+  .recap.landscape .rc-range { margin: 2px 0 0; }
+  .recap.landscape .rc-kpis { grid-template-columns: repeat(4, 1fr); margin-top: 16px; }
+  .recap.landscape .rc-kpi { padding: 10px 16px; }
+  .recap.landscape .rc-kpi b { font-size: 26px; }
+  .recap.landscape .rc-cols { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 0 34px; }
+  .recap.landscape .rc-section { margin-top: 16px; }
+  .recap.landscape .rc-row { padding: 4px 0; }
+  .recap.landscape .rc-cover, .recap.landscape img.rc-cover { width: 40px; height: 40px; border-radius: 8px; }
+  .recap.landscape .rc-hours { height: 48px; }
+  .recap.landscape .rc-foot { margin-top: 14px; padding-top: 10px; }
+
+  .rc-foot { color: var(--muted); font-size: 12px; text-align: center; margin: 26px 0 0; padding-top: 14px; border-top: 1px solid rgb(255 255 255 / .07); }
+  .recap-text-card summary { cursor: pointer; color: var(--muted); }
+  .recap-text-card textarea {
+    width: 100%; margin-top: 12px; font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; color: var(--text);
+    background: var(--night); border: 1px solid var(--outline); border-radius: 12px; padding: 12px; resize: vertical;
+  }
+
+  /* Catalogue tab */
+  .catalog-form { display: flex; align-items: end; gap: 10px; width: 100%; }
+  .catalog-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 12px; align-items: start; margin-bottom: 12px; }
+  .catalog-layout #catalog-results:only-child, .catalog-layout:has(#catalog-detail[hidden]) { grid-template-columns: minmax(0, 1fr); }
+  #catalog-results.loading, .catalog-detail.loading { opacity: .6; transition: opacity .2s; }
+  .catalog-list { max-height: none; }
+  .catalog-list li { cursor: pointer; padding: 8px 6px; border-radius: 10px; }
+  .catalog-list li:hover, .catalog-list li.open { background: rgb(255 255 255 / .04); }
+  .catalog-list li.open { box-shadow: inset 3px 0 0 var(--lavender); }
+  .explicit { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 3px; font-size: 10px;
+    font-weight: 800; background: var(--muted); color: var(--night); vertical-align: 1px; }
+  .catalog-detail { position: sticky; top: calc(var(--header-h, 70px) + 12px); max-height: calc(100vh - var(--header-h, 70px) - 24px); overflow-y: auto; }
+  .catalog-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 4px; }
+  .catalog-head h2 { font-size: 17px; overflow-wrap: anywhere; }
+  .catalog-head .row { flex-wrap: wrap; }
+  .catalog-cover, img.catalog-cover { width: 96px; height: 96px; border-radius: 12px; flex: none; background: var(--outline); object-fit: cover; }
+  .catalog-h3 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--lavender); margin: 18px 0 8px; }
+  .catalog-note { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .catalog-raw { margin-top: 16px; color: var(--muted); font-size: 12px; }
+  .catalog-raw summary { cursor: pointer; }
+  .catalog-raw pre { max-height: 320px; overflow: auto; background: #08080b; border: 1px solid var(--outline); border-radius: 10px;
+    padding: 10px; color: #d6d6dc; font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* Drops about to expire (overview) */
+  .expiring { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); gap: 10px; }
+  .exp-item {
+    display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: 12px; row-gap: 10px;
+    padding: 12px 14px 10px; border: 1px solid var(--outline); border-radius: 14px; background: rgb(255 255 255 / .02);
+  }
+  .exp-item img, .exp-item .cover { width: 44px; height: 44px; border-radius: 8px; background: var(--outline); }
+  .exp-what { min-width: 0; }
+  .exp-what b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .exp-what small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .exp-left { text-align: right; white-space: nowrap; }
+  .exp-left small { display: block; color: var(--muted); font-size: 11px; }
+  .exp-time { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .exp-life { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--outline); overflow: hidden; }
+  .exp-life i { display: block; height: 100%; border-radius: 2px; background: var(--lavender); }
+  .exp-item.soon .exp-time { color: var(--peach); }
+  .exp-item.soon .exp-life i { background: var(--peach); }
+  .exp-item.last { border-color: rgb(240 72 72 / .5); background: rgb(240 72 72 / .06); }
+  .exp-item.last .exp-time { color: #ff8a8a; }
+  .exp-item.last .exp-life i { background: #ff8a8a; }
+
+  /* Drops tab */
+  .filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  .field.grow { flex: 1 1 220px; }
+  select {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--night);
+    border: 1px solid var(--outline); border-radius: 12px; padding: 8px 10px;
+  }
+  th button.sort {
+    all: unset; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; color: inherit;
+  }
+  th button.sort:focus-visible { outline: 2px solid var(--lavender); outline-offset: 2px; border-radius: 4px; }
+  th[aria-sort] { color: var(--text); }
+  tr.drop-row { cursor: pointer; }
+  tr.drop-row:hover td, tr.drop-row.open td { background: rgb(255 255 255 / .03); }
+  tr.drop-detail td { background: rgb(0 0 0 / .18); padding: 14px 16px; }
+  .rank { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rate { display: inline-flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .rate .bar { width: 56px; height: 6px; border-radius: 3px; background: var(--outline); overflow: hidden; }
+  .rate .bar i { display: block; height: 100%; background: var(--likes); border-radius: 3px; }
+  /* Too few swipes: grey, with the reason in a tooltip */
+  .rate.few, span.few { color: var(--muted); cursor: help; }
+  .rate.few .bar i { background: #4a4a56; }
+  .chip-genre { font-size: 11px; color: var(--muted); border: 1px solid var(--outline); border-radius: 999px; padding: 1px 7px; margin-left: 6px; }
+  .swipe-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .swipe-columns h3 { font-size: 13px; margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+  .people { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; }
+  .people li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: 13px; }
+  .people time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  #drops-more, #songs-more { margin-top: 12px; }
+
+  /* Play button and mini player */
+  button.play {
+    width: 30px; height: 30px; padding: 0; flex: none; display: inline-grid; place-items: center;
+    border-radius: 50%; background: var(--lavender); color: var(--night);
+  }
+  button.play svg { width: 12px; height: 12px; fill: currentColor; }
+  button.play.busy { opacity: .6; cursor: progress; }
+  .player {
+    position: fixed; right: 16px; bottom: 16px; z-index: 5; display: flex; align-items: center; gap: 12px;
+    width: min(420px, calc(100vw - 32px)); padding: 10px 12px; border-radius: 16px;
+    background: #22222b; border: 1px solid var(--outline); box-shadow: 0 8px 30px rgb(0 0 0 / .45);
+  }
+  .player img, .player .cover { width: 40px; height: 40px; border-radius: 8px; display: block; background: var(--outline); }
+  .player-text { flex: 1; min-width: 0; }
+  .player-text b, .player-text small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player-text small { color: var(--muted); font-size: 12px; }
+  .player-bar { display: block; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--outline); overflow: hidden; }
+  .player-bar i { display: block; height: 100%; width: 0; background: var(--lavender); }
+  #player-time { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .ids { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .ids a { color: var(--muted); }
+
+  a.tile { color: inherit; text-decoration: none; transition: border-color .2s; }
+  a.tile:hover { border-color: var(--lavender); }
+  a.tile .sub { color: var(--lavender); }
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .filter-chips button {
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+    background: var(--night); color: var(--muted); border: 1px solid var(--outline);
+  }
+  .filter-chips button[aria-pressed="true"] { background: rgb(180 167 245 / .16); color: var(--text); border-color: var(--lavender); }
+  .badge.rescue { color: #f0a070; border-color: rgb(212 110 58 / .5); }
+
+  /* Utilisateurs tab */
+  .users-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 12px; align-items: start; }
+  /* --header-h: height of the top bar, set by the script */
+  .user-picker { position: sticky; top: calc(var(--header-h, 70px) + 12px); padding: 12px; }
+  .user-list { list-style: none; margin: 10px 0 0; padding: 0; max-height: calc(100vh - var(--header-h, 70px) - 160px); overflow-y: auto; }
+  .user-list a {
+    display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px;
+    color: var(--text); text-decoration: none;
+  }
+  .user-list a:hover { background: rgb(255 255 255 / .04); }
+  .user-list a[aria-current="true"] { background: rgb(180 167 245 / .14); }
+  .user-list .who { flex: 1; min-width: 0; }
+  .user-list .who b, .user-list .who small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-list small { color: var(--muted); font-size: 12px; }
+  .user-list .when { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+  /* Round like the app: the accessories are cut at the edge of the circle */
+  .avatar {
+    display: inline-block; flex: none; border-radius: 50%; overflow: hidden;
+    width: var(--size, 28px); height: var(--size, 28px); background: var(--bg, var(--lavender));
+  }
+  .avatar svg { display: block; width: 100%; height: 100%; }
+
+  .who-cell { display: inline-flex; align-items: center; gap: 8px; }
+  .user-pane { display: grid; gap: 12px; min-width: 0; }
+  .user-detail { display: grid; gap: 12px; min-width: 0; }
+  .user-detail.loading { opacity: .6; transition: opacity .2s; }
+  .empty-detail { color: var(--muted); text-align: center; padding: 48px 20px; }
+  .detail-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .detail-row.wide { grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); }
+
+  .profile-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .profile-head .name { font: 600 20px "Unbounded", system-ui, sans-serif; overflow-wrap: anywhere; }
+  .counters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .counters div { background: var(--night); border: 1px solid var(--outline); border-radius: 12px; padding: 10px; text-align: center; }
+  .counters b { display: block; font-size: 22px; }
+  .counters span { color: var(--muted); font-size: 12px; }
+  .covers { display: flex; gap: 8px; flex-wrap: wrap; }
+  .covers img, .covers .cover { width: 52px; height: 52px; border-radius: 10px; background: var(--outline); }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; overflow-wrap: anywhere; }
+
+  .song-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+  .song-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--outline); }
+  .song-list li:first-child { border-top: 0; }
+  .song-list .what { flex: 1; min-width: 0; }
+  .song-list .what b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+  .song-list .what small { color: var(--muted); font-size: 12px; }
+  .song-list img, .song-list .cover { width: 36px; height: 36px; border-radius: 8px; flex: none; background: var(--outline); }
+  .song-list .side { text-align: right; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .badge.live { color: var(--mint); border-color: rgb(158 224 184 / .4); }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "daily" "hourly" "feed"; }
+    .status { margin-left: 0; flex-wrap: wrap; gap: 8px 12px; }
+    .status label { white-space: nowrap; }
+    #updated { flex-basis: 100%; }
+    header { gap: 8px 12px; padding: 10px 16px; }
+    .chip, #updated { display: none; }
+    .logo { width: 32px; height: 24px; }
+    .wordmark { font-size: 19px; }
+    .source { padding: 4px 10px; font-size: 11px; }
+    .status button { padding: 5px 12px; font-size: 13px; }
+    /* The tabs scroll sideways instead of breaking the words */
+    .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .users-layout, .detail-row.wide, .catalog-layout { grid-template-columns: minmax(0, 1fr); }
+    .catalog-detail { position: static; max-height: none; }
+    .user-picker { position: static; }
+    .user-list { max-height: 260px; }
+    .recap { padding: 22px 16px 18px; border-radius: 22px; }
+    .rc-title { font-size: 22px; }
+    .rc-kpi b { font-size: 24px; }
+    .recap-buttons { margin-left: 0; }
+    .segmented button { padding: 8px 9px; font-size: 12px; }
+  }
+  /* ---------- Phone: one column, bigger text and buttons, tabs at the bottom ---------- */
+  .phone-only { display: none !important; }
+  .tab-icon, .tab-short { display: none; }
+  .tab-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .catalog-detail { scroll-margin-top: calc(var(--header-h, 70px) + 12px); }
+  .btn-icon { display: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .source { white-space: nowrap; }
+  .back-link, .users-link { color: var(--lavender); font-weight: 600; text-decoration: none; }
+  .users-link { padding: 16px; margin-bottom: 12px; }
+  @media (max-width: 600px) {
+    .phone-only { display: block !important; }
+    .hide-phone { display: none !important; }
+    body { font-size: 15px; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+    .page { padding: 14px 12px 0; }
+    /* No blur on the top bar: it would hold the bottom tab bar inside it */
+    .topbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(12 12 16 / .94); }
+    header { padding: 8px 12px; flex-wrap: nowrap; }
+    .logo { width: 28px; height: 21px; }
+    .wordmark { font-size: 17px; }
+    /* Auto-refresh stays on; it already pauses when the screen is off */
+    .status label { display: none; }
+    .status { margin-left: auto; gap: 6px; flex-wrap: nowrap; }
+    .brand { min-width: 0; gap: 8px; }
+    .status button { width: 42px; height: 42px; padding: 0; flex: none; display: inline-grid; place-items: center; }
+    .btn-icon { display: block; }
+    .btn-label { display: none; }
+    /* Tabs: a bar at the bottom of the screen, like in the app */
+    .tabs {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-width: none;
+      border: 0; border-top: 1px solid var(--outline); border-radius: 0;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+      background: rgb(12 12 16 / .92); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    }
+    .tabs a { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 11px; padding: 8px 2px; border-radius: 12px; }
+    .tab-icon { display: block; }
+    .tab-long { display: none; }
+    .tab-short { display: inline; }
+    /* Bigger text and touch targets (44 px is the size of a finger) */
+    h2 { font-size: 16px; }
+    .card { padding: 14px; border-radius: 16px; }
+    .subtitle, .tile .label, .tile .sub, .legend li, .events time, details,
+    .user-list small, .song-list .what small, .song-list .side, .exp-what small, .people li { font-size: 13px; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .tile .value { font-size: 26px; }
+    .chart-box { height: 220px; }
+    .hourly .chart-box { height: 180px; }
+    .events { max-height: 420px; }
+    .events li { padding: 11px 0; }
+    button.small { min-height: 40px; padding: 9px 14px; font-size: 14px; }
+    button.play { width: 40px; height: 40px; }
+    button.play svg { width: 14px; height: 14px; }
+    /* 16 px: the phone does not zoom in when a field gets the focus */
+    input[type="password"], input[type="email"], input[type="text"], input[type="search"], select { font-size: 16px; padding: 12px; }
+    /* Tables: each row becomes a small card, with the name of the column above each value */
+    table.stack thead { display: none; }
+    table.stack tr {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--outline);
+    }
+    table.stack tr:last-child { border-bottom: 0; }
+    table.stack td { padding: 0; border: 0; text-align: left; font-size: 15px; }
+    table.stack td:first-child { grid-column: 1 / -1; }
+    table.stack td:not(:first-child)::before { content: attr(data-label); display: block; color: var(--muted); font-size: 12px; }
+    table.stack .rate { justify-content: flex-start; }
+    table.stack td { min-width: 0; overflow-wrap: anywhere; }
+    table.stack td.rank-cell { display: none; }
+    table.stack td.title-cell { grid-column: 1 / -1; }
+    table.stack tr.drop-row.open { background: rgb(255 255 255 / .04); border-radius: 12px; }
+    table.stack tr.drop-detail td { grid-column: 1 / -1; padding: 12px; border-radius: 12px; }
+    .phone-only.sort-menu { display: flex !important; align-items: center; gap: 8px; margin: 0 0 4px; }
+    .sort-menu select { flex: 1; min-width: 0; }
+    .sort-menu button { flex: none; width: 44px; }
+    /* Filters: two per line, the search on its own line */
+    .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .filters .field.grow, .filters > form { grid-column: 1 / -1; }
+    .filters select, .filters input { width: 100%; }
+    .catalog-form { flex-wrap: wrap; }
+    .catalog-form button { flex: 1; min-height: 44px; }
+    .recap-buttons button { min-height: 40px; }
+    /* Users tab: the list, then one user on the whole screen with a way back */
+    body.user-open .user-picker { display: none; }
+    body:not(.user-open) .user-pane { display: none; }
+    .user-list { max-height: none; }
+    .user-list a { padding: 12px 8px; }
+    .back-link { padding: 4px 2px 0; }
+    .detail-row, .detail-row.wide { grid-template-columns: minmax(0, 1fr); }
+    .song-list { max-height: 340px; }
+    .song-list li { padding: 10px 0; }
+    .kv { font-size: 14px; }
+    /* Account window: the whole screen, one field per line */
+    dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+    .dialog-head { padding: calc(14px + env(safe-area-inset-top)) 16px 0; }
+    .dialog-part { padding: 16px; }
+    .dialog-part h3 { font-size: 15px; }
+    .dialog-part p { font-size: 14px; }
+    dialog .row { flex-direction: column; align-items: stretch; }
+    dialog .row button { min-height: 44px; }
+    /* Player and messages stay above the tab bar */
+    .player { left: 12px; right: 12px; width: auto; bottom: calc(80px + env(safe-area-inset-bottom)); }
+    .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+    .login { margin-top: 3vh; }
+    .login-logo { width: 150px; height: 112px; }
+  }
+</style>
+</head>
+<body>
+<!-- Logo of the app, converted from app/src/main/res/drawable/ic_melodrop_logo.xml -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><radialGradient id="md-g1" gradientUnits="userSpaceOnUse" cx="512" cy="604" r="300"><stop offset="0" stop-color="#B4A7F5" stop-opacity="0.298"/><stop offset="0.6" stop-color="#F5A8C8" stop-opacity="0.078"/><stop offset="1" stop-color="#F5A8C8" stop-opacity="0.0"/></radialGradient><linearGradient id="md-g2" gradientUnits="userSpaceOnUse" x1="212" y1="0" x2="812" y2="0"><stop offset="0" stop-color="#FFE08A" stop-opacity="1.0"/><stop offset="0.25" stop-color="#9EE0B8" stop-opacity="1.0"/><stop offset="0.5" stop-color="#B4A7F5" stop-opacity="1.0"/><stop offset="0.75" stop-color="#F5A8C8" stop-opacity="1.0"/><stop offset="1" stop-color="#FFB38A" stop-opacity="1.0"/></linearGradient><linearGradient id="md-g3" gradientUnits="userSpaceOnUse" x1="312" y1="0" x2="712" y2="0"><stop offset="0" stop-color="#9EE0B8" stop-opacity="1.0"/><stop offset="0.25" stop-color="#B4A7F5" stop-opacity="1.0"/><stop offset="0.5" stop-color="#F5A8C8" stop-opacity="1.0"/><stop offset="0.75" stop-color="#FFB38A" stop-opacity="1.0"/><stop offset="1" stop-color="#FFE08A" stop-opacity="1.0"/></linearGradient><linearGradient id="md-g4" gradientUnits="userSpaceOnUse" x1="408" y1="0" x2="616" y2="0"><stop offset="0" stop-color="#B4A7F5" stop-opacity="1.0"/><stop offset="0.25" stop-color="#F5A8C8" stop-opacity="1.0"/><stop offset="0.5" stop-color="#FFB38A" stop-opacity="1.0"/><stop offset="0.75" stop-color="#FFE08A" stop-opacity="1.0"/><stop offset="1" stop-color="#9EE0B8" stop-opacity="1.0"/></linearGradient><radialGradient id="md-g5" gradientUnits="userSpaceOnUse" cx="512" cy="400" r="170"><stop offset="0" stop-color="#B4A7F5" stop-opacity="0.451"/><stop offset="0.5" stop-color="#F5A8C8" stop-opacity="0.149"/><stop offset="1" stop-color="#F5A8C8" stop-opacity="0.0"/></radialGradient><clipPath id="md-c6"><path d="M512 260 C470 315 432 360 432 420 C432 468 468 503 512 503 C556 503 592 468 592 420 C592 360 554 315 512 260 Z"/></clipPath><radialGradient id="md-g7" gradientUnits="userSpaceOnUse" cx="488" cy="337.8" r="96"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.322"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0.0"/></radialGradient><radialGradient id="md-g8" gradientUnits="userSpaceOnUse" cx="547.2" cy="473.8" r="88"><stop offset="0" stop-color="#0C0C10" stop-opacity="0.251"/><stop offset="1" stop-color="#0C0C10" stop-opacity="0.0"/></radialGradient></defs><symbol id="melodrop-logo" viewBox="0 0 624 466"><g transform="translate(-200.0 -226.0) rotate(0) scale(1 1) translate(-0.0 -0.0)"><g transform="translate(512.0 604.0) rotate(0) scale(1 0.2600) translate(-512.0 -604.0)"><path d="M212,604 a300,300 0 1,0 600,0 a300,300 0 1,0 -600,0 z" fill="url(#md-g1)"/></g><path d="M212 600 a300 74 0 1 0 600 0 a300 74 0 1 0 -600 0 Z M224 590.5 a288 61.5 0 1 0 576 0 a288 61.5 0 1 0 -576 0 Z" fill="url(#md-g2)" opacity="0.75" fill-rule="evenodd"/><path d="M312 600 a200 49 0 1 0 400 0 a200 49 0 1 0 -400 0 Z M324 590.5 a188 36.5 0 1 0 376 0 a188 36.5 0 1 0 -376 0 Z" fill="url(#md-g3)" opacity="0.9" fill-rule="evenodd"/><path d="M408 600 a104 26 0 1 0 208 0 a104 26 0 1 0 -208 0 Z M420 590.5 a92 13.5 0 1 0 184 0 a92 13.5 0 1 0 -184 0 Z" fill="url(#md-g4)" opacity="1.0" fill-rule="evenodd"/><path d="M387,506 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 z" fill="#F5A8C8"/><path d="M623,500 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 z" fill="#9EE0B8"/><path d="M585,478 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" fill="#FFE08A"/><path d="M435,484 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" fill="#B4A7F5"/><path d="M342,400 a170,170 0 1,0 340,0 a170,170 0 1,0 -340,0 z" fill="url(#md-g5)"/><g transform="translate(0.0 0.0) rotate(0) scale(1 1) translate(-0.0 -0.0)"><g clip-path="url(#md-c6)"><path d="M420,250 h184 v51.4 h-184 z" fill="#B4A7F5"/><path d="M420,310.4 h184 v41.4 h-184 z" fill="#F5A8C8"/><path d="M420,360.8 h184 v41.4 h-184 z" fill="#FFB38A"/><path d="M420,411.2 h184 v41.4 h-184 z" fill="#FFE08A"/><path d="M420,461.6 h184 v51.4 h-184 z" fill="#9EE0B8"/><g transform="translate(488.0 337.8) rotate(0) scale(1 1.5188) translate(-488.0 -337.8)"><path d="M392,337.8 a96,96 0 1,0 192,0 a96,96 0 1,0 -192,0 z" fill="url(#md-g7)"/></g><g transform="translate(547.2 473.8) rotate(0) scale(1 1.5188) translate(-547.2 -473.8)"><path d="M459.2,473.8 a88,88 0 1,0 176,0 a88,88 0 1,0 -176,0 z" fill="url(#md-g8)"/></g></g></g><g transform="translate(470.0 395.0) rotate(18) scale(1 1) translate(-470.0 -395.0)"><path d="M459,395 a11,30 0 1,0 22,0 a11,30 0 1,0 -22,0 z" fill="#FFFFFF" opacity="0.5"/></g></g></symbol></svg>
+
+<!-- Background: pastel halos like HaloBackground.kt, and the image of the login screen -->
+<div class="background" aria-hidden="true">
+  <div class="halo" style="--c: 180 167 245"><div class="glow"></div></div>
+  <div class="halo" style="--c: 255 224 138"><div class="glow"></div></div>
+  <div class="halo" style="--c: 158 224 184"><div class="glow"></div></div>
+  <div class="halo" style="--c: 245 168 200"><div class="glow"></div></div>
+  <div class="login-image"></div>
+</div>
+
+<!-- Top bar: stays at the top of the screen when scrolling -->
+<div class="topbar" id="topbar">
+  <header>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 624 466" aria-hidden="true"><use href="#melodrop-logo"/></svg>
+      <span class="wordmark">melo<span>Drop</span></span>
+      <span class="chip">admin</span>
+    </div>
+    <span id="source" class="source" hidden></span>
+    <nav class="tabs" id="tabs" hidden>
+      <a href="#overview" data-tab="overview"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8.5a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z"/></svg><span class="tab-long">Vue d'ensemble</span><span class="tab-short">Accueil</span></a>
+      <a href="#drops" data-tab="drops"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-3.2 4.2-6 7.3-6 10.8a6 6 0 0 0 12 0C18 10.3 15.2 7.2 12 3z"/></svg><span class="tab-long">Drops</span><span class="tab-short">Drops</span></a>
+      <a href="#songs" data-tab="songs"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span class="tab-long">Sons</span><span class="tab-short">Sons</span></a>
+      <a href="#catalog" data-tab="catalog"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="tab-long">Catalogue</span><span class="tab-short">Deezer</span></a>
+      <a href="#users" data-tab="users"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-long">Utilisateurs</span><span class="tab-short">Comptes</span></a>
+      <a href="#recap" data-tab="recap"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg><span class="tab-long">Récap</span><span class="tab-short">Récap</span></a>
+    </nav>
+    <div class="status" id="status" hidden>
+      <span id="updated">Chargement…</span>
+      <label title="Actualise toutes les 20 secondes"><input type="checkbox" id="auto" checked> Auto<span id="countdown"></span></label>
+      <button id="refresh" type="button" aria-label="Actualiser" title="Actualiser">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4"/></svg>
+        <span class="btn-label">Actualiser</span></button>
+      <button id="logout" type="button" class="ghost" aria-label="Se déconnecter" title="Se déconnecter">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>
+        <span class="btn-label">Se déconnecter</span></button>
+    </div>
+  </header>
+</div>
+
+<div class="page">
+
+  <section id="login" class="login" hidden>
+    <svg class="login-logo" viewBox="0 0 624 466" role="img" aria-label="meloDrop"><use href="#melodrop-logo"/></svg>
+    <p class="wordmark big">melo<span>Drop</span></p>
+    <form id="login-form" class="card">
+      <h2>Connexion</h2>
+      <p class="subtitle" id="login-subtitle">Réservé aux comptes admin de meloDrop</p>
+      <input type="text" id="identifier" autocomplete="username" autocapitalize="none" spellcheck="false"
+             placeholder="E-mail ou pseudo" aria-label="E-mail ou pseudo" required>
+      <input type="password" id="password" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe" required>
+      <button type="submit" id="login-button">Se connecter</button>
+      <p class="form-error" id="login-error" role="alert"></p>
+    </form>
+  </section>
+
+  <div id="error" class="error" hidden></div>
+
+  <main id="dashboard" hidden>
+   <div id="tab-overview">
+    <section class="tiles" id="tiles"></section>
+
+    <section class="grid">
+      <article class="card daily">
+        <h2>Activité par jour</h2>
+        <p class="subtitle" id="daily-subtitle">14 derniers jours, heure française</p>
+        <ul class="legend" id="daily-legend"></ul>
+        <div class="chart-box"><canvas id="daily-chart" aria-label="Activité par jour"></canvas></div>
+        <details>
+          <summary>Voir les données</summary>
+          <div class="table-wrap"><table id="daily-table"></table></div>
+        </details>
+      </article>
+
+      <article class="card hourly">
+        <h2>Swipes par heure</h2>
+        <p class="subtitle">Likes et skips des dernières 24 heures</p>
+        <div class="chart-box"><canvas id="hourly-chart" aria-label="Swipes par heure"></canvas></div>
+      </article>
+
+      <article class="card feed">
+        <h2>Activité récente</h2>
+        <p class="subtitle">Drops, likes, skips, repêchages et nouveaux comptes</p>
+        <ul class="events" id="events"></ul>
+      </article>
+    </section>
+
+    <section class="card table-card">
+      <h2>Les drops bientôt expirés</h2>
+      <p class="subtitle">Les prochains à quitter Discover, le plus pressé en premier</p>
+      <ul class="expiring" id="expiring"></ul>
+    </section>
+
+    <section class="card table-card">
+      <h2>Drops en ligne</h2>
+      <p class="subtitle">Les plus likés en premier · <a class="user-link" href="#drops">voir tous les drops</a></p>
+      <div class="table-wrap" id="online"></div>
+    </section>
+
+    <a class="card users-link phone-only" id="users-link" href="#users">Voir les utilisateurs →</a>
+    <section class="card table-card hide-phone">
+      <h2>Utilisateurs</h2>
+      <p class="subtitle">Les plus récemment actifs en premier</p>
+      <div class="table-wrap" id="users"></div>
+    </section>
+   </div>
+
+   <!-- Drops tab: filters, totals of the selection, then the ranking -->
+   <div id="tab-drops" hidden>
+    <section class="card filters" aria-label="Filtres">
+      <label class="field grow"><span>Recherche</span>
+        <input type="search" id="drop-search" placeholder="Titre, artiste ou @pseudo"></label>
+      <label class="field"><span>Période</span>
+        <select id="drop-period">
+          <option value="">Depuis le début</option>
+          <option value="1">24 dernières heures</option>
+          <option value="7">7 derniers jours</option>
+          <option value="30">30 derniers jours</option>
+        </select></label>
+      <label class="field"><span>Statut</span>
+        <select id="drop-status">
+          <option value="">Tous</option>
+          <option value="online">En ligne</option>
+          <option value="expired">Expirés</option>
+        </select></label>
+      <label class="field"><span>Genre</span>
+        <select id="drop-genre"><option value="">Tous les genres</option></select></label>
+      <label class="field"><span>Swipes min.</span>
+        <select id="drop-min">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select></label>
+    </section>
+    <section class="tiles" id="drop-tiles"></section>
+    <section class="card table-card">
+      <h2 id="drops-title">Classement des drops</h2>
+      <p class="subtitle" id="drops-subtitle"></p>
+      <div class="table-wrap" id="drops-table"></div>
+      <button type="button" id="drops-more" class="ghost small" hidden>Afficher 100 de plus</button>
+    </section>
+   </div>
+
+   <!-- Récap tab: stats to share with the testers -->
+   <div id="tab-recap" hidden>
+    <section class="card recap-toolbar" aria-label="Période du récap">
+      <div class="segmented" id="recap-period" role="group" aria-label="Période">
+        <button type="button" data-days="1" aria-pressed="false">24 h</button>
+        <button type="button" data-days="7" aria-pressed="true">7 jours</button>
+        <button type="button" data-days="30" aria-pressed="false">30 jours</button>
+        <button type="button" data-days="all" aria-pressed="false">Depuis le début</button>
+      </div>
+      <div class="segmented" id="recap-format" role="group" aria-label="Format de la carte">
+        <button type="button" data-format="landscape">Paysage</button>
+        <button type="button" data-format="portrait">Portrait</button>
+      </div>
+      <div class="recap-buttons">
+        <button type="button" id="recap-share" class="small" hidden>Partager</button>
+        <button type="button" id="recap-copy-image" class="small">Copier l'image</button>
+        <button type="button" id="recap-download" class="ghost small">Télécharger l'image</button>
+        <button type="button" id="recap-copy" class="ghost small">Copier le message</button>
+      </div>
+    </section>
+    <div class="recap-wrap">
+      <article class="recap" id="recap-card" aria-live="polite">
+        <p class="rc-empty">Chargement…</p>
+      </article>
+    </div>
+    <details class="card recap-text-card">
+      <summary>Voir et modifier le message avant de le copier</summary>
+      <textarea id="recap-text" rows="16" aria-label="Message à envoyer aux testeurs"></textarea>
+    </details>
+   </div>
+
+   <!-- Catalogue tab: the Deezer catalog, searched like in the app -->
+   <div id="tab-catalog" hidden>
+    <section class="card filters">
+      <form id="catalog-form" class="catalog-form" role="search">
+        <label class="field grow"><span>Rechercher sur Deezer</span>
+          <input type="search" id="catalog-query" maxlength="100" autocomplete="off"
+                 placeholder='Titre, artiste… ou artist:"Daft Punk" track:"One More Time", ou un id / lien Deezer'></label>
+        <button type="submit">Chercher</button>
+      </form>
+    </section>
+    <div class="catalog-layout">
+      <section class="card" id="catalog-results">
+        <p class="empty">Les mêmes résultats que la recherche de l'appli (GET /catalog/search), avec en plus l'album, la durée, la popularité et les titres déjà en base. Clique sur un titre pour voir sa fiche.</p>
+      </section>
+      <aside class="card catalog-detail" id="catalog-detail" hidden></aside>
+    </div>
+   </div>
+
+   <!-- Sons tab: every song stored in the base, with its preview -->
+   <div id="tab-songs" hidden>
+    <section class="card filters" aria-label="Filtres">
+      <label class="field grow"><span>Recherche</span>
+        <input type="search" id="song-search" placeholder="Titre, artiste ou ISRC"></label>
+      <label class="field"><span>Genre</span>
+        <select id="song-genre"><option value="">Tous les genres</option></select></label>
+      <label class="field"><span>Drops</span>
+        <select id="song-dropped">
+          <option value="">Tous</option>
+          <option value="many">Déposés plusieurs fois</option>
+          <option value="none">Plus aucun drop</option>
+        </select></label>
+    </section>
+    <section class="tiles" id="song-tiles"></section>
+    <section class="card table-card">
+      <h2>Sons en base</h2>
+      <p class="subtitle" id="songs-subtitle"></p>
+      <div class="table-wrap" id="songs-table"></div>
+      <button type="button" id="songs-more" class="ghost small" hidden>Afficher 100 de plus</button>
+    </section>
+   </div>
+
+   <!-- Utilisateurs tab: the list on the left, the selected user on the right -->
+   <div id="tab-users" class="users-layout" hidden>
+    <aside class="card user-picker">
+      <input type="search" id="user-search" placeholder="Pseudo, nom ou e-mail" aria-label="Rechercher un utilisateur">
+      <div class="filter-chips" id="user-filters" role="group" aria-label="Filtrer les utilisateurs"></div>
+      <ul class="user-list" id="user-list"></ul>
+    </aside>
+    <section class="user-pane">
+      <a class="back-link phone-only" href="#users">← Tous les utilisateurs</a>
+      <div id="user-detail" class="user-detail">
+        <div class="card empty-detail">Choisis un utilisateur dans la liste.</div>
+      </div>
+    </section>
+   </div>
+  </main>
+</div>
+
+<dialog id="manage"></dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<!-- Mini player of the 30-second previews -->
+<div id="player" class="player" hidden>
+  <span id="player-cover"></span>
+  <div class="player-text"><b id="player-title"></b><small id="player-artist"></small>
+    <span class="player-bar"><i id="player-progress"></i></span></div>
+  <span id="player-time" class="muted"></span>
+  <button type="button" id="player-stop" class="ghost small">Arrêter</button>
+</div>
+
+<script>
+// Seconds between two automatic refreshes
+const REFRESH_SECONDS = 20;
+
+// The token is kept in sessionStorage: it survives a refresh, and is gone when the tab closes
+const TOKEN_KEY = "melodrop_admin_token";
+// Tabs open in production: everything but Logs, which stays in the local dashboard
+const ENABLED_TABS = ["overview", "drops", "songs", "catalog", "users", "recap"];
+
+// Error codes of the API (the "detail" field), as messages for the admin
+const ERROR_MESSAGES = {
+  admin_only: "Ce compte n'a pas accès au dashboard.",
+  not_authenticated: "Connexion nécessaire.",
+  invalid_token: "Session expirée : reconnecte-toi.",
+  invalid_credentials: "E-mail, pseudo ou mot de passe incorrect.",
+  email_not_verified: "L'e-mail de ce compte n'est pas encore validé.",
+  user_not_found: "Utilisateur introuvable : il a peut-être été supprimé.",
+  drop_not_found: "Plus de drop en cours.",
+  email_taken: "Cette adresse est déjà utilisée par un autre compte.",
+  same_email: "C'est déjà son adresse.",
+  own_account: "Ton propre compte ne se supprime pas d'ici.",
+  username_mismatch: "Le pseudo tapé ne correspond pas.",
+  song_not_found: "Titre introuvable.",
+  track_not_found: "Ce titre n'est plus sur Deezer.",
+  deezer_error: "Deezer ne répond pas pour le moment.",
+  validation_error: "Valeur refusée : vérifie ce que tu as tapé.",
+  deezer_unavailable: "Deezer ne répond pas pour le moment.",
+  cover_not_allowed: "Cette pochette ne vient pas de Deezer.",
+  cover_not_found: "Pochette introuvable sur Deezer.",
+};
+
+// Series of the daily chart, in this order (checked for color blindness)
+const SERIES = [
+  { key: "saves",  label: "Likes",        color: "--likes" },
+  { key: "drops",  label: "Drops",        color: "--drops" },
+  { key: "users",  label: "Inscriptions", color: "--signups" },
+  { key: "skips",  label: "Skips",        color: "--skips" },
+];
+
+// What each event type looks like in the activity list
+const EVENT_COLORS = { like: "--likes", skip: "--skips", drop: "--drops", signup: "--signups", rescue: "--swipes" };
+
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const pad = (n) => String(n).padStart(2, "0");
+const timeFormat = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const dateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const dayFormat = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric" });
+const numberFormat = new Intl.NumberFormat("fr-FR");
+
+let dailyChart = null;
+let hourlyChart = null;
+let lastUpdate = 0;
+let loading = false;
+let timer = null;
+let seenEvents = null;
+let currentData = null;
+let currentAdmin = null;
+let loggedIn = false;
+let currentTab = "overview";
+let selectedUserId = null;
+let userChart = null;
+let userRequest = 0;
+
+// ---------- Token and API calls ----------
+
+// Fallback when the browser blocks sessionStorage: the token is lost on refresh
+let memoryToken = null;
+
+function getToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY); } catch { return memoryToken; }
+}
+
+function setToken(token) {
+  memoryToken = token;
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token);
+    else sessionStorage.removeItem(TOKEN_KEY);
+  } catch { /* storage blocked: memoryToken is used */ }
+}
+
+// Error of the API, with its HTTP status and its code (detail)
+class ApiError extends Error {
+  constructor(status, detail) {
+    super(ERROR_MESSAGES[detail] || detail || `Erreur ${status}`);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+// Calls a route of the API with the token, and returns its JSON (null for a 204)
+async function api(path, { method = "GET", body } = {}) {
+  const headers = { Authorization: `Bearer ${getToken()}` };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const response = await fetch(path, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+    cache: "no-store",
+  });
+  const data = response.status === 204 ? null : await response.json().catch(() => null);
+  if (response.ok) return data;
+
+  // FastAPI sends {"detail": "code"}, or a list of errors for a 422
+  const detail = Array.isArray(data?.detail) ? "validation_error" : data?.detail;
+  const error = new ApiError(response.status, detail);
+  // Token missing or expired, or an account that is not admin: back to the login
+  if (response.status === 401 || detail === "admin_only") {
+    setToken(null);
+    showLogin(error.message);
+  }
+  throw error;
+}
+
+// ---------- Small helpers (text is always set with textContent, never innerHTML) ----------
+
+function el(tag, options = {}, children = []) {
+  const node = document.createElement(tag);
+  if (options.text !== undefined) node.textContent = options.text;
+  if (options.className) node.className = options.className;
+  if (options.href) node.href = options.href;
+  // setProperty also works for CSS variables like --bg
+  for (const [key, value] of Object.entries(options.style || {})) node.style.setProperty(key, value);
+  for (const child of children) node.append(child);
+  return node;
+}
+
+function userLink(id, username) {
+  if (id === null || id === undefined) return el("span", { className: "muted", text: "compte supprimé" });
+  return el("a", { className: "user-link", href: `#user/${id}`, text: `@${username}` });
+}
+
+function dot(colorVar) {
+  return el("span", { className: "key-dot", style: { background: css(colorVar) } });
+}
+
+function relativeTime(iso) {
+  const seconds = (Date.now() - new Date(iso)) / 1000;
+  if (seconds < 60) return "à l'instant";
+  if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)} min`;
+  if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)} h`;
+  return `il y a ${Math.floor(seconds / 86400)} j`;
+}
+
+// Time until a future date, like "dans 9 min"
+function untilTime(iso) {
+  const seconds = (new Date(iso) - Date.now()) / 1000;
+  if (seconds < 60) return "dans moins d'1 min";
+  if (seconds < 3600) return `dans ${Math.floor(seconds / 60)} min`;
+  if (seconds < 86400) return `dans ${Math.floor(seconds / 3600)} h`;
+  return `dans ${Math.floor(seconds / 86400)} j`;
+}
+
+function timeLeft(iso) {
+  const minutes = Math.max(0, Math.floor((new Date(iso) - Date.now()) / 60000));
+  return `${Math.floor(minutes / 60)} h ${pad(minutes % 60)}`;
+}
+
+function likeRate(saves, skips) {
+  return saves + skips === 0 ? "—" : `${Math.round((100 * saves) / (saves + skips))} %`;
+}
+
+// Below this number of swipes, a like rate says little: it is shown in grey
+const RELIABLE_SWIPES = 5;
+
+// "Prudent" like rate used to rank (Wilson score, 95 %): the low end of the range
+// where the real rate probably is. 2 likes out of 2 counts as 34 %,
+// 18 out of 20 as 70 %: a rate seen on many swipes goes first.
+function prudentRate(likes, swipes) {
+  if (!swipes) return -1;
+  const z = 1.96;
+  const p = likes / swipes;
+  const z2 = z * z;
+  return (p + z2 / (2 * swipes) - z * Math.sqrt((p * (1 - p) + z2 / (4 * swipes)) / swipes)) / (1 + z2 / swipes);
+}
+
+// Like rate as text, in grey with an explanation when the swipes are too few
+function rateSpan(saves, skips) {
+  const swipes = saves + skips;
+  const span = el("span", { text: likeRate(saves, skips) });
+  if (swipes && swipes < RELIABLE_SWIPES) {
+    span.className = "few";
+    span.title = `Seulement ${swipes} swipe${swipes > 1 ? "s" : ""} : taux peu fiable`;
+  }
+  return span;
+}
+
+// Local day of a date, like "2026-10-29" (the browser is on French time)
+function dayKey(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+// UTC hour of a date, written like the keys sent by the API
+function hourKey(date) {
+  return date.toISOString().slice(0, 13) + ":00:00Z";
+}
+
+// ---------- Tiles ----------
+
+function renderTiles(data) {
+  const t = data.totals;
+  const d = data.last_24h;
+  const tiles = [
+    { label: "Comptes", value: t.users,
+      sub: `+${d.signups} en 24 h · ${t.unverified} non vérifié${t.unverified > 1 ? "s" : ""}` },
+    { label: "Actifs (24 h)", value: d.active_users, sub: "ont déposé ou swipé" },
+    { label: "Drops en ligne", value: t.online_drops, sub: `${d.drops} déposé${d.drops > 1 ? "s" : ""} en 24 h` },
+    { label: "Likes (24 h)", value: d.saves, sub: `${numberFormat.format(t.saves)} au total`, color: "--likes" },
+    { label: "Skips (24 h)", value: d.skips, color: "--skips",
+      sub: `${numberFormat.format(t.skips)} au total · ${d.rescues} repêché${d.rescues > 1 ? "s" : ""} en 24 h` },
+    { label: "Taux de like (24 h)", value: likeRate(d.saves, d.skips), sub: "des swipes sont des likes" },
+  ];
+  // Validated accounts without a drop online, and those that never dropped
+  const noDrop = usersMatching("no-drop", data).length;
+  const never = usersMatching("never", data).length;
+  tiles.push({ label: "Sans drop en ligne", value: noDrop, href: "#users/no-drop",
+    sub: `dont ${never} jamais droppé · voir la liste` });
+  const box = document.getElementById("tiles");
+  box.replaceChildren(...tiles.map((tile) => {
+    const label = el("div", { className: "label" });
+    if (tile.color) label.append(dot(tile.color));
+    label.append(tile.label);
+    const value = typeof tile.value === "number" ? numberFormat.format(tile.value) : tile.value;
+    // A tile with href opens a filtered list
+    return el(tile.href ? "a" : "div", { className: "card tile", href: tile.href }, [
+      label,
+      el("div", { className: "value", text: value }),
+      el("div", { className: "sub", text: tile.sub }),
+    ]);
+  }));
+}
+
+// ---------- Daily chart ----------
+
+function dailySeries(data, series = SERIES) {
+  // The days to show, from the oldest to today
+  const days = [];
+  for (let i = data.days - 1; i >= 0; i--) {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() - i);
+    days.push(date);
+  }
+  // Add up the UTC hours of each table into French days
+  const values = {};
+  for (const serie of series) {
+    const perDay = {};
+    for (const [hour, count] of Object.entries(data.hourly[serie.key] || {})) {
+      const key = dayKey(new Date(hour));
+      perDay[key] = (perDay[key] || 0) + count;
+    }
+    values[serie.key] = days.map((date) => perDay[dayKey(date)] || 0);
+  }
+  const labels = days.map((date, i) => (i === days.length - 1 ? "Auj." : dayFormat.format(date)));
+  return { days, labels, values };
+}
+
+// Vertical line under the pointer, to find a day easily
+const crosshair = {
+  id: "crosshair",
+  beforeDatasetsDraw(chart) {
+    const active = chart.tooltip?.getActiveElements();
+    if (!active?.length) return;
+    const { ctx, chartArea } = chart;
+    ctx.save();
+    ctx.strokeStyle = "#4a4a56";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(active[0].element.x, chartArea.top);
+    ctx.lineTo(active[0].element.x, chartArea.bottom);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
+function tooltipStyle() {
+  return {
+    backgroundColor: "#22222b",
+    borderColor: css("--outline"),
+    borderWidth: 1,
+    titleColor: css("--muted"),
+    titleFont: { weight: "500" },
+    bodyColor: css("--text"),
+    bodyFont: { weight: "600" },
+    padding: 10,
+    boxPadding: 6,
+    usePointStyle: true,
+  };
+}
+
+function axisStyle() {
+  return {
+    y: {
+      beginAtZero: true,
+      ticks: { precision: 0, color: css("--muted") },
+      grid: { color: css("--outline") },
+      border: { display: false },
+    },
+    x: {
+      ticks: { color: css("--muted"), maxRotation: 0, autoSkip: true,
+        maxTicksLimit: matchMedia("(max-width: 600px)").matches ? 7 : undefined },
+      grid: { display: false },
+      border: { color: css("--outline") },
+    },
+  };
+}
+
+function renderDaily(data) {
+  const { days, labels, values } = dailySeries(data);
+  document.getElementById("daily-subtitle").textContent =
+    `${data.days} derniers jours, heure française`;
+
+  if (!dailyChart) {
+    dailyChart = new Chart(document.getElementById("daily-chart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: SERIES.map((serie) => ({
+          label: serie.label,
+          data: values[serie.key],
+          borderColor: css(serie.color),
+          backgroundColor: css(serie.color),
+          borderWidth: 2,
+          borderCapStyle: "round",
+          borderJoinStyle: "round",
+          cubicInterpolationMode: "monotone",
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBorderWidth: 2,
+          pointHoverBorderColor: css("--card"),
+          pointStyle: "line",
+        })),
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipStyle(),
+            callbacks: {
+              title: (items) => dateFormat.format(days[items[0].dataIndex]),
+              label: (item) => ` ${item.formattedValue}  ${item.dataset.label}`,
+            },
+          },
+        },
+        scales: axisStyle(),
+      },
+      plugins: [crosshair],
+    });
+  } else {
+    dailyChart.data.labels = labels;
+    SERIES.forEach((serie, i) => { dailyChart.data.datasets[i].data = values[serie.key]; });
+    dailyChart.update("none");
+  }
+
+  // Legend: the color key, the name and the total of the period
+  document.getElementById("daily-legend").replaceChildren(...SERIES.map((serie) => {
+    const total = values[serie.key].reduce((a, b) => a + b, 0);
+    return el("li", {}, [
+      el("span", { className: "line-key", style: { background: css(serie.color) } }),
+      `${serie.label} `,
+      el("b", { text: numberFormat.format(total) }),
+    ]);
+  }));
+
+  // Same numbers as a table, without hovering
+  const head = el("tr", {}, [el("th", { text: "Jour" }), ...SERIES.map((s) => el("th", { className: "num", text: s.label }))]);
+  const rows = days.map((date, i) => el("tr", {}, [
+    el("td", { text: dateFormat.format(date) }),
+    ...SERIES.map((s) => el("td", { className: "num", text: values[s.key][i] })),
+  ]));
+  document.getElementById("daily-table").replaceChildren(el("thead", {}, [head]), el("tbody", {}, rows.reverse()));
+}
+
+// ---------- Hourly chart ----------
+
+function renderHourly(data) {
+  const end = new Date();
+  end.setMinutes(0, 0, 0);
+  const hours = [];
+  for (let i = 23; i >= 0; i--) {
+    const start = new Date(end.getTime() - i * 3600 * 1000);
+    const key = hourKey(start);
+    hours.push({
+      start,
+      likes: data.hourly.saves[key] || 0,
+      skips: data.hourly.skips[key] || 0,
+    });
+  }
+  const labels = hours.map((h) => `${h.start.getHours()} h`);
+  const swipes = hours.map((h) => h.likes + h.skips);
+
+  if (!hourlyChart) {
+    hourlyChart = new Chart(document.getElementById("hourly-chart"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "Swipes",
+          data: swipes,
+          backgroundColor: css("--swipes"),
+          hoverBackgroundColor: "#e88a5a",
+          maxBarThickness: 24,
+          borderRadius: { topLeft: 4, topRight: 4 },
+          borderSkipped: "start",
+        }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipStyle(),
+            usePointStyle: false,
+            displayColors: false,
+            callbacks: {
+              title: (items) => {
+                const h = hourlyChart.$hours[items[0].dataIndex];
+                return `${h.start.getHours()} h – ${(h.start.getHours() + 1) % 24} h`;
+              },
+              label: (item) => `${item.formattedValue} swipes`,
+              afterLabel: (item) => {
+                const h = hourlyChart.$hours[item.dataIndex];
+                return `${h.likes} likes · ${h.skips} skips · ${likeRate(h.likes, h.skips)}`;
+              },
+            },
+          },
+        },
+        scales: axisStyle(),
+      },
+    });
+  } else {
+    hourlyChart.data.labels = labels;
+    hourlyChart.data.datasets[0].data = swipes;
+    hourlyChart.update("none");
+  }
+  // Kept on the chart for the tooltip
+  hourlyChart.$hours = hours;
+}
+
+// ---------- Activity list ----------
+
+function eventText(event) {
+  const p = el("p", {}, [userLink(event.user_id, event.username)]);
+  const song = event.title ? `« ${event.title} »` : "";
+  if (event.type === "signup") p.append(" a créé son compte");
+  if (event.type === "drop") p.append(` a déposé ${song} — ${event.artist}`);
+  if (event.type === "like") p.append(` a liké ${song}, drop de `, userLink(event.author_id, event.author));
+  if (event.type === "skip") p.append(` a passé ${song}, drop de `, userLink(event.author_id, event.author));
+  // Rescued from "Mes skips" after the drop expired: no like for the author
+  if (event.type === "rescue") p.append(` a repêché ${song} dans ses skips, drop expiré de `, userLink(event.author_id, event.author));
+  return p;
+}
+
+function renderEvents(data) {
+  const list = document.getElementById("events");
+  if (!data.activity.length) {
+    list.replaceChildren(el("li", { className: "empty", text: "Rien pour l'instant" }));
+    return;
+  }
+  const keys = new Set();
+  list.replaceChildren(...data.activity.map((event) => {
+    const key = `${event.at}|${event.type}|${event.username}|${event.title}`;
+    keys.add(key);
+    const time = el("time", { text: `${relativeTime(event.at)} · ${timeFormat.format(new Date(event.at))}` });
+    time.dateTime = event.at;
+    // Events that arrived since the last refresh flash once
+    const isNew = seenEvents !== null && !seenEvents.has(key);
+    return el("li", { className: isNew ? "new" : "" }, [
+      dot(EVENT_COLORS[event.type]),
+      el("div", {}, [eventText(event), time]),
+    ]);
+  }));
+  seenEvents = keys;
+}
+
+// ---------- Tables ----------
+
+function table(headers, rows) {
+  const head = el("tr", {}, headers.map(([text, isNumber]) => el("th", { text, className: isNumber ? "num" : "" })));
+  // On a phone, each cell shows the name of its column (see table.stack in the CSS)
+  rows.forEach((row) => [...row.children].forEach((cell, i) => { cell.dataset.label = headers[i][0]; }));
+  return el("table", { className: "stack" }, [el("thead", {}, [head]), el("tbody", {}, rows)]);
+}
+
+function songCell(drop) {
+  // Empty square when there is no cover, or when it does not load
+  let cover = el("span", { className: "cover" });
+  // Only Deezer images over https are shown
+  if (drop.cover_url && drop.cover_url.startsWith("https://")) {
+    const image = Object.assign(el("img"), { src: drop.cover_url, alt: "", loading: "lazy" });
+    image.addEventListener("error", () => image.replaceWith(el("span", { className: "cover" })));
+    cover = image;
+  }
+  return el("div", { className: "song" }, [cover, el("div", {}, [drop.title, el("small", { text: drop.artist })])]);
+}
+
+// Time before a date, like "42 min" or "3 h 05"
+function expiresIn(iso) {
+  const minutes = Math.max(0, Math.floor((new Date(iso) - Date.now()) / 60000));
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${pad(minutes % 60)}`;
+}
+
+// Size of the list of drops about to expire
+const EXPIRING_SIZE = 6;
+
+function renderExpiring(data) {
+  const box = document.getElementById("expiring");
+  const drops = [...data.online_drops]
+    .sort((a, b) => new Date(a.expires_at) - new Date(b.expires_at))
+    .slice(0, EXPIRING_SIZE);
+  if (!drops.length) {
+    box.replaceChildren(el("li", { className: "empty", text: "Aucun drop en ligne" }));
+    return;
+  }
+  box.replaceChildren(...drops.map((drop) => {
+    const minutes = (new Date(drop.expires_at) - Date.now()) / 60000;
+    // Last 15 minutes (time of the reminder notification), then the last hour
+    const urgency = minutes <= 15 ? "last" : minutes <= 60 ? "soon" : "";
+    // Part of the 24 hours left
+    const life = Math.max(0, Math.min(100, (100 * minutes) / (24 * 60)));
+    const item = el("li", { className: `exp-item ${urgency}` }, [
+      playButton(drop),
+      cover(drop.cover_url),
+      el("div", { className: "exp-what" }, [
+        el("b", { text: drop.title }),
+        el("small", {}, [`${drop.artist} · `, userLink(drop.user_id, drop.username)]),
+        el("small", { className: "exp-stats" }, [
+          `${plural(drop.saves, "like")} · ${plural(drop.skips, "skip")} · `, rateSpan(drop.saves, drop.skips)]),
+      ]),
+      el("div", { className: "exp-left" }, [
+        el("small", { text: "expire dans" }),
+        el("b", { className: "exp-time", text: expiresIn(drop.expires_at) }),
+      ]),
+      el("span", { className: "exp-life" }, [el("i", { style: { width: `${life}%` } })]),
+    ]);
+    item.title = `Expire à ${timeFormat.format(new Date(drop.expires_at))}`;
+    return item;
+  }));
+}
+
+function renderOnline(data) {
+  const box = document.getElementById("online");
+  if (!data.online_drops.length) {
+    box.replaceChildren(el("p", { className: "empty", text: "Aucun drop en ligne" }));
+    return;
+  }
+  const rows = data.online_drops.map((drop) => el("tr", {}, [
+    el("td", {}, [songCell(drop)]),
+    el("td", {}, [userLink(drop.user_id, drop.username)]),
+    el("td", { className: "num", text: timeLeft(drop.expires_at) }),
+    el("td", { className: "num", text: drop.saves }),
+    el("td", { className: "num", text: drop.skips }),
+    el("td", { className: "num" }, [rateSpan(drop.saves, drop.skips)]),
+  ]));
+  box.replaceChildren(table(
+    [["Titre"], ["Par"], ["Reste", true], ["Likes", true], ["Skips", true], ["Taux de like", true]],
+    rows,
+  ));
+}
+
+function renderUsers(data) {
+  const rows = data.users.map((user) => el("tr", {}, [
+    el("td", {}, [el("span", { className: "who-cell" }, [
+      avatar(user.avatar_color, user.avatar_style, 26), userLink(user.id, user.username)])]),
+    el("td", {}, [el("span", {
+      className: user.verified ? "badge" : "badge no",
+      text: user.verified ? "Vérifié" : "Non vérifié",
+    })]),
+    el("td", { className: "muted", text: dateFormat.format(new Date(user.created_at)) }),
+    el("td", { className: "num", text: user.drops }),
+    el("td", { className: "num", text: user.saves }),
+    el("td", { className: "num", text: user.skips }),
+    el("td", { className: "num", text: user.saves_received }),
+    el("td", { className: "num", text: user.liked_songs }),
+    el("td", { className: "muted", text: relativeTime(user.last_activity) }),
+    el("td", {}, [actionButton("Gérer", "ghost small", () => openManage(user.id))]),
+  ]));
+  document.getElementById("users").replaceChildren(table(
+    [["Utilisateur"], ["E-mail"], ["Inscrit le"], ["Drops", true], ["Likes donnés", true],
+     ["Skips", true], ["Likes reçus", true], ["Mes likes", true], ["Dernière activité"], [""]],
+    rows,
+  ));
+}
+
+function actionButton(text, className, onClick) {
+  const button = el("button", { text, className });
+  button.type = "button";
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+// ---------- Account dialog ----------
+
+function openManage(userId) {
+  const user = currentData.users.find((u) => u.id === userId);
+  if (!user) return;
+  const drop = currentData.online_drops.find((d) => d.user_id === userId);
+  const dialog = document.getElementById("manage");
+  const parts = [];
+
+  // Title
+  const close = actionButton("Fermer", "ghost small", () => dialog.close());
+  parts.push(el("div", { className: "dialog-head" }, [
+    el("div", {}, [
+      el("h2", { text: `@${user.username}` }),
+      el("p", { className: "subtitle", text: `Inscrit le ${dateFormat.format(new Date(user.created_at))} · ${user.drops} drops` }),
+    ]),
+    close,
+  ]));
+
+  // Display name: empty = the app shows the username
+  const nameInput = Object.assign(el("input"), {
+    type: "text", value: user.display_name || "", placeholder: user.username, maxLength: 30,
+  });
+  nameInput.setAttribute("aria-label", "Nom affiché");
+  parts.push(el("div", { className: "dialog-part" }, [
+    el("h3", { text: "Nom affiché" }),
+    el("p", { text: "30 caractères maximum. Laisse vide pour afficher le pseudo." }),
+    el("div", { className: "row" }, [
+      nameInput,
+      actionButton("Changer", "small", () => runAction("PATCH", `/admin/users/${user.id}/profile`, { display_name: nameInput.value },
+        (profile) => (profile.display_name
+          ? `Nom affiché de @${user.username} : « ${profile.display_name} »`
+          : `Nom affiché de @${user.username} retiré : l'appli montre le pseudo.`))),
+    ]),
+  ]));
+
+  // Email
+  const emailInput = Object.assign(el("input"), { type: "email", value: user.email, required: true });
+  emailInput.setAttribute("aria-label", "Nouvelle adresse e-mail");
+  const emailPart = el("div", { className: "dialog-part" }, [
+    el("h3", { text: "Adresse e-mail" }),
+    el("p", { text: user.verified ? "Validée. La nouvelle adresse sera validée directement, sans code." : "Pas encore validée : la connexion est bloquée." }),
+    el("div", { className: "row" }, [
+      emailInput,
+      actionButton("Changer", "small", () => runAction("PATCH", `/admin/users/${user.id}/email`, { new_email: emailInput.value.trim() },
+        (account) => `E-mail de @${user.username} changé en ${account.email}.`)),
+    ]),
+  ]);
+  if (!user.verified) {
+    emailPart.append(el("p", {}), actionButton("Valider l'e-mail sans code", "ghost small",
+      () => runAction("POST", `/admin/users/${user.id}/verify-email`, undefined, `E-mail de @${user.username} validé.`)));
+  }
+  parts.push(emailPart);
+
+  // Drop in progress
+  const dropPart = el("div", { className: "dialog-part" }, [el("h3", { text: "Drop en cours" })]);
+  if (drop) {
+    dropPart.append(
+      el("p", { text: `« ${drop.title} » — ${drop.artist} · ${drop.saves} likes, ${drop.skips} skips, reste ${timeLeft(drop.expires_at)}` }),
+      actionButton("Supprimer le drop", "ghost small", () => {
+        if (confirm(`Supprimer le drop « ${drop.title} » de @${user.username} ? Ses likes et skips seront effacés.`)) {
+          runAction("DELETE", `/admin/users/${user.id}/drop`, undefined, `Drop « ${drop.title} » de @${user.username} supprimé.`);
+        }
+      }),
+    );
+  } else {
+    dropPart.append(el("p", { text: "Aucun drop en cours." }));
+  }
+  parts.push(dropPart);
+
+  // Special avatar: on the admin account only
+  if (false && user.username === currentAdmin) {
+    const isOn = user.avatar_style === "admin";
+    parts.push(el("div", { className: "dialog-part" }, [
+      el("h3", { text: "Avatar spécial" }),
+      el("p", { text: isOn
+        ? "Activé : tout le monde le voit sur ton profil (avec l'appli à jour)."
+        : "Réservé à ton compte. Les anciennes versions de l'appli afficheront la goutte simple." }),
+      el("div", { className: "row" }, [
+        avatar(user.avatar_color, "admin", 40),
+        actionButton(isOn ? "Retirer" : "Activer", isOn ? "ghost small" : "small",
+          () => runAction({ action: "set_admin_avatar", user_id: user.id, enabled: !isOn })),
+      ]),
+    ]));
+  }
+
+  // Delete the account: the username must be typed
+  const dangerPart = el("div", { className: "dialog-part danger-part" }, [el("h3", { text: "Supprimer le compte" })]);
+  if (user.username === currentAdmin) {
+    dangerPart.append(el("p", { text: "C'est ton compte : il ne se supprime pas d'ici." }));
+  } else {
+    const confirmInput = Object.assign(el("input"), { type: "text", placeholder: user.username, autocomplete: "off" });
+    confirmInput.setAttribute("aria-label", "Pseudo à taper pour confirmer");
+    const deleteButton = actionButton("Supprimer", "danger small", () => runAction(
+      "DELETE", `/admin/users/${user.id}`, { username: confirmInput.value }, `Compte @${user.username} supprimé.`));
+    deleteButton.disabled = true;
+    confirmInput.addEventListener("input", () => { deleteButton.disabled = confirmInput.value !== user.username; });
+    dangerPart.append(
+      el("p", { text: "Efface le compte, ses drops, ses likes et ses skips. Les titres déjà dans « Mes likes » des autres y restent. Tape son pseudo pour confirmer." }),
+      el("div", { className: "row" }, [confirmInput, deleteButton]),
+    );
+  }
+  parts.push(dangerPart);
+
+  dialog.replaceChildren(...parts);
+  dialog.showModal();
+}
+
+// Runs an account action with its admin route, then shows the message
+// (a text, or a function that builds it from the answer of the route)
+async function runAction(method, path, body, message) {
+  const buttons = document.querySelectorAll("#manage button");
+  buttons.forEach((b) => { b.disabled = true; });
+  try {
+    const result = await api(path, { method, body });
+    showToast(typeof message === "function" ? message(result) : message, true);
+    document.getElementById("manage").close();
+    refresh();
+  } catch (error) {
+    if (loggedIn) showToast(error.message, false);
+  } finally {
+    buttons.forEach((b) => { b.disabled = false; });
+    // The delete button stays off until the username is typed again
+    document.querySelectorAll("#manage input").forEach((i) => i.dispatchEvent(new Event("input")));
+  }
+}
+
+let toastTimer = null;
+function showToast(message, ok) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.className = `toast ${ok ? "ok" : "fail"}`;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
+}
+
+// ---------- Source, status and refresh ----------
+
+function renderSource() {
+  const badge = document.getElementById("source");
+  // The page is served by the API: localhost means the development base
+  const onServer = !["localhost", "127.0.0.1"].includes(location.hostname);
+  badge.textContent = onServer ? "Prod" : "Local";
+  badge.className = `source ${onServer ? "server" : "local"}`;
+  badge.hidden = false;
+  document.title = `${onServer ? "[PROD] " : ""}meloDrop admin`;
+}
+
+function render(data) {
+  // Kept for the account dialog
+  currentData = data;
+  renderTiles(data);
+  document.getElementById("users-link").textContent = `Voir les ${data.users.length} utilisateurs →`;
+  renderDaily(data);
+  renderHourly(data);
+  renderEvents(data);
+  renderExpiring(data);
+  renderOnline(data);
+  renderUsers(data);
+}
+
+function showError(message) {
+  // Logged out in the meantime: the login screen already says why
+  if (!loggedIn) return;
+  const box = document.getElementById("error");
+  // Only the end of a long Python error is useful
+  const detail = message.split("\n").slice(-6).join("\n");
+  box.replaceChildren(el("strong", { text: "Impossible de lire les données." }), el("pre", { text: detail }));
+  box.hidden = false;
+}
+
+function updateStatus() {
+  const status = document.getElementById("updated");
+  if (!lastUpdate) return;
+  status.textContent = `À jour à ${new Date(lastUpdate).toLocaleTimeString("fr-FR")}`;
+  // Seconds before the next automatic refresh, next to "Auto"
+  const left = Math.max(0, Math.round(REFRESH_SECONDS - (Date.now() - lastUpdate) / 1000));
+  document.getElementById("countdown").textContent = timer ? ` · ${left} s` : "";
+}
+
+function schedule() {
+  clearTimeout(timer);
+  timer = null;
+  // No refresh while the tab is hidden or when logged out
+  if (loggedIn && document.getElementById("auto").checked && !document.hidden) {
+    const wait = Math.max(0, REFRESH_SECONDS * 1000 - (Date.now() - lastUpdate));
+    timer = setTimeout(refresh, wait);
+  }
+  updateStatus();
+}
+
+async function refresh() {
+  if (loading) return;
+  if (!window.Chart) {
+    showError("Chart.js n'a pas pu être chargé. Vérifie ta connexion internet.");
+    return;
+  }
+  loading = true;
+  document.body.classList.add("loading");
+  document.getElementById("refresh").disabled = true;
+  try {
+    render(await api("/admin/overview"));
+    if (currentTab === "users") {
+      renderUserList();
+      if (selectedUserId) loadUser(selectedUserId);
+    }
+    if (currentTab === "drops") loadDrops();
+    if (currentTab === "songs") loadSongs();
+    if (currentTab === "recap") loadRecap();
+    document.getElementById("error").hidden = true;
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    lastUpdate = Date.now();
+    loading = false;
+    document.body.classList.remove("loading");
+    document.getElementById("refresh").disabled = false;
+    schedule();
+  }
+}
+
+// ---------- Utilisateurs tab ----------
+
+// Pastel colors of the avatars (avatar_color, same names as Avatar.kt)
+const AVATAR_COLORS = { lavender: "#b4a7f5", peach: "#ffb38a", butter: "#ffe08a", mint: "#9ee0b8", rose: "#f5a8c8" };
+const AVATAR_COLOR_LABELS = { lavender: "Lavande", peach: "Pêche", butter: "Jaune", mint: "Menthe", rose: "Rose" };
+const AVATAR_STYLES = { admin: "spéciale admin", simple: "Simple", rock: "Rock", rap: "Rap", pop: "Pop", classical: "Classique", reggae: "Reggae", electro: "Électro" };
+const CODE_PURPOSES = { verify_email: "Validation de l'e-mail", reset_password: "Mot de passe oublié", change_email: "Changement d'e-mail" };
+// Series of the user's chart (validated order)
+const USER_SERIES = [
+  { key: "saves", label: "Likes", color: "--likes" },
+  { key: "drops", label: "Drops", color: "--drops" },
+  { key: "skips", label: "Skips", color: "--skips" },
+];
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+// ---------- Avatars, drawn like ui/components/Avatar.kt ----------
+// Everything is drawn on a 100 x 100 grid, with the same numbers as the app
+
+const NIGHT = "#0c0c10";
+const TEXT_PRIMARY = "#f2f2f5";
+const REGGAE_RED = "#e2574c";
+const REGGAE_YELLOW = "#f4c542";
+const REGGAE_GREEN = "#3fa34d";
+// dropPath(): pointed at the top, round at the bottom
+const DROP_PATH = "M50 22C55.24 33.2 71.84 45.52 71.84 58.96C71.84 70.16 62.23 78 50 78C37.77 78 28.16 70.16 28.16 58.96C28.16 45.52 44.76 33.2 50 22Z";
+
+function svgEl(tag, attributes) {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
+  return node;
+}
+
+// drawStar(): a star with 4 thin branches, centered on (x, y)
+function starPath(x, y, r) {
+  return `M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`;
+}
+
+// drawLock(): a curve from the top of the drop to its bead
+function lock(start, bend, end, bead) {
+  return [
+    svgEl("path", { d: `M${start}Q${bend} ${end}`, fill: "none", stroke: NIGHT, "stroke-width": 4.6, "stroke-linecap": "round" }),
+    svgEl("circle", { cx: end.split(" ")[0], cy: Number(end.split(" ")[1]) + 1, r: 3, fill: bead }),
+  ];
+}
+
+// Accessory of each style, drawn over the drop (reggae: under it, see avatar())
+const AVATAR_ACCESSORIES = {
+  rock: (bg) => [svgEl("path", { d: "M56 46L47 62L53 62L50 75L61 57L55 57L59 46Z", fill: bg })],
+  rap: () => [
+    svgEl("path", { d: "M35 40.5C35 24 44 18 51 18C59 18 66 25 66 40.5Z", fill: TEXT_PRIMARY }),
+    svgEl("path", { d: "M61 35L80 36.5Q83.5 38.5 80 40.5L61 40.5Z", fill: TEXT_PRIMARY }),
+    svgEl("circle", { cx: 51, cy: 18.5, r: 2, fill: TEXT_PRIMARY }),
+  ],
+  pop: () => [[24, 33, 9], [77, 29, 6], [79, 70, 5]].map(([x, y, r]) => svgEl("path", { d: starPath(x, y, r), fill: NIGHT })),
+  classical: () => [
+    svgEl("path", { d: "M50 85L37 78L37 92Z", fill: NIGHT }),
+    svgEl("path", { d: "M50 85L63 78L63 92Z", fill: NIGHT }),
+    svgEl("circle", { cx: 50, cy: 85, r: 3.6, fill: NIGHT }),
+  ],
+  electro: () => [
+    svgEl("path", { d: "M22.75 51C22.75 8 77.25 8 77.25 51", fill: "none", stroke: NIGHT, "stroke-width": 4, "stroke-linecap": "round" }),
+    svgEl("rect", { x: 18, y: 48, width: 9.5, height: 19, rx: 3.5, fill: NIGHT }),
+    svgEl("rect", { x: 72.5, y: 48, width: 9.5, height: 19, rx: 3.5, fill: NIGHT }),
+  ],
+};
+
+// Admin avatar (drawAdminAvatar in Avatar.kt): striped drop, pastel ring, crown
+let adminAvatarCount = 0;
+function drawAdminAvatar(svg) {
+  // Ids must be unique in the page: one pair per avatar
+  const n = ++adminAvatarCount;
+  const ring = svgEl("linearGradient", { id: `admin-ring-${n}`, x1: 0, y1: 0, x2: 1, y2: 1 });
+  ["#b4a7f5", "#f5a8c8", "#ffb38a", "#ffe08a", "#9ee0b8"].forEach((color, i) =>
+    ring.append(svgEl("stop", { offset: i / 4, "stop-color": color })));
+  const clip = svgEl("clipPath", { id: `admin-drop-${n}` });
+  clip.append(svgEl("path", { d: DROP_PATH }));
+  const stripes = svgEl("g", { "clip-path": `url(#admin-drop-${n})` });
+  [[20, 11.5, "#b4a7f5"], [33.6, 9.6, "#f5a8c8"], [45.3, 9.5, "#ffb38a"], [56.9, 9.6, "#ffe08a"], [68.6, 11, "#9ee0b8"]]
+    .forEach(([y, height, fill]) => stripes.append(svgEl("rect", { x: 20, y, width: 60, height, fill })));
+  const defs = svgEl("defs", {});
+  defs.append(ring, clip);
+  svg.append(
+    defs,
+    svgEl("circle", { cx: 50, cy: 50, r: 47.5, fill: "none", stroke: `url(#admin-ring-${n})`, "stroke-width": 3.5 }),
+    stripes,
+    svgEl("ellipse", { cx: 39.5, cy: 53, rx: 2.6, ry: 7.2, fill: "#fff", opacity: 0.5, transform: "rotate(18 39.5 53)" }),
+    svgEl("path", { d: "M38 20.5L37 10L44.5 15L50 6.5L55.5 15L63 10L62 20.5Z", fill: "#ffe08a" }),
+  );
+}
+
+// Round avatar: pastel background, the drop, and the accessory of its style.
+// An unknown color or style shows lavender and the simple drop, like the app
+function avatar(color, style, size) {
+  // The admin avatar has its own dark background, whatever the color chosen
+  const bg = style === "admin" ? "#18181f" : AVATAR_COLORS[color] || AVATAR_COLORS.lavender;
+  const svg = svgEl("svg", { viewBox: "0 0 100 100", "aria-hidden": "true" });
+  if (style === "admin") {
+    drawAdminAvatar(svg);
+    const box = el("span", { className: "avatar", style: { "--size": `${size}px`, "--bg": bg } }, [svg]);
+    box.title = "Avatar spécial admin";
+    return box;
+  }
+  // The locks hang behind the drop: drawn first
+  if (style === "reggae") {
+    svg.append(
+      ...lock("45 30", "24 40", "19 62", REGGAE_RED),
+      ...lock("47 31", "30 48", "26 72", REGGAE_YELLOW),
+      ...lock("53 31", "70 48", "74 72", REGGAE_GREEN),
+      ...lock("55 30", "76 40", "81 62", REGGAE_RED),
+    );
+  }
+  svg.append(svgEl("path", { d: DROP_PATH, fill: NIGHT }));
+  // No reflection with the bolt: the drop would look too busy
+  if (style !== "rock") svg.append(svgEl("ellipse", { cx: 39.96, cy: 58.96, rx: 3.06, ry: 7.84, fill: bg, "fill-opacity": 0.55 }));
+  if (AVATAR_ACCESSORIES[style]) svg.append(...AVATAR_ACCESSORIES[style](bg));
+  const label = `Avatar ${AVATAR_COLOR_LABELS[color] || "Lavande"}, goutte ${AVATAR_STYLES[style] || "Simple"}`;
+  const box = el("span", { className: "avatar", style: { "--size": `${size}px`, "--bg": bg } }, [svg]);
+  box.title = label;
+  return box;
+}
+
+function cover(url, className = "") {
+  const empty = () => el("span", { className: `cover ${className}` });
+  // A Deezer link, or the same image downloaded through the API (blob: link)
+  if (!url || !(url.startsWith("https://") || url.startsWith("blob:"))) return empty();
+  const image = Object.assign(el("img"), { src: url, alt: "", loading: "lazy", className });
+  image.addEventListener("error", () => image.replaceWith(empty()));
+  return image;
+}
+
+function longDate(iso) {
+  return iso ? new Date(iso).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
+}
+
+// Filters of the user list. "no-drop" and "never" only count validated
+// accounts: an account without a validated email cannot log in to drop.
+const USER_FILTERS = [
+  ["all", "Tous"],
+  ["online", "Drop en ligne"],
+  ["no-drop", "Sans drop en ligne"],
+  ["never", "Jamais droppé"],
+  ["unverified", "Non validés"],
+];
+const EMPTY_FILTER_TEXT = {
+  online: "Personne n'a de drop en ligne.",
+  "no-drop": "Tout le monde a un drop en ligne.",
+  never: "Tout le monde a déjà droppé.",
+  unverified: "Tous les e-mails sont validés.",
+};
+let userFilter = "all";
+
+function usersMatching(filter, data = currentData) {
+  const online = new Set(data.online_drops.map((d) => d.user_id));
+  return data.users.filter((u) => {
+    if (filter === "online") return online.has(u.id);
+    if (filter === "no-drop") return u.verified && !online.has(u.id);
+    if (filter === "never") return u.verified && u.drops === 0;
+    if (filter === "unverified") return !u.verified;
+    return true;
+  });
+}
+
+function renderUserFilters() {
+  document.getElementById("user-filters").replaceChildren(...USER_FILTERS.map(([key, label]) => {
+    const button = el("button", { text: `${label} (${usersMatching(key).length})` });
+    button.type = "button";
+    button.setAttribute("aria-pressed", String(key === userFilter));
+    button.addEventListener("click", () => { userFilter = key; renderUserList(); });
+    return button;
+  }));
+}
+
+// Second line of a user in the list: what matters for the chosen filter
+function userInfo(user) {
+  const swipes = user.saves + user.skips;
+  if (userFilter === "never") return `inscrit ${relativeTime(user.created_at)} · ${swipes} swipe${swipes > 1 ? "s" : ""}`;
+  if (userFilter === "no-drop") return user.last_drop ? `dernier drop ${relativeTime(user.last_drop)}` : "jamais droppé";
+  return user.display_name || (user.verified ? user.email : "e-mail non validé");
+}
+
+function renderUserList() {
+  if (!currentData) return;
+  renderUserFilters();
+  const search = document.getElementById("user-search").value.trim().toLowerCase();
+  const online = new Set(currentData.online_drops.map((d) => d.user_id));
+  const users = usersMatching(userFilter).filter((u) =>
+    [u.username, u.display_name || "", u.email].some((text) => text.toLowerCase().includes(search)));
+  const list = document.getElementById("user-list");
+  if (!users.length) {
+    const text = search ? "Aucun utilisateur trouvé" : EMPTY_FILTER_TEXT[userFilter] || "Aucun utilisateur trouvé";
+    list.replaceChildren(el("li", { className: "empty", text }));
+    return;
+  }
+  list.replaceChildren(...users.map((user) => {
+    const link = el("a", { href: `#user/${user.id}` }, [
+      avatar(user.avatar_color, user.avatar_style, 30),
+      el("span", { className: "who" }, [
+        el("b", { text: `@${user.username}` }),
+        el("small", { text: userInfo(user) }),
+      ]),
+      el("span", { className: "when", text: relativeTime(user.last_activity) }),
+    ]);
+    if (online.has(user.id)) link.querySelector(".who b").append(" ", dot("--likes"));
+    if (user.id === selectedUserId) link.setAttribute("aria-current", "true");
+    return el("li", {}, [link]);
+  }));
+}
+
+async function loadUser(userId) {
+  const box = document.getElementById("user-detail");
+  // Only the last request counts, if the admin clicks fast
+  const request = ++userRequest;
+  box.classList.add("loading");
+  try {
+    const data = await api(`/admin/users/${userId}`);
+    if (request !== userRequest) return;
+    renderUserDetail(data);
+  } catch (error) {
+    if (request !== userRequest) return;
+    if (error.status === 404) {
+      box.replaceChildren(el("div", { className: "card empty-detail", text: error.message }));
+      return;
+    }
+    showError(error.message);
+  } finally {
+    if (request === userRequest) box.classList.remove("loading");
+  }
+}
+
+// Keeps the scroll of each list when the detail is drawn again
+function keepScroll(box, draw) {
+  const scrolls = {};
+  box.querySelectorAll("[data-scroll]").forEach((node) => { scrolls[node.dataset.scroll] = node.scrollTop; });
+  draw();
+  box.querySelectorAll("[data-scroll]").forEach((node) => { node.scrollTop = scrolls[node.dataset.scroll] || 0; });
+}
+
+function card(title, subtitle, children, className = "") {
+  return el("article", { className: `card ${className}` }, [
+    el("h2", { text: title }),
+    el("p", { className: "subtitle", text: subtitle }),
+    ...children,
+  ]);
+}
+
+// List of songs: cover, title, artist and a line under it, details on the right
+function songList(key, items, build, emptyText) {
+  if (!items.length) return el("p", { className: "empty", text: emptyText });
+  const list = el("ul", { className: "song-list" }, items.map((item) => {
+    const { below = [], side = [] } = build(item);
+    return el("li", {}, [
+      item.song_id ? playButton(item) : "",
+      cover(item.cover_url),
+      el("div", { className: "what" }, [el("b", { text: item.title }), el("small", {}, [item.artist, ...below])]),
+      el("div", { className: "side" }, side),
+    ]);
+  }));
+  list.dataset.scroll = key;
+  return list;
+}
+
+function countLabel(shown, total) {
+  return total > shown.length ? `${shown.length} plus récents sur ${total}` : `${total}`;
+}
+
+function profileCard(data) {
+  const profile = data.profile;
+  const name = profile.display_name || profile.username;
+  const since = new Date(profile.created_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const parts = [
+    el("div", { className: "profile-head" }, [
+      avatar(profile.avatar_color, profile.avatar_style, 72),
+      el("div", {}, [
+        el("div", { className: "name", text: name }),
+        el("div", { className: "muted", text: `@${profile.username} · membre depuis ${since}` }),
+      ]),
+    ]),
+    el("div", { className: "counters" }, [
+      el("div", {}, [el("b", { text: profile.stats.drops_count }), el("span", { text: "drops" })]),
+      el("div", {}, [el("b", { text: profile.stats.likes_received }), el("span", { text: "ajouts reçus" })]),
+      el("div", {}, [el("b", { text: profile.stats.likes_count }), el("span", { text: "dans Mes likes" })]),
+    ]),
+  ];
+  if (profile.current_drop) {
+    const drop = profile.current_drop;
+    parts.push(el("h3", { className: "subtitle", text: "Drop du jour" }), songList("profile-drop", [drop], (d) => ({
+      below: d.genre ? [` · ${d.genre}`] : [],
+      side: [`ajouté par ${d.saves_count}`],
+    }), ""));
+  }
+  if (profile.recent_drops.length) {
+    parts.push(
+      el("h3", { className: "subtitle", text: "Derniers drops" }),
+      el("div", { className: "covers" }, profile.recent_drops.map((d) => {
+        const node = cover(d.cover_url);
+        node.title = `${d.title} — ${d.artist}`;
+        return node;
+      })),
+    );
+  }
+  return card("Profil", "Tel qu'il apparaît dans l'appli", parts);
+}
+
+function accountCard(data) {
+  const a = data.account;
+  const listed = currentData?.users.find((u) => u.id === a.id);
+  const rows = [
+    ["ID", String(a.id)],
+    ["E-mail", el("span", {}, [`${a.email} `, el("span", {
+      className: a.email_verified ? "badge" : "badge no", text: a.email_verified ? "Validé" : "Non validé" })])],
+    ["E-mail en attente", a.pending_email || "—"],
+    ["Inscrit le", longDate(a.created_at)],
+    ["Modifié le", longDate(a.updated_at)],
+    ["Dernière activité", listed ? `${relativeTime(listed.last_activity)} · ${longDate(listed.last_activity)}` : "—"],
+    ["Avatar", `${AVATAR_COLOR_LABELS[a.avatar_color] || a.avatar_color} · goutte ${AVATAR_STYLES[a.avatar_style] || a.avatar_style}`],
+  ];
+  // Codes sent by email, still waiting (without the code itself)
+  const codes = a.email_codes.length
+    ? a.email_codes.map((c) => {
+        const expired = new Date(c.expires_at) < Date.now();
+        const state = expired ? "expiré" : `expire ${untilTime(c.expires_at)}`;
+        return `${CODE_PURPOSES[c.purpose] || c.purpose} · ${state} · ${c.attempts} essai${c.attempts > 1 ? "s" : ""}`;
+      }).join("\n")
+    : "Aucun";
+  rows.push(["Codes e-mail", codes]);
+
+  const list = el("dl", { className: "kv" });
+  for (const [label, value] of rows) {
+    const dd = el("dd");
+    dd.append(value);
+    dd.style.whiteSpace = "pre-line";
+    list.append(el("dt", { text: label }), dd);
+  }
+  const manage = actionButton("Gérer le compte", "small", () => openManage(a.id));
+  manage.style.marginTop = "14px";
+  return card("Compte", "Données privées, jamais envoyées à l'appli", [list, manage]);
+}
+
+function statTiles(data) {
+  const s = data.stats;
+  const tiles = [
+    ["Drops", s.drops, null],
+    ["Likes donnés", s.saves, "--likes"],
+    ["Skips", s.skips, "--skips"],
+    ["Taux de like donné", likeRate(s.saves, s.skips), null, `sur ${plural(s.saves + s.skips, "swipe")}`],
+    ["Likes reçus", s.saves_received, null],
+    ["Skips reçus", s.skips_received, null],
+    ["Taux de like reçu", likeRate(s.saves_received, s.skips_received), null,
+      `sur ${plural(s.saves_received + s.skips_received, "swipe")} reçu${s.saves_received + s.skips_received > 1 ? "s" : ""}`],
+    ["Dans Mes likes", s.liked_songs, null],
+    ["Repêchés dans ses skips", s.rescues, "--swipes"],
+  ];
+  return el("section", { className: "tiles" }, tiles.map(([label, value, color, sub]) => {
+    const head = el("div", { className: "label" });
+    if (color) head.append(dot(color));
+    head.append(label);
+    const tileBox = el("div", { className: "card tile" }, [head, el("div", { className: "value", text: value })]);
+    if (sub) tileBox.append(el("div", { className: "sub", text: sub }));
+    return tileBox;
+  }));
+}
+
+function activityCard(data) {
+  const { days, labels, values } = dailySeries({ days: data.days, hourly: data.hourly }, USER_SERIES);
+  const canvas = el("canvas");
+  canvas.setAttribute("aria-label", "Son activité par jour");
+  const legend = el("ul", { className: "legend" }, USER_SERIES.map((serie) => el("li", {}, [
+    el("span", { className: "line-key", style: { background: css(serie.color) } }),
+    `${serie.label} `,
+    el("b", { text: values[serie.key].reduce((a, b) => a + b, 0) }),
+  ])));
+  const box = card("Son activité par jour", `${data.days} derniers jours, heure française`,
+    [legend, el("div", { className: "chart-box" }, [canvas])]);
+  // Drawn once the canvas is in the page
+  box.$draw = () => {
+    if (userChart) userChart.destroy();
+    userChart = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: USER_SERIES.map((serie) => ({
+          label: serie.label,
+          data: values[serie.key],
+          borderColor: css(serie.color),
+          backgroundColor: css(serie.color),
+          borderWidth: 2,
+          cubicInterpolationMode: "monotone",
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBorderWidth: 2,
+          pointHoverBorderColor: css("--card"),
+          pointStyle: "line",
+        })),
+      },
+      options: {
+        animation: false,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipStyle(),
+            callbacks: {
+              title: (items) => dateFormat.format(days[items[0].dataIndex]),
+              label: (item) => ` ${item.formattedValue}  ${item.dataset.label}`,
+            },
+          },
+        },
+        scales: axisStyle(),
+      },
+      plugins: [crosshair],
+    });
+  };
+  return box;
+}
+
+function affinitiesCard(data) {
+  const people = (key, items, emptyText) => items.length
+    ? el("ul", { className: "song-list" }, items.map((p) => el("li", {}, [
+        el("div", { className: "what" }, [userLink(p.user_id, p.username)]),
+        el("div", { className: "side", text: `${p.likes} like${p.likes > 1 ? "s" : ""}` }),
+      ])))
+    : el("p", { className: "empty", text: emptyText });
+  return card("Affinités", "Les liens les plus forts avec les autres", [
+    el("h3", { className: "subtitle", text: "Ses plus grands fans (likent ses drops)" }),
+    people("fans", data.affinities.fans, "Personne n'a encore liké ses drops."),
+    el("h3", { className: "subtitle", text: "Ses coups de cœur (il like leurs drops)" }),
+    people("favorites", data.affinities.favorites, "Il n'a encore rien liké."),
+  ]);
+}
+
+function currentDropCard(data) {
+  const drop = data.profile.current_drop;
+  if (!drop) return card("Drop en cours", "Visible 24 h dans Discover", [el("p", { className: "empty", text: "Aucun drop en cours." })]);
+  const online = currentData?.online_drops.find((d) => d.drop_id === drop.id);
+  const swipes = data.current_drop_swipes;
+  const likes = swipes.filter((s) => s.type === "like").length;
+  const children = [
+    songList("current", [drop], () => ({ side: online ? [`reste ${timeLeft(online.expires_at)}`] : [] }), ""),
+    el("h3", { className: "subtitle", text: `${likes} likes · ${swipes.length - likes} skips · ${likeRate(likes, swipes.length - likes)}` }),
+  ];
+  if (swipes.length) {
+    const list = el("ul", { className: "events" }, swipes.map((s) => el("li", {}, [
+      dot(s.type === "like" ? "--likes" : "--skips"),
+      el("div", {}, [
+        el("p", {}, [userLink(s.user_id, s.username), s.type === "like" ? " l'a liké" : " l'a passé"]),
+        el("time", { text: `${relativeTime(s.at)} · ${timeFormat.format(new Date(s.at))}` }),
+      ]),
+    ])));
+    list.dataset.scroll = "current-swipes";
+    list.style.maxHeight = "240px";
+    children.push(list);
+  }
+  return card("Drop en cours", "Qui l'a liké ou passé", children);
+}
+
+// Badges of a skip: rescued, or still in "Mes skips" in the app (with a like possible if online)
+function skipBadges(skip, mySkip) {
+  if (skip.rescued) return [el("br"), el("span", { className: "badge rescue", text: "titre repêché" })];
+  if (!mySkip) return [];
+  const badges = [el("br"), el("span", { className: "badge", text: "dans Mes skips" })];
+  if (mySkip.drop_active) badges.push(" ", el("span", { className: "badge live", text: "like possible" }));
+  return badges;
+}
+
+function renderUserDetail(data) {
+  // Skips shown in the app's "Mes skips" list, by drop id
+  const inMySkips = new Map(data.my_skips.map((k) => [k.drop_id, k]));
+  const box = document.getElementById("user-detail");
+  const s = data.stats;
+  keepScroll(box, () => {
+    const activity = activityCard(data);
+    box.replaceChildren(
+      el("div", { className: "detail-row" }, [profileCard(data), accountCard(data)]),
+      statTiles(data),
+      el("div", { className: "detail-row wide" }, [activity, affinitiesCard(data)]),
+      el("div", { className: "detail-row" }, [
+        currentDropCard(data),
+        card(`Son fil Discover (${data.feed.length})`, "Drops en ligne qu'il n'a pas encore vus. L'appli lui en tire 10 au hasard.", [
+          songList("feed", data.feed, (d) => ({
+            below: [" · drop de ", userLink(d.author_id, d.author_username)],
+            side: [`reste ${timeLeft(d.expires_at)}`, el("br"), `${d.saves} likes`],
+          }), "Rien à découvrir : il a tout vu."),
+        ]),
+        card(`Mes likes (${data.likes.length})`, "Sa liste dans l'appli, la plus récente en premier", [
+          songList("likes", data.likes, (l) => ({
+            // Rescued after the drop expired: the app shows "Récupéré dans les skips"
+            below: l.liked_late
+              ? [" · ", el("span", { className: "badge rescue", text: "récupéré dans les skips" })]
+              : [" · drop de ", userLink(l.author_id, l.author_username)],
+            side: [relativeTime(l.liked_at)],
+          }), "Sa liste est vide."),
+        ]),
+        card(`Likes donnés (${countLabel(data.saves, s.saves)})`, "Drops gardés en swipant à droite", [
+          songList("saves", data.saves, (v) => ({
+            below: [" · drop de ", userLink(v.author_id, v.author_username)],
+            side: [relativeTime(v.at), ...(v.in_likes ? [] : [el("br"), el("span", { className: "badge no", text: "retiré de Mes likes" })])],
+          }), "Aucun like pour l'instant."),
+        ]),
+        card(`Skips (${countLabel(data.skips, s.skips)})`,
+          `Drops passés en swipant à gauche · ${data.my_skips.length} dans sa liste « Mes skips » (7 derniers jours)`, [
+          songList("skips", data.skips, (v) => ({
+            below: [" · drop de ", userLink(v.author_id, v.author_username)],
+            side: [relativeTime(v.at), ...skipBadges(v, inMySkips.get(v.drop_id))],
+          }), "Aucun skip pour l'instant."),
+        ]),
+        card(`Ses drops (${countLabel(data.drops, s.drops)})`, "Avec les likes et skips reçus", [
+          songList("drops", data.drops, (d) => {
+            const live = new Date(d.expires_at) > Date.now();
+            return {
+              below: [` · ${dateFormat.format(new Date(d.created_at))}`],
+              side: [
+                live ? el("span", { className: "badge live", text: "en ligne" }) : "",
+                live ? el("br") : "",
+                `${d.saves} likes · ${d.skips} skips`, el("br"), likeRate(d.saves, d.skips),
+              ],
+            };
+          }, "Aucun drop pour l'instant."),
+        ]),
+      ]),
+    );
+    activity.$draw();
+  });
+}
+
+// ---------- Sortable tables (Drops and Sons tabs) ----------
+
+// Value used to sort a row; a row without swipe has no rate, so it goes last
+function sortValue(row, key) {
+  const swipes = row.saves + row.skips;
+  if (key === "swipes") return swipes;
+  // Ranked with the prudent rate: 2 likes out of 2 does not beat 45 out of 50
+  if (key === "rate") return prudentRate(row.saves, swipes);
+  if (["created_at", "last_drop"].includes(key)) return row[key] ? new Date(row[key]).getTime() : 0;
+  return row[key];
+}
+
+function sortRows(rows, sort) {
+  const sign = sort.dir === "desc" ? -1 : 1;
+  // Ties: more likes, then more swipes, then the most recent
+  return rows.sort((a, b) =>
+    sign * (sortValue(a, sort.key) - sortValue(b, sort.key)) ||
+    sortValue(b, "saves") - sortValue(a, "saves") ||
+    sortValue(b, "swipes") - sortValue(a, "swipes") ||
+    sortValue(b, "created_at") - sortValue(a, "created_at"));
+}
+
+// Header of a table: a click on a sortable column sorts by it, a second click reverses
+function headerRow(columns, sort, onSort) {
+  return el("tr", {}, columns.map(([key, title, sortable]) => {
+    const th = el("th", { className: NUMBER_COLUMNS.has(key) ? "num" : "" });
+    if (!sortable) {
+      th.textContent = title;
+      return th;
+    }
+    const active = sort.key === key;
+    if (active) th.setAttribute("aria-sort", sort.dir === "desc" ? "descending" : "ascending");
+    const button = el("button", { className: "sort", text: title });
+    button.type = "button";
+    if (active) button.append(el("span", { text: sort.dir === "desc" ? "↓" : "↑" }));
+    button.addEventListener("click", () => onSort({ key, dir: active && sort.dir === "desc" ? "asc" : "desc" }));
+    if (key === "rate") button.title = "Classé avec un taux prudent : un taux mesuré sur peu de swipes compte moins";
+    th.append(button);
+    return th;
+  }));
+}
+
+// On a phone the header of the table is hidden: this menu sorts instead
+function sortMenu(columns, sort, onSort) {
+  const select = el("select");
+  select.setAttribute("aria-label", "Trier par");
+  for (const [key, title, sortable] of columns) {
+    if (sortable) select.append(Object.assign(el("option", { text: title }), { value: key }));
+  }
+  select.value = sort.key;
+  select.addEventListener("change", () => onSort({ key: select.value, dir: "desc" }));
+  const flip = actionButton(sort.dir === "desc" ? "↓" : "↑", "ghost small",
+    () => onSort({ key: sort.key, dir: sort.dir === "desc" ? "asc" : "desc" }));
+  flip.setAttribute("aria-label", sort.dir === "desc" ? "Du plus grand au plus petit" : "Du plus petit au plus grand");
+  return el("div", { className: "sort-menu phone-only" }, [el("span", { className: "muted", text: "Trier par" }), select, flip]);
+}
+
+// Sortable table that turns into cards on a phone, each value with the name of its column
+function stackTable(columns, sort, onSort, rows) {
+  rows.forEach((row) => {
+    if (row.classList.contains("drop-detail")) return;
+    [...row.children].forEach((cell, i) => {
+      const [key, title] = columns[i];
+      if (key === "rank") cell.classList.add("rank-cell");
+      else if (key === "title") cell.classList.add("title-cell");
+      else cell.dataset.label = title;
+    });
+  });
+  const table = el("table", { className: "stack" }, [el("thead", {}, [headerRow(columns, sort, onSort)]), el("tbody", {}, rows)]);
+  return [sortMenu(columns, sort, onSort), table];
+}
+
+const NUMBER_COLUMNS = new Set(["rank", "drops", "saves", "skips", "swipes", "rate", "in_likes"]);
+
+function rateCell(saves, skips) {
+  const swipes = saves + skips;
+  const td = el("td", { className: "num" });
+  if (!swipes) {
+    td.append(el("span", { className: "muted", text: "—" }));
+    return td;
+  }
+  const percent = Math.round((100 * saves) / swipes);
+  const rate = el("span", { className: swipes < RELIABLE_SWIPES ? "rate few" : "rate" }, [
+    el("span", { className: "bar" }, [el("i", { style: { width: `${percent}%` } })]),
+    `${percent} %`,
+  ]);
+  if (swipes < RELIABLE_SWIPES) rate.title = `Seulement ${swipes} swipe${swipes > 1 ? "s" : ""} : taux peu fiable`;
+  td.append(rate);
+  return td;
+}
+
+// Cover, play button, title, genre and artist
+function titleCell(row) {
+  const what = el("div", {}, [row.title]);
+  if (row.genre) what.append(el("span", { className: "chip-genre", text: row.genre }));
+  what.append(el("small", { text: row.artist }));
+  return el("td", {}, [el("div", { className: "song" }, [playButton(row), cover(row.cover_url), what])]);
+}
+
+function fillGenres(select, rows) {
+  const chosen = select.value;
+  const genres = [...new Set(rows.map((r) => r.genre).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+  select.replaceChildren(
+    Object.assign(el("option", { text: "Tous les genres" }), { value: "" }),
+    ...genres.map((g) => Object.assign(el("option", { text: g }), { value: g })),
+    Object.assign(el("option", { text: "Sans genre" }), { value: "__none" }),
+  );
+  select.value = [...select.options].some((o) => o.value === chosen) ? chosen : "";
+}
+
+function genreMatches(row, genre) {
+  if (genre === "__none") return !row.genre;
+  return !genre || row.genre === genre;
+}
+
+function tile(label, value, sub, color) {
+  const head = el("div", { className: "label" });
+  if (color) head.append(dot(color));
+  head.append(label);
+  const shown = typeof value === "number" ? numberFormat.format(value) : value;
+  return el("div", { className: "card tile" }, [head, el("div", { className: "value", text: shown }), el("div", { className: "sub" }, [sub])]);
+}
+
+function perItem(total, count) {
+  return count ? (total / count).toFixed(1).replace(".", ",") : "0";
+}
+
+// ---------- Drops tab ----------
+
+let dropsData = null;
+let dropSort = { key: "saves", dir: "desc" };
+let dropLimit = 100;
+let openDropId = null;
+
+const PERIOD_DAYS = { "": null, 1: 1, 7: 7, 30: 30 };
+// Columns: [key, title, sortable]
+const DROP_COLUMNS = [
+  ["rank", "#"], ["title", "Titre"], ["author", "Par"], ["created_at", "Déposé", true], ["status", "Statut"],
+  ["saves", "Likes", true], ["skips", "Skips", true], ["swipes", "Swipes", true], ["rate", "Taux de like", true],
+];
+
+async function loadDrops() {
+  try {
+    const data = await api("/admin/drops");
+    if (!data) return;
+    dropsData = data.drops;
+    fillGenres(document.getElementById("drop-genre"), dropsData);
+    renderDrops();
+    if (openDropId) loadDropSwipes(openDropId);
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+// Drops kept by the filters
+function filteredDrops() {
+  const search = document.getElementById("drop-search").value.trim().toLowerCase().replace(/^@/, "");
+  const days = PERIOD_DAYS[document.getElementById("drop-period").value];
+  const status = document.getElementById("drop-status").value;
+  const genre = document.getElementById("drop-genre").value;
+  const minSwipes = Number(document.getElementById("drop-min").value);
+  const now = Date.now();
+  return dropsData.filter((d) => {
+    const online = new Date(d.expires_at) > now;
+    if (search && ![d.title, d.artist, d.author_username].some((t) => t.toLowerCase().includes(search))) return false;
+    if (days && now - new Date(d.created_at) > days * 86400000) return false;
+    if (status === "online" && !online) return false;
+    if (status === "expired" && online) return false;
+    if (!genreMatches(d, genre)) return false;
+    return d.saves + d.skips >= minSwipes;
+  });
+}
+
+function dropRow(d, rank) {
+  const online = new Date(d.expires_at) > Date.now();
+  const isOpen = d.drop_id === openDropId;
+  const row = el("tr", { className: `drop-row${isOpen ? " open" : ""}` }, [
+    el("td", { className: "num rank", text: rank }),
+    titleCell(d),
+    el("td", {}, [userLink(d.author_id, d.author_username)]),
+    el("td", { className: "muted", text: `${dateFormat.format(new Date(d.created_at))} · ${timeFormat.format(new Date(d.created_at))}` }),
+    el("td", {}, [online
+      ? el("span", { className: "badge live", text: `en ligne · ${timeLeft(d.expires_at)}` })
+      : el("span", { className: "muted", text: "expiré" })]),
+    el("td", { className: "num", text: d.saves }),
+    el("td", { className: "num", text: d.skips }),
+    el("td", { className: "num", text: d.saves + d.skips }),
+    rateCell(d.saves, d.skips),
+  ]);
+  row.tabIndex = 0;
+  row.setAttribute("aria-expanded", String(isOpen));
+  const toggle = (event) => {
+    // A click on a @pseudo or a play button does its own job
+    if (clickedControl(event)) return;
+    openDropId = isOpen ? null : d.drop_id;
+    renderDrops();
+    if (openDropId) loadDropSwipes(openDropId);
+  };
+  row.addEventListener("click", toggle);
+  row.addEventListener("keydown", (event) => { if (event.key === "Enter") toggle(event); });
+  if (!isOpen) return [row];
+  const cell = el("td", { text: "Chargement…" });
+  cell.colSpan = DROP_COLUMNS.length;
+  cell.id = "drop-detail";
+  return [row, el("tr", { className: "drop-detail" }, [cell])];
+}
+
+function renderDrops() {
+  if (!dropsData) return;
+  const drops = filteredDrops();
+  const saves = drops.reduce((n, d) => n + d.saves, 0);
+  const skips = drops.reduce((n, d) => n + d.skips, 0);
+  // Drop of the selection that got the most likes in the last 24 hours
+  // (ties: the most liked overall); null if nobody liked anything
+  const best = drops.reduce((top, d) => {
+    if (d.saves_24h === 0) return top;
+    if (!top || d.saves_24h > top.saves_24h || (d.saves_24h === top.saves_24h && d.saves > top.saves)) return d;
+    return top;
+  }, null);
+  const tiles = [
+    tile("Drops", drops.length, `${drops.filter((d) => new Date(d.expires_at) > Date.now()).length} en ligne`),
+    tile("Likes", saves, `${perItem(saves, drops.length)} par drop`, "--likes"),
+    tile("Skips", skips, `${perItem(skips, drops.length)} par drop`, "--skips"),
+    tile("Taux de like", likeRate(saves, skips), "sur la sélection"),
+    tile("Sans aucun swipe", drops.filter((d) => d.saves + d.skips === 0).length, "personne ne les a vus"),
+  ];
+  const top = best
+    ? tile("Le plus liké ces dernières 24 h", best.title, el("span", {}, [
+        `${best.saves_24h} like${best.saves_24h > 1 ? "s" : ""} en 24 h · `, userLink(best.author_id, best.author_username)]))
+    : tile("Le plus liké ces dernières 24 h", "—", "aucun like depuis 24 h");
+  if (best) top.querySelector(".value").style.fontSize = "16px";
+  tiles.push(top);
+  document.getElementById("drop-tiles").replaceChildren(...tiles);
+
+  const rows = sortRows(drops, dropSort);
+  document.getElementById("drops-subtitle").textContent =
+    `${rows.length} drop${rows.length > 1 ? "s" : ""} · clique sur une ligne pour voir qui l'a liké ou passé`;
+  const box = document.getElementById("drops-table");
+  if (!rows.length) {
+    box.replaceChildren(el("p", { className: "empty", text: "Aucun drop ne correspond aux filtres." }));
+  } else {
+    const onSort = (sort) => { dropSort = sort; dropLimit = 100; renderDrops(); };
+    const body = rows.slice(0, dropLimit).flatMap((d, i) => dropRow(d, i + 1));
+    box.replaceChildren(...stackTable(DROP_COLUMNS, dropSort, onSort, body));
+  }
+  const more = document.getElementById("drops-more");
+  more.hidden = rows.length <= dropLimit;
+  more.textContent = `Afficher 100 de plus (${Math.max(0, rows.length - dropLimit)} restants)`;
+}
+
+async function loadDropSwipes(dropId) {
+  try {
+    const data = await api(`/admin/drops/${dropId}/swipes`);
+    const cell = document.getElementById("drop-detail");
+    if (!data || !cell || openDropId !== dropId) return;
+    const drop = dropsData.find((d) => d.drop_id === dropId);
+    const column = (type, title, color) => {
+      const people = data.swipes.filter((s) => s.type === type);
+      return el("div", {}, [
+        el("h3", {}, [dot(color), `${title} (${people.length})`]),
+        people.length
+          ? el("ul", { className: "people" }, people.map((s) => el("li", {}, [
+              el("span", {}, [userLink(s.user_id, s.username),
+                ...(s.rescued ? [" ", el("span", { className: "badge rescue", text: "repêché plus tard" })] : [])]),
+              el("time", { text: `${relativeTime(s.at)} · ${timeFormat.format(new Date(s.at))}` }),
+            ])))
+          : el("p", { className: "empty", text: "Personne" }),
+      ]);
+    };
+    const parts = [el("div", { className: "swipe-columns" }, [
+      column("like", "Ont liké", "--likes"),
+      column("skip", "Ont passé", "--skips"),
+    ])];
+    // Same action as "Supprimer le drop" in the account dialog
+    if (drop && new Date(drop.expires_at) > Date.now()) {
+      const remove = actionButton("Supprimer ce drop", "ghost small", () => {
+        if (confirm(`Supprimer le drop « ${drop.title} » de @${drop.author_username} ? Ses likes et skips seront effacés.`)) {
+          openDropId = null;
+          runAction("DELETE", `/admin/users/${drop.author_id}/drop`, undefined, `Drop « ${drop.title} » de @${drop.author_username} supprimé.`);
+        }
+      });
+      remove.style.marginTop = "12px";
+      parts.push(remove);
+    }
+    cell.replaceChildren(...parts);
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+["drop-search", "drop-period", "drop-status", "drop-genre", "drop-min"].forEach((id) => {
+  const node = document.getElementById(id);
+  node.addEventListener(node.tagName === "SELECT" ? "change" : "input", () => { dropLimit = 100; renderDrops(); });
+});
+document.getElementById("drops-more").addEventListener("click", () => { dropLimit += 100; renderDrops(); });
+
+// ---------- Sons tab ----------
+
+let songsData = null;
+let songSort = { key: "saves", dir: "desc" };
+let songLimit = 100;
+
+const SONG_COLUMNS = [
+  ["rank", "#"], ["title", "Titre"], ["ids", "ISRC · Deezer"], ["created_at", "En base depuis", true],
+  ["drops", "Drops", true], ["saves", "Likes", true], ["skips", "Skips", true], ["rate", "Taux de like", true],
+  ["in_likes", "Dans Mes likes", true], ["last_drop", "Dernier drop", true],
+];
+
+async function loadSongs() {
+  try {
+    const data = await api("/admin/songs");
+    if (!data) return;
+    songsData = data.songs;
+    fillGenres(document.getElementById("song-genre"), songsData);
+    renderSongs();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+function filteredSongs() {
+  const search = document.getElementById("song-search").value.trim().toLowerCase();
+  const genre = document.getElementById("song-genre").value;
+  const dropped = document.getElementById("song-dropped").value;
+  return songsData.filter((s) => {
+    if (search && ![s.title, s.artist, s.isrc || ""].some((t) => t.toLowerCase().includes(search))) return false;
+    if (!genreMatches(s, genre)) return false;
+    if (dropped === "many" && s.drops < 2) return false;
+    if (dropped === "none" && s.drops > 0) return false;
+    return true;
+  });
+}
+
+function songRow(s, rank) {
+  // Link to the song page on Deezer, opened in a new tab
+  const ids = el("td", { className: "ids" }, [s.isrc || "sans ISRC", el("br")]);
+  if (s.deezer_track_id) {
+    const link = el("a", { href: `https://www.deezer.com/track/${s.deezer_track_id}`, text: `Deezer ${s.deezer_track_id}` });
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    ids.append(link);
+  }
+  return el("tr", {}, [
+    el("td", { className: "num rank", text: rank }),
+    titleCell(s),
+    ids,
+    el("td", { className: "muted", text: s.created_at ? dateFormat.format(new Date(s.created_at)) : "—" }),
+    el("td", { className: "num", text: s.drops }),
+    el("td", { className: "num", text: s.saves }),
+    el("td", { className: "num", text: s.skips }),
+    rateCell(s.saves, s.skips),
+    el("td", { className: "num", text: s.in_likes }),
+    el("td", { className: "muted", text: s.last_drop ? relativeTime(s.last_drop) : "jamais" }),
+  ]);
+}
+
+function renderSongs() {
+  if (!songsData) return;
+  const songs = filteredSongs();
+  const saves = songs.reduce((n, s) => n + s.saves, 0);
+  const skips = songs.reduce((n, s) => n + s.skips, 0);
+  document.getElementById("song-tiles").replaceChildren(
+    tile("Sons", songs.length, `${songsData.length} en base au total`),
+    tile("Déposés plusieurs fois", songs.filter((s) => s.drops > 1).length, "même titre, plusieurs drops"),
+    tile("Dans des Mes likes", songs.filter((s) => s.in_likes > 0).length, `${songs.reduce((n, s) => n + s.in_likes, 0)} ajouts en tout`, "--likes"),
+    tile("Taux de like", likeRate(saves, skips), "sur la sélection"),
+    tile("Sans genre", songs.filter((s) => !s.genre).length, `${songs.filter((s) => !s.isrc).length} sans ISRC`),
+  );
+
+  const rows = sortRows(songs, songSort);
+  document.getElementById("songs-subtitle").textContent =
+    `${rows.length} son${rows.length > 1 ? "s" : ""} · les drops d'un même titre sont additionnés · le bouton rond fait écouter l'extrait`;
+  const box = document.getElementById("songs-table");
+  if (!rows.length) {
+    box.replaceChildren(el("p", { className: "empty", text: "Aucun son ne correspond aux filtres." }));
+  } else {
+    const onSort = (sort) => { songSort = sort; songLimit = 100; renderSongs(); };
+    const body = rows.slice(0, songLimit).map((s, i) => songRow(s, i + 1));
+    box.replaceChildren(...stackTable(SONG_COLUMNS, songSort, onSort, body));
+  }
+  const more = document.getElementById("songs-more");
+  more.hidden = rows.length <= songLimit;
+  more.textContent = `Afficher 100 de plus (${Math.max(0, rows.length - songLimit)} restants)`;
+}
+
+["song-search", "song-genre", "song-dropped"].forEach((id) => {
+  const node = document.getElementById(id);
+  node.addEventListener(node.tagName === "SELECT" ? "change" : "input", () => { songLimit = 100; renderSongs(); });
+});
+document.getElementById("songs-more").addEventListener("click", () => { songLimit += 100; renderSongs(); });
+
+// ---------- Preview player ----------
+
+const player = new Audio();
+let playingSong = null;
+// Key of the song being loaded: its song_id, or "dz" + Deezer id for the catalog
+let loadingKey = null;
+
+// True when a click started on a link or a button of the row (play, @user...).
+// composedPath() keeps the path of the click even when the play button
+// redraws its icon before the click reaches the row.
+function clickedControl(event) {
+  return event.composedPath().some((node) => node.tagName === "BUTTON" || node.tagName === "A");
+}
+
+function playKey(song) {
+  return String(song.play_key ?? song.song_id);
+}
+// Deezer links expire after about 15 minutes (ADR-0008): kept 10 minutes here
+const previewLinks = new Map();
+const PREVIEW_KEEP_MS = 10 * 60 * 1000;
+
+function icon(kind) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 12 12");
+  const shape = document.createElementNS(SVG_NS, "path");
+  shape.setAttribute("d", kind === "stop" ? "M2 2h8v8H2z" : "M3 1.5v9l7.5-4.5z");
+  svg.append(shape);
+  return svg;
+}
+
+// Play button of a song: its look follows the player
+function playButton(song) {
+  const button = el("button", { className: "play" });
+  button.type = "button";
+  button.dataset.song = playKey(song);
+  button.addEventListener("click", () => togglePreview(song));
+  drawPlayButton(button);
+  return button;
+}
+
+function drawPlayButton(button) {
+  const key = button.dataset.song;
+  const playing = playingSong && playKey(playingSong) === key;
+  button.classList.toggle("busy", loadingKey === key);
+  button.setAttribute("aria-label", playing ? "Arrêter l'extrait" : "Écouter l'extrait");
+  button.replaceChildren(icon(playing ? "stop" : "play"));
+}
+
+function updatePlayer() {
+  document.querySelectorAll("button.play").forEach(drawPlayButton);
+  const box = document.getElementById("player");
+  box.hidden = !playingSong;
+  if (!playingSong) return;
+  document.getElementById("player-cover").replaceChildren(cover(playingSong.cover_url));
+  document.getElementById("player-title").textContent = playingSong.title;
+  document.getElementById("player-artist").textContent = playingSong.artist;
+}
+
+async function previewLink(songId) {
+  const kept = previewLinks.get(songId);
+  if (kept && Date.now() - kept.at < PREVIEW_KEEP_MS) return kept.url;
+  // Same route as the app: a fresh link, asked to Deezer by the API
+  const data = await api(`/songs/${songId}/preview`);
+  previewLinks.set(songId, { url: data.preview_url, at: Date.now() });
+  return data.preview_url;
+}
+
+async function togglePreview(song) {
+  if (playingSong && playKey(playingSong) === playKey(song)) return stopPreview();
+  stopPreview();
+  playingSong = song;
+  loadingKey = playKey(song);
+  updatePlayer();
+  try {
+    // A track of the catalog brings its own link; a song of the base asks /songs/{id}/preview
+    const url = song.getPreview ? await song.getPreview() : await previewLink(song.song_id);
+    // Another song was chosen in the meantime
+    if (!playingSong || playKey(playingSong) !== playKey(song)) return;
+    if (!url) {
+      showToast("Pas d'extrait Deezer pour ce titre.", false);
+      return stopPreview();
+    }
+    player.src = url;
+    await player.play();
+  } catch (error) {
+    showToast(error.message, false);
+    stopPreview();
+  } finally {
+    loadingKey = null;
+    updatePlayer();
+  }
+}
+
+function stopPreview() {
+  player.pause();
+  player.removeAttribute("src");
+  playingSong = null;
+  updatePlayer();
+}
+
+player.addEventListener("ended", stopPreview);
+player.addEventListener("timeupdate", () => {
+  const duration = player.duration || 30;
+  document.getElementById("player-progress").style.width = `${(100 * player.currentTime) / duration}%`;
+  document.getElementById("player-time").textContent = `0:${pad(Math.floor(player.currentTime))} / 0:${pad(Math.round(duration))}`;
+});
+document.getElementById("player-stop").addEventListener("click", stopPreview);
+
+// ---------- Catalogue tab: the Deezer catalog, read like in the app ----------
+
+let catalogRequest = 0;
+let catalogResults = [];
+let catalogTrackId = null;
+// Deezer preview links expire after about 15 minutes (ADR-0008)
+const CATALOG_PREVIEW_MS = 10 * 60 * 1000;
+
+function duration(seconds) {
+  return seconds ? `${Math.floor(seconds / 60)}:${pad(seconds % 60)}` : "—";
+}
+
+// A Deezer id, or a link like https://www.deezer.com/fr/track/3135556
+function deezerIdFrom(text) {
+  const match = text.trim().match(/^(\d+)$/) || text.match(/deezer\.com\/(?:\w{2}\/)?track\/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+// Track of the catalog as a song for the player: its preview link, renewed when old
+function catalogSong(track, fetchedAt) {
+  return {
+    play_key: `dz${track.deezer_track_id}`,
+    title: track.title,
+    artist: track.artist,
+    cover_url: track.cover_url,
+    getPreview: async () => {
+      if (Date.now() - fetchedAt < CATALOG_PREVIEW_MS) return track.preview_url;
+      const data = await api(`/admin/catalog/${track.deezer_track_id}`);
+      return data.track.preview_url;
+    },
+  };
+}
+
+function inBaseBadge(inBase) {
+  if (!inBase) return el("span", { className: "badge", text: "pas en base" });
+  const badge = el("span", { className: "badge live", text: `en base · ${plural(inBase.drops, "drop")}` });
+  badge.title = `Chanson n° ${inBase.song_id} : ${plural(inBase.likes, "like")}, dans ${inBase.in_likes} « Mes likes »`;
+  return badge;
+}
+
+async function searchCatalog(text) {
+  const box = document.getElementById("catalog-results");
+  const request = ++catalogRequest;
+  const id = deezerIdFrom(text);
+  if (id) return openCatalogTrack(id);
+  box.classList.add("loading");
+  try {
+    const data = await api(`/admin/catalog?q=${encodeURIComponent(text)}`);
+    if (request !== catalogRequest) return;
+    const fetchedAt = Date.now();
+    catalogResults = data.results.map((track) => ({ ...track, fetchedAt }));
+    renderCatalogResults(data.query);
+  } catch (error) {
+    box.replaceChildren(el("p", { className: "empty", text: error.message }));
+  } finally {
+    if (request === catalogRequest) box.classList.remove("loading");
+  }
+}
+
+function renderCatalogResults(query) {
+  const box = document.getElementById("catalog-results");
+  const head = el("p", { className: "subtitle" }, [
+    `${plural(catalogResults.length, "résultat")} pour « ${query} » · même ordre que la recherche de l'appli`,
+  ]);
+  if (!catalogResults.length) {
+    box.replaceChildren(head, el("p", { className: "empty", text: "Deezer n'a rien trouvé." }));
+    return;
+  }
+  const list = el("ul", { className: "song-list catalog-list" }, catalogResults.map((track) => {
+    const title = el("b", { text: track.title });
+    if (track.explicit) title.append(" ", Object.assign(el("span", { className: "explicit", text: "E" }), { title: "Paroles explicites" }));
+    const item = el("li", { className: track.deezer_track_id === catalogTrackId ? "open" : "" }, [
+      playButton(catalogSong(track, track.fetchedAt)),
+      cover(track.cover_url),
+      el("div", { className: "what" }, [title, el("small", { text: `${track.artist} · ${track.album || "—"}` })]),
+      el("div", { className: "side" }, [
+        inBaseBadge(track.in_base), el("br"),
+        `${duration(track.duration)} · popularité ${numberFormat.format(track.rank || 0)}`,
+      ]),
+    ]);
+    item.tabIndex = 0;
+    const open = (event) => { if (!clickedControl(event)) openCatalogTrack(track.deezer_track_id); };
+    item.addEventListener("click", open);
+    item.addEventListener("keydown", (event) => { if (event.key === "Enter") open(event); });
+    return item;
+  }));
+  box.replaceChildren(head, list);
+}
+
+async function openCatalogTrack(trackId) {
+  catalogTrackId = trackId;
+  document.querySelectorAll(".catalog-list li").forEach((li, i) =>
+    li.classList.toggle("open", catalogResults[i]?.deezer_track_id === trackId));
+  const panel = document.getElementById("catalog-detail");
+  panel.hidden = false;
+  panel.classList.add("loading");
+  try {
+    const data = await api(`/admin/catalog/${trackId}`);
+    if (catalogTrackId !== trackId) return;
+    renderCatalogTrack(data, Date.now());
+    // On a phone the track is under the results: scroll down to it
+    if (matchMedia("(max-width: 900px)").matches) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    panel.replaceChildren(el("p", { className: "empty", text: error.message }));
+  } finally {
+    panel.classList.remove("loading");
+  }
+}
+
+function kvList(rows) {
+  const list = el("dl", { className: "kv" });
+  for (const [label, value] of rows) {
+    const dd = el("dd");
+    dd.append(value ?? "—");
+    list.append(el("dt", { text: label }), dd);
+  }
+  return list;
+}
+
+function renderCatalogTrack(data, fetchedAt) {
+  const t = data.track;
+  const panel = document.getElementById("catalog-detail");
+  const link = Object.assign(el("a", { className: "user-link", text: "Ouvrir sur Deezer" }), {
+    href: `https://www.deezer.com/track/${t.deezer_track_id}`, target: "_blank", rel: "noopener noreferrer",
+  });
+
+  // What the base already has, or what the first drop would create
+  let baseText;
+  if (data.match === "id") baseText = `Déjà en base : chanson n° ${data.in_base.song_id}, avec le même id Deezer.`;
+  else if (data.match === "isrc") baseText = `Déjà en base : chanson n° ${data.in_base.song_id}, trouvée par son ISRC (même titre sous un autre id Deezer). Un drop de ce titre réutilisera cette chanson.`;
+  else baseText = "Pas encore en base : le premier drop de ce titre créera cette ligne dans songs.";
+  const store = data.would_store;
+
+  panel.replaceChildren(
+    el("div", { className: "catalog-head" }, [
+      cover(t.cover_url, "catalog-cover"),
+      el("div", {}, [
+        el("h2", { text: t.title }),
+        el("p", { className: "subtitle", text: `${t.contributors.join(", ") || t.artist} · ${t.album || "—"}` }),
+        el("div", { className: "row" }, [playButton(catalogSong(t, fetchedAt)), inBaseBadge(data.in_base), link]),
+      ]),
+    ]),
+    el("h3", { className: "catalog-h3", text: "Sur Deezer" }),
+    kvList([
+      ["Id Deezer", String(t.deezer_track_id)],
+      ["ISRC", t.isrc],
+      ["Genre (album)", t.genre || "aucun genre"],
+      ["Durée", duration(t.duration)],
+      ["Sortie", t.release_date ? new Date(t.release_date).toLocaleDateString("fr-FR", { dateStyle: "long" }) : null],
+      ["BPM", t.bpm ? String(t.bpm) : null],
+      ["Popularité", numberFormat.format(t.rank || 0)],
+      ["Paroles explicites", t.explicit ? "oui" : "non"],
+      ["Extrait", t.preview_url ? "disponible (30 s)" : "aucun"],
+    ]),
+    el("h3", { className: "catalog-h3", text: "Dans meloDrop" }),
+    el("p", { className: "catalog-note", text: baseText }),
+    data.in_base
+      ? kvList([
+          ["Drops", String(data.in_base.drops)],
+          ["Likes reçus", String(data.in_base.likes)],
+          ["Dans des Mes likes", String(data.in_base.in_likes)],
+        ])
+      : kvList([
+          ["title", store.title],
+          ["artist_name", store.artist_name],
+          ["isrc", store.isrc],
+          ["genre", store.genre],
+          ["deezer_track_id", String(store.deezer_track_id)],
+          ["cover_url", store.cover_url],
+        ]),
+    el("details", { className: "catalog-raw" }, [
+      el("summary", { text: "Réponse brute de Deezer (GET /track)" }),
+      el("pre", { text: JSON.stringify(data.raw, null, 2) }),
+    ]),
+  );
+}
+
+document.getElementById("catalog-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const text = document.getElementById("catalog-query").value.trim();
+  if (text) searchCatalog(text);
+});
+
+// ---------- Récap tab: stats to share with the testers ----------
+
+let recapDays = "7";
+// Landscape fits one screenshot on a computer; portrait reads better on a phone
+let recapFormat = window.innerWidth >= 1000 ? "landscape" : "portrait";
+try {
+  recapFormat = localStorage.getItem("recapFormat") || recapFormat;
+} catch {
+  // No storage (private window): the default stays
+}
+let recapData = null;
+let recapRequest = 0;
+
+const RECAP_TITLES = {
+  1: "Les stats des dernières 24 h",
+  7: "Les stats de la semaine",
+  30: "Les stats du mois",
+  all: "Les stats depuis le lancement",
+};
+const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const longDay = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
+
+function plural(n, word, many = `${word}s`) {
+  return `${numberFormat.format(n)} ${n > 1 ? many : word}`;
+}
+
+function recapRange(data) {
+  const end = new Date(data.generated_at);
+  if (!data.since) return "depuis le début de la bêta";
+  const start = new Date(data.since);
+  if (data.days === 1) return `du ${longDay.format(start)} ${start.getHours()} h au ${longDay.format(end)} ${end.getHours()} h`;
+  return `du ${longDay.format(start)} au ${longDay.format(end)}`;
+}
+
+// Swipes per hour of the day and per weekday, in French time
+function recapHours(data) {
+  const hours = new Array(24).fill(0);
+  const days = new Array(7).fill(0);
+  for (const [utcHour, count] of Object.entries(data.hourly)) {
+    const date = new Date(utcHour);
+    hours[date.getHours()] += count;
+    days[date.getDay()] += count;
+  }
+  const peak = hours.indexOf(Math.max(...hours));
+  const bestDay = days.indexOf(Math.max(...days));
+  return { hours, peak, bestDay, total: hours.reduce((a, b) => a + b, 0) };
+}
+
+async function loadRecap() {
+  const request = ++recapRequest;
+  const card = document.getElementById("recap-card");
+  card.classList.add("loading");
+  try {
+    const data = await api(`/admin/recap?days=${recapDays}`);
+    await loadRecapCovers(data);
+    if (request !== recapRequest) return;
+    recapData = data;
+    renderRecap();
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    if (request === recapRequest) card.classList.remove("loading");
+  }
+}
+
+// ---- Pieces of the card ----
+
+// Covers of the card, downloaded through the API: a picture can only include
+// images of its own site, and blob: links count as such
+const recapCovers = new Map();
+
+async function loadRecapCovers(data) {
+  const urls = [...data.podium, data.tube, data.unanimity]
+    .map((drop) => drop?.cover_url)
+    .filter((url) => url && url.startsWith("https://") && !recapCovers.has(url));
+  await Promise.all(urls.map(async (url) => {
+    try {
+      const response = await fetch(`/admin/cover?url=${encodeURIComponent(url)}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (response.ok) recapCovers.set(url, URL.createObjectURL(await response.blob()));
+    } catch {
+      // Not downloaded: the card shows the Deezer link, without it in the picture
+    }
+  }));
+}
+
+function recapCover(url) {
+  return recapCovers.get(url) || url;
+}
+
+function rcSection(title, children) {
+  return el("section", { className: "rc-section" }, [el("h3", { text: title }), ...children]);
+}
+
+function rcName(user) {
+  return el("b", { className: "rc-name", text: `@${user.username}` });
+}
+
+// showAuthor false: a song dropped by several testers has no single author
+function rcDropRow(drop, side, rank, showAuthor = true) {
+  const row = el("div", { className: "rc-row" });
+  if (rank) row.append(el("span", { className: `rc-rank r${rank}`, text: rank }));
+  row.append(
+    cover(recapCover(drop.cover_url), "rc-cover"),
+    el("div", { className: "rc-what" }, [
+      el("b", { text: drop.title }),
+      el("small", {}, showAuthor ? [`${drop.artist} · par `, rcName(drop.author)] : [drop.artist]),
+    ]),
+    el("div", { className: "rc-num" }, side),
+  );
+  return row;
+}
+
+function rcUserRow(user, value, label, rank) {
+  return el("div", { className: "rc-row" }, [
+    el("span", { className: `rc-rank r${rank}`, text: rank }),
+    avatar(user.avatar_color, user.avatar_style, 40),
+    el("div", { className: "rc-what" }, [rcName(user)]),
+    el("div", { className: "rc-num" }, [el("b", { text: numberFormat.format(value) }), el("small", { text: label })]),
+  ]);
+}
+
+
+// A special mention: one or two avatars, a title, the name(s) and a number
+function rcMention(title, users, value, unit) {
+  const names = el("b", {});
+  users.forEach((user, i) => names.append(i ? " & " : "", rcName(user)));
+  return el("div", { className: "rc-row rc-mention" }, [
+    el("span", { className: "rc-duo-avatars" }, users.map((u) => avatar(u.avatar_color, u.avatar_style, 40))),
+    el("div", { className: "rc-what" }, [el("small", { className: "rc-label", text: title }), names]),
+    el("div", { className: "rc-num" }, [el("b", { text: value }), el("small", { text: unit })]),
+  ]);
+}
+
+function renderRecap() {
+  const data = recapData;
+  const t = data.totals;
+  const card = document.getElementById("recap-card");
+  card.classList.toggle("landscape", recapFormat === "landscape");
+
+  // Logo of the app: a full copy of the symbol, so the image keeps it
+  const logo = svgEl("svg", { viewBox: "0 0 624 466", class: "rc-logo", "aria-hidden": "true" });
+  const symbol = document.getElementById("melodrop-logo");
+  logo.append(symbol.ownerSVGElement.querySelector("defs").cloneNode(true),
+    ...[...symbol.childNodes].map((node) => node.cloneNode(true)));
+  const parts = [el("header", { className: "rc-header" }, [
+    el("div", { className: "rc-head" }, [
+      logo,
+      // "Drop" letter by letter: a canvas cannot draw the gradient text of the header
+      el("span", { className: "wordmark rc-wordmark" }, ["melo",
+        ...[["D", "#b4a7f5"], ["r", "#f5a8c8"], ["o", "#ffb38a"], ["p", "#ffe08a"]]
+          .map(([letter, color]) => el("i", { text: letter, style: { color } }))]),
+    ]),
+    el("div", { className: "rc-heading" }, [
+      el("h2", { className: "rc-title", text: RECAP_TITLES[recapDays] }),
+      el("p", { className: "rc-range", text: recapRange(data) }),
+    ]),
+    el("span", { className: "rc-beta", text: "bêta" }),
+  ])];
+
+  if (!t.drops && !t.likes && !t.skips) {
+    parts.push(el("p", { className: "rc-empty", text: "Pas encore d'activité sur cette période. À vos drops !" }));
+    card.replaceChildren(...parts);
+    renderRecapText();
+    return;
+  }
+
+  // Big numbers
+  parts.push(el("div", { className: "rc-kpis" }, [
+    [t.drops, t.drops > 1 ? "drops partagés" : "drop partagé"],
+    [t.likes, t.likes > 1 ? "likes donnés" : "like donné"],
+    [t.active_users, `testeur${t.active_users > 1 ? "s" : ""} actif${t.active_users > 1 ? "s" : ""} sur ${t.testers}`],
+    [t.liked_songs, t.liked_songs > 1 ? "titres ajoutés aux Mes likes" : "titre ajouté aux Mes likes"],
+  ].map(([value, label]) => el("div", { className: "rc-kpi" }, [el("b", { text: numberFormat.format(value) }), el("span", { text: label })]))));
+
+  // Three columns in landscape (one after the other in portrait):
+  // the drops, the testers, the music
+  const drops = [];
+  const people = [];
+  const music = [];
+
+  if (data.podium.length) {
+    drops.push(rcSection("Le podium des drops", data.podium.map((drop, i) =>
+      rcDropRow(drop, [el("b", { text: numberFormat.format(drop.likes) }), el("small", { text: drop.likes > 1 ? "likes" : "like" })], i + 1))));
+  }
+  if (data.tube) {
+    drops.push(rcSection("Le tube", [rcDropRow(data.tube,
+      [el("b", { text: data.tube.droppers }), el("small", { text: "testeurs l'ont droppé" })], null, false)]));
+  }
+  if (data.unanimity) {
+    drops.push(rcSection("L'unanimité", [rcDropRow(data.unanimity,
+      [el("b", { text: data.unanimity.likes }), el("small", { text: "likes, 0 skip" })])]));
+  }
+
+  if (data.finders.length) {
+    people.push(rcSection("Les meilleurs dénicheurs", data.finders.map((user, i) =>
+      rcUserRow(user, user.likes, user.likes > 1 ? "likes reçus" : "like reçu", i + 1))));
+  }
+  const mentions = [];
+  if (data.generous.length) {
+    const g = data.generous[0];
+    mentions.push(rcMention("Le cœur sur la main", [g], numberFormat.format(g.likes), g.likes > 1 ? "likes donnés" : "like donné"));
+  }
+  if (data.best_ear) {
+    const e = data.best_ear;
+    mentions.push(rcMention("La meilleure oreille", [e], `${e.likes} / ${e.likes + e.skips}`, "swipes en like"));
+  }
+  if (data.duo) {
+    mentions.push(rcMention("Le duo", data.duo.users, numberFormat.format(data.duo.total), "likes échangés"));
+  }
+  if (mentions.length) people.push(rcSection("Les mentions spéciales", mentions));
+
+  if (data.artists.length) {
+    music.push(rcSection("Les artistes les plus aimés", data.artists.map((a, i) => el("div", { className: "rc-row compact" }, [
+      el("span", { className: `rc-rank r${i + 1}`, text: i + 1 }),
+      el("div", { className: "rc-what" }, [el("b", { text: a.artist })]),
+      el("div", { className: "rc-num" }, [el("b", { text: a.likes }), el("small", { text: a.likes > 1 ? "likes" : "like" })]),
+    ]))));
+  }
+  if (data.genres.length) {
+    music.push(rcSection("Les genres qui plaisent", data.genres.slice(0, 4).map((g) => {
+      const percent = Math.round((100 * g.likes) / data.genre_likes_total);
+      return el("div", { className: "rc-bar" }, [
+        el("span", { text: g.genre }),
+        el("span", { className: "rc-track" }, [el("i", { style: { width: `${percent}%` } })]),
+        el("b", { text: `${percent} %` }),
+      ]);
+    })));
+  }
+  const time = recapHours(data);
+  if (time.total) {
+    const max = time.hours[time.peak];
+    const bars = el("div", { className: "rc-hours" }, time.hours.map((count, hour) => {
+      const bar = el("i", { className: hour === time.peak ? "peak" : "", style: { height: `${Math.max(4, (100 * count) / max)}%` } });
+      bar.title = `${hour} h – ${(hour + 1) % 24} h : ${plural(count, "swipe")}`;
+      return bar;
+    }));
+    const text = [`Le pic : entre ${time.peak} h et ${(time.peak + 1) % 24} h`];
+    if (data.days !== 1) text.push(`le ${WEEKDAYS[time.bestDay]} en tête`);
+    music.push(rcSection("L'heure de pointe", [
+      bars,
+      el("div", { className: "rc-hours-axis" }, ["0 h", "6 h", "12 h", "18 h", "23 h"].map((label) => el("span", { text: label }))),
+      el("p", { className: "rc-note", text: text.join(" · ") }),
+    ]));
+  }
+
+  const columns = [drops, people, music].filter((column) => column.length);
+  const grid = el("div", { className: "rc-cols" }, columns.map((column) => el("div", { className: "rc-col" }, column)));
+  grid.style.setProperty("--cols", columns.length);
+  parts.push(grid);
+
+  // Footer
+  const extras = [];
+  if (t.rescues) extras.push(`${plural(t.rescues, "titre repêché", "titres repêchés")} dans les skips`);
+  if (t.new_testers && data.days) extras.push(`${plural(t.new_testers, "nouveau testeur", "nouveaux testeurs")}`);
+  extras.push(`${plural(t.songs, "titre différent", "titres différents")} droppés`);
+  parts.push(el("p", { className: "rc-foot", text: extras.join(" · ") }));
+
+  card.replaceChildren(...parts);
+  renderRecapText();
+}
+
+// The same stats as a message for WhatsApp or Discord
+function recapText() {
+  const data = recapData;
+  if (!data) return "";
+  const t = data.totals;
+  const lines = [`meloDrop · ${RECAP_TITLES[recapDays]} (${recapRange(data)})`, ""];
+  if (!t.drops && !t.likes && !t.skips) return lines.concat("Pas encore d'activité sur cette période. À vos drops !").join("\n");
+  lines.push(`${plural(t.drops, "drop partagé", "drops partagés")} · ${plural(t.likes, "like")} · ${plural(t.active_users, "testeur actif", "testeurs actifs")}`);
+  if (data.podium.length) {
+    lines.push("", "Le podium des drops");
+    data.podium.forEach((d, i) => lines.push(`${i + 1}. « ${d.title} » de ${d.artist}, droppé par @${d.author.username} (${plural(d.likes, "like")})`));
+  }
+  if (data.finders.length) {
+    lines.push("", `Les meilleurs dénicheurs : ${data.finders.map((u) => `@${u.username} (${plural(u.likes, "like reçu", "likes reçus")})`).join(", ")}`);
+  }
+  if (data.generous.length) lines.push(`Le cœur sur la main : @${data.generous[0].username}, ${plural(data.generous[0].likes, "like donné", "likes donnés")}`);
+  if (data.best_ear) {
+    const e = data.best_ear;
+    lines.push(`La meilleure oreille : @${e.username}, ${e.likes} likes sur ${plural(e.likes + e.skips, "swipe")} reçus`);
+  }
+  if (data.duo) lines.push(`Le duo : @${data.duo.users[0].username} & @${data.duo.users[1].username}, ${data.duo.total} likes échangés`);
+  if (data.tube) lines.push(`Le tube : « ${data.tube.title} » de ${data.tube.artist}, droppé par ${data.tube.droppers} testeurs`);
+  if (data.unanimity) lines.push(`L'unanimité : « ${data.unanimity.title} », ${data.unanimity.likes} likes et 0 skip`);
+  if (data.artists.length) lines.push(`L'artiste le plus aimé : ${data.artists[0].artist} (${plural(data.artists[0].likes, "like")})`);
+  if (data.genres.length) lines.push(`Le genre qui plaît le plus : ${data.genres[0].genre}`);
+  const time = recapHours(data);
+  if (time.total) lines.push(`L'heure de pointe : entre ${time.peak} h et ${(time.peak + 1) % 24} h`);
+  if (t.rescues) lines.push(`${plural(t.rescues, "titre repêché", "titres repêchés")} dans les skips`);
+  lines.push("", "Merci à tous, et à demain pour le prochain drop !");
+  return lines.join("\n");
+}
+
+function renderRecapText() {
+  document.getElementById("recap-text").value = recapText();
+}
+
+function renderFormatButtons() {
+  document.querySelectorAll("#recap-format button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.format === recapFormat)));
+}
+renderFormatButtons();
+document.querySelectorAll("#recap-format button").forEach((button) => button.addEventListener("click", () => {
+  recapFormat = button.dataset.format;
+  try {
+    localStorage.setItem("recapFormat", recapFormat);
+  } catch {
+    // Not kept: fine
+  }
+  renderFormatButtons();
+  if (recapData) renderRecap();
+}));
+
+document.querySelectorAll("#recap-period button").forEach((button) => button.addEventListener("click", () => {
+  recapDays = button.dataset.days;
+  document.querySelectorAll("#recap-period button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+  loadRecap();
+}));
+
+// ---- Image of the card (html2canvas, loaded the first time only) ----
+
+const HTML2CANVAS = {
+  src: "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",
+  integrity: "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H",
+};
+let html2canvasLoading = null;
+
+function loadHtml2canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  html2canvasLoading ??= new Promise((resolve, reject) => {
+    const script = Object.assign(document.createElement("script"), { ...HTML2CANVAS, crossOrigin: "anonymous" });
+    script.onload = () => resolve(window.html2canvas);
+    script.onerror = () => {
+      html2canvasLoading = null;
+      reject(new Error("Impossible de créer l'image : html2canvas n'a pas pu être chargé."));
+    };
+    document.head.append(script);
+  });
+  return html2canvasLoading;
+}
+
+async function recapImage() {
+  const draw = await loadHtml2canvas();
+  // The fonts and the covers must be there before the picture is taken
+  await document.fonts.ready;
+  const card = document.getElementById("recap-card");
+  await Promise.all([...card.querySelectorAll("img")].map((img) =>
+    img.complete ? null : new Promise((done) => { img.onload = img.onerror = done; })));
+  // Transparent corners around the rounded card, twice the size for a sharp image
+  const canvas = await draw(card, { backgroundColor: null, scale: 2, logging: false });
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
+function recapFileName() {
+  const period = { 1: "24h", 7: "semaine", 30: "mois", all: "depuis-le-debut" }[recapDays];
+  return `meloDrop-stats-${period}-${dayKey(new Date())}.png`;
+}
+
+async function withBusy(button, task) {
+  button.disabled = true;
+  try {
+    await task();
+  } catch (error) {
+    showToast(error.message, false);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById("recap-download").addEventListener("click", (event) => withBusy(event.target, async () => {
+  const blob = await recapImage();
+  const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: recapFileName() });
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+  showToast("Image téléchargée.", true);
+}));
+
+document.getElementById("recap-copy-image").addEventListener("click", (event) => withBusy(event.target, async () => {
+  if (!window.ClipboardItem) throw new Error("Ce navigateur ne sait pas copier une image : utilise « Télécharger l'image ».");
+  // The image is promised right away: the browser keeps the right to write in the clipboard
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": recapImage() })]);
+  showToast("Image copiée : colle-la dans le groupe des testeurs (Ctrl+V).", true);
+}));
+
+// Only shown when the browser can share an image (phones, mostly)
+const shareButton = document.getElementById("recap-share");
+try {
+  shareButton.hidden = !navigator.canShare?.({ files: [new File([""], "test.png", { type: "image/png" })] });
+} catch {
+  shareButton.hidden = true;
+}
+shareButton.addEventListener("click", (event) => withBusy(event.target, async () => {
+  const file = new File([await recapImage()], recapFileName(), { type: "image/png" });
+  try {
+    await navigator.share({ files: [file], title: `meloDrop · ${RECAP_TITLES[recapDays]}` });
+  } catch (error) {
+    // Closed without choosing an app: nothing to say
+    if (error.name !== "AbortError") throw error;
+  }
+}));
+
+document.getElementById("recap-copy").addEventListener("click", async () => {
+  const text = document.getElementById("recap-text").value;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Without clipboard access: select the text so Ctrl+C works
+    const area = document.getElementById("recap-text");
+    area.closest("details").open = true;
+    area.select();
+    document.execCommand("copy");
+  }
+  showToast("Message copié : colle-le dans le groupe des testeurs.", true);
+});
+
+// ---------- Tabs (the address ends with #overview, #drops, #songs, #users or #user/12) ----------
+
+// Halo layouts of HaloBackground.kt: x, y, radius, strength for lavender, butter, mint, rose
+const HALO_LAYOUTS = {
+  overview: [[0, .55, .75, .12], [.85, .08, .95, .2], [.1, 1, .7, .1], [1, .75, .7, .12]],     // like Discover
+  users: [[.05, .75, .8, .14], [1, .95, .65, .1], [1, .35, .65, .1], [.5, 0, 1, .2]],          // like Profil
+  drops: [[1, .45, .75, .12], [0, .9, .7, .1], [.15, .1, .95, .2], [.9, 1, .7, .12]],           // like Drop
+  songs: [[1, .55, .75, .12], [.15, .08, .95, .2], [.9, 1, .7, .1], [0, .75, .7, .12]],          // Discover, mirrored
+  catalog: [[0, .2, .8, .14], [1, .1, .7, .1], [.2, 1, .8, .16], [1, .8, .6, .1]],                // like the Drop screen search
+  recap: [[.5, .15, .9, .2], [.05, .6, .7, .14], [.95, .85, .7, .12], [.9, .1, .6, .14]],          // festive
+};
+
+function setHalos(layout) {
+  document.querySelectorAll(".halo").forEach((halo, i) => {
+    const [x, y, r, a] = HALO_LAYOUTS[layout][i];
+    Object.entries({ "--x": x, "--y": y, "--r": r, "--a": a }).forEach(([k, v]) => halo.style.setProperty(k, v));
+  });
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  document.getElementById("tab-overview").hidden = tab !== "overview";
+  document.getElementById("tab-users").hidden = tab !== "users";
+  document.getElementById("tab-drops").hidden = tab !== "drops";
+  document.getElementById("tab-songs").hidden = tab !== "songs";
+  document.getElementById("tab-catalog").hidden = tab !== "catalog";
+  document.getElementById("tab-recap").hidden = tab !== "recap";
+  document.querySelectorAll("#tabs a").forEach((a) => {
+    if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+  setHalos(tab);
+}
+
+function route() {
+  // A tab that is not open yet in production: back to the overview
+  const tab = location.hash.slice(1).split("/")[0];
+  if (["drops", "songs", "catalog", "recap", "logs"].includes(tab) && !ENABLED_TABS.includes(tab)) {
+    history.replaceState(null, "", "#overview");
+  }
+  const match = location.hash.match(/^#user\/(\d+)$/);
+  // On a phone, a user opened from the list takes the whole screen
+  document.body.classList.toggle("user-open", Boolean(match));
+  if (match) {
+    showTab("users");
+    selectedUserId = Number(match[1]);
+    // A user opened from a link but hidden by the filter: show everyone
+    if (currentData && !usersMatching(userFilter).some((u) => u.id === selectedUserId)) userFilter = "all";
+    renderUserList();
+    // Before the first numbers arrive, refresh() loads the user itself
+    if (currentData) loadUser(selectedUserId);
+    window.scrollTo({ top: 0 });
+  } else if (location.hash === "#drops") {
+    showTab("drops");
+    if (dropsData) renderDrops();
+    else if (currentData) loadDrops();
+  } else if (location.hash === "#catalog") {
+    showTab("catalog");
+    document.getElementById("catalog-query").focus();
+  } else if (location.hash === "#songs") {
+    showTab("songs");
+    if (songsData) renderSongs();
+    else if (currentData) loadSongs();
+  } else if (location.hash === "#recap") {
+    showTab("recap");
+    if (currentData) loadRecap();
+  } else if (location.hash.startsWith("#users")) {
+    // #users/never opens the list with a filter (link of the overview tile)
+    const filter = location.hash.split("/")[1];
+    if (USER_FILTERS.some(([key]) => key === filter)) userFilter = filter;
+    showTab("users");
+    renderUserList();
+  } else {
+    showTab("overview");
+  }
+}
+
+window.addEventListener("hashchange", () => { if (loggedIn) route(); });
+document.getElementById("user-search").addEventListener("input", renderUserList);
+
+// ---------- Login ----------
+
+function showLogin(message = "") {
+  loggedIn = false;
+  currentData = null;
+  stopPreview();
+  schedule();
+  document.body.classList.add("on-login");
+  document.getElementById("tabs").hidden = true;
+  document.getElementById("manage").close();
+  document.getElementById("dashboard").hidden = true;
+  document.getElementById("status").hidden = true;
+  document.getElementById("error").hidden = true;
+  document.getElementById("login").hidden = false;
+  document.getElementById("login-error").textContent = message;
+  // No focus on a phone: the keyboard would hide the page
+  if (!matchMedia("(pointer: coarse)").matches) document.getElementById("identifier").focus();
+}
+
+function showDashboard() {
+  loggedIn = true;
+  document.body.classList.remove("on-login");
+  document.getElementById("login").hidden = true;
+  document.getElementById("dashboard").hidden = false;
+  document.getElementById("status").hidden = false;
+  document.getElementById("tabs").hidden = false;
+  route();
+  refresh();
+}
+
+// Reads the logged-in account, then opens the dashboard
+async function enterDashboard() {
+  // Its own account can't be deleted from the page
+  const me = await api("/me");
+  currentAdmin = me.username;
+  showDashboard();
+}
+
+document.getElementById("login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = document.getElementById("login-button");
+  const message = document.getElementById("login-error");
+  const password = document.getElementById("password");
+  button.disabled = true;
+  message.textContent = "";
+  try {
+    // Same login as the app: email or username, and the password
+    const response = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: document.getElementById("identifier").value.trim(), password: password.value }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      message.textContent = ERROR_MESSAGES[data?.detail] || "Connexion impossible.";
+      return;
+    }
+    password.value = "";
+    setToken(data.access_token);
+    // A 403 (not admin) sends back to this screen with its message
+    await enterDashboard();
+  } catch (error) {
+    if (!(error instanceof ApiError)) message.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("logout").addEventListener("click", () => {
+  setToken(null);
+  currentAdmin = null;
+  showLogin();
+});
+
+// ---------- Start ----------
+
+document.getElementById("refresh").addEventListener("click", refresh);
+document.getElementById("auto").addEventListener("change", schedule);
+document.addEventListener("visibilitychange", schedule);
+setInterval(updateStatus, 1000);
+
+if (window.Chart) {
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.color = css("--muted");
+}
+
+setHalos("overview");
+
+// Keeps --header-h equal to the height of the top bar (it changes on phones)
+new ResizeObserver(([entry]) => {
+  document.documentElement.style.setProperty("--header-h", `${entry.target.offsetHeight}px`);
+}).observe(document.getElementById("topbar"));
+
+async function start() {
+  renderSource();
+  if (!getToken()) return showLogin();
+  try {
+    await enterDashboard();
+  } catch (error) {
+    // 401 or 403: api() already went back to the login
+    if (!(error instanceof ApiError) || loggedIn) showLogin(error.message);
+  }
+}
+start();
+</script>
+</body>
+</html>

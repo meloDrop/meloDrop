@@ -55,6 +55,7 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.compose.material3.IconButton
 
 // Distance to reach, as a fraction of the card width, for a swipe to count
 private const val SWIPE_THRESHOLD = 0.3f
@@ -70,6 +71,8 @@ private const val FLY_OUT_MS = 250
 fun DiscoverScreen(
     // Tap on the @username of a card: opens the profile of its author
     onAuthorClick: (Int) -> Unit,
+    // Tap on the magnifying glass: opens the user search
+    onSearchClick: () -> Unit,
     viewModel: DiscoverViewModel = viewModel(),
 ) {
     // Leaving the Discover tab: the music stops
@@ -88,6 +91,7 @@ fun DiscoverScreen(
         onSwiped = viewModel::onSwiped,
         onPlayPause = viewModel::togglePlay,
         onAuthorClick = onAuthorClick,
+        onSearchClick = onSearchClick,
     )
 }
 
@@ -99,6 +103,7 @@ private fun DiscoverContent(
     onSwiped: (FeedItem, Boolean) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: (Int) -> Unit,
+    onSearchClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -106,7 +111,21 @@ private fun DiscoverContent(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        MeloDropTitle()
+        // Title on the left, search button on the right
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            MeloDropTitle()
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_search),
+                    contentDescription = "Rechercher un utilisateur",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+        }
 
         // Takes all the space left under the title, content centered
         Box(
@@ -292,7 +311,10 @@ private fun SwipeableDropCard(
                         } else {
                             // Not far enough: back to the center with a small bounce
                             scope.launch {
-                                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                offsetX.animateTo(
+                                    0f,
+                                    spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                )
                             }
                         }
                     },
@@ -437,6 +459,7 @@ private fun DiscoverEmptyPreview() {
             onSwiped = { _, _ -> },
             onPlayPause = {},
             onAuthorClick = {},
+            onSearchClick = {}
         )
     }
 }
@@ -451,6 +474,7 @@ private fun DiscoverErrorPreview() {
             onSwiped = { _, _ -> },
             onPlayPause = {},
             onAuthorClick = {},
+            onSearchClick = {}
         )
     }
 }
@@ -481,6 +505,7 @@ private fun DiscoverDeckPreview() {
             onSwiped = { _, _ -> },
             onPlayPause = {},
             onAuthorClick = {},
+            onSearchClick = {}
         )
     }
 }

@@ -1,145 +1,180 @@
 # meloDrop
+<img width="1200" height="630" alt="og-image" src="https://github.com/user-attachments/assets/2d4e7fad-537f-4176-bc3d-d9e5f9c7bb7f" />
 
-One song a day, picked by someone, not by an algorithm.
+> One song a day, picked by someone, not by an algorithm.
 
-meloDrop is an Android app for music discovery. Every user can drop one song a day on their profile. The other users discover these drops one by one, listen to a 30-second preview, and swipe right to keep the song or left to pass.
+meloDrop is an Android app for music discovery. Each user drops one song a day. The other users listen to a 30-second preview, then swipe to keep the song or skip it.
 
-The app is built for a French-speaking audience: the interface is in French, the code and the documentation are in English.
+The interface is in French. The code and the docs are in English.
 
-This is my end-of-first-year project at Holberton School.
+This is my end-of-first-year project at Holberton School. The app is in early access on Google Play. Website: [melodrop-app.com](https://melodrop-app.com)
 
-Version 0.5.0 is available in early access (closed testing) on Google Play. More about the app on [melodrop-app.com](https://melodrop-app.com).
+## What you can do in the app
 
-## Features
+- Drop one song a day. It stays online for 24 hours.
+- Swipe the drops of the other users: right to like, left to skip.
+- Find your liked songs in "Mes likes".
+- Get back a song skipped by mistake in "Mes skips".
+- Visit profiles and search users by @username.
 
-- Drop one song a day. A drop stays online for 24 hours from the time it was posted. Songs come from the Deezer catalog, and the genre is taken from the Deezer album.
-- Discover the drops of the other users in a random order. Swipe right to like a song, left to skip it.
-- Find your liked songs in "Mes likes", listen to them again or remove them.
-- Rescue a song skipped by mistake from "Mes skips" (skips of the last 7 days).
-- Visit a profile: drop of the day, latest drops and counters. "Mes drops" lists all your drops, and every song on a profile can be played.
-- Search other users by @username.
-- Customize your profile with a display name and an avatar.
-- Manage your account: email check with a 6-digit code, forgotten password, email and password change, account deletion.
-- Get a notification when your drop expires.
+<table>
+  <tr>
+    <td align="center"><img src="https://github.com/user-attachments/assets/de34bafb-f7f0-4e55-bcc3-f96795f77a5b" width="230" alt="Discover screen"><br>Discover</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/e06861ba-5dac-4694-889e-61d6f9f19290" width="230" alt="Drop screen"><br>Drop</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/94ca96eb-51f9-469d-a2d5-19944963c002" width="230" alt="Profile screen"><br>Profile</td>
+  </tr>
+</table>
 
-In this first version, the app does not connect to a streaming account: liked songs are kept in meloDrop.
 
-An admin dashboard is served at `/admin`, for accounts with the admin role.
-
-## Stack
+## Built with
 
 - Android app: Kotlin, Jetpack Compose, Retrofit
 - Backend: Python, FastAPI, SQLAlchemy, Alembic
-- Database: MySQL 9.7
-- Music data: Deezer public API (search, track details, previews)
-- Emails: Brevo SMTP relay, Jinja2 templates
-- Hosting: Scaleway server, Docker Compose, Nginx, Let's Encrypt
+- Database: MySQL
+- Music data: Deezer public API
 
-## Project structure
+## Run the project locally
 
+### What you need
+
+- Git
+- Docker Desktop
+- Android Studio
+- An Android phone with USB debugging turned on, or an Android emulator
+
+### 1. Clone the project
+
+```bash
+git clone https://github.com/meloDrop/meloDrop.git
+cd meloDrop
 ```
-meloDrop/
-├── app/            Android app
-├── backend/        FastAPI API and Docker files
-│   ├── app/        routers, services, schemas, models, providers
-│   ├── alembic/    database migrations
-│   └── scripts/    server scripts (daily database backup)
-├── database/       demo data for development
-└── landing/        landing page of melodrop-app.com
-```
 
-In the backend, every request follows the same path: the router receives the HTTP request, the service applies the business rules, the models read and write the database, and the providers call Deezer.
+### 2. Create the `.env` file
 
-## Run the backend locally
-
-You need Docker with Docker Compose.
+The backend reads its settings in `backend/.env`. Start from the example file:
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Fill in `.env` before the first start:
+Open `.env` and change these three lines:
 
-- `DB_USER` must be `root` with this Docker Compose setup, and `DB_PASSWORD` is the MySQL root password.
-- `JWT_SECRET` can be generated with `python3 -c "import secrets; print(secrets.token_hex(32))"`.
-- The `SMTP_*` variables are your Brevo SMTP keys. They are needed to send the emails (account check, forgotten password).
+```env
+DB_USER=root
+DB_PASSWORD=choose_a_password
+JWT_SECRET=paste_a_random_key_here
+```
 
-Then start the database and the API:
+To create a random key for `JWT_SECRET`:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Keep the other lines as they are.
+
+The email lines (`SMTP_*` and `MAIL_FROM`) are only needed to send real emails with Brevo. Without them, the app runs, but you cannot confirm a new account. Use the demo accounts instead (step 4).
+
+### 3. Start the backend
+
+Still in the `backend` folder:
 
 ```bash
 docker compose up -d --build
 ```
 
-At startup, the API container applies the Alembic migrations, then starts the API with auto-reload.
+This starts two containers: the database (`db`) and the API (`api`). The first start can take a minute. The API creates the tables by itself.
 
-- API: http://localhost:8000
-- Interactive docs (Swagger): http://localhost:8000/docs
-
-To check that everything works:
+Check that both containers are ready:
 
 ```bash
-curl -s http://localhost:8000/health | jq
+docker compose ps
 ```
 
-The answer should be `{"status": "ok"}`.
+The `STATUS` column must show `healthy` for both.
 
-### Demo data
+Then open http://localhost:8000/health in your browser. You should see `{"status":"ok"}`.
 
-`database/demo.sql` creates demo accounts and drops. All the accounts use the password `Password1!`. Log in with `lito`: this account has no drop of the day, so the whole feed is left to discover.
+The API docs (Swagger) are at http://localhost:8000/docs.
 
-Load it once, on an empty database, after the first start:
+### 4.  Load the demo data (optional)
+
+Without demo data, the app is empty. The demo file adds users, songs and drops of the day.
+
+Still in the `backend` folder:
 
 ```bash
-docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < ../database/demo.sql
+docker compose cp ../database/demo.sql db:/demo.sql
+docker compose exec db sh -c 'MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot $MYSQL_DATABASE < /demo.sql'
 ```
 
-Never load it in production.
+Load it only once, on an empty database.
 
-## Run the Android app
+All the demo accounts use the password `Password1!`. Log in with `litoxam`: this account has no drop of the day, so all the drops of the feed are left to discover.
 
-1. Start the backend (see above).
-2. Open the root folder of the project in Android Studio.
-3. The debug build calls `http://localhost:8000/`. Forward this port to the phone or the emulator:
+The drops of the day last 24 hours from the time you load the file. After that, the feed is empty. To get new drops, reset the database (see [Useful commands](#useful-commands)).
+
+### 5. Run the Android app
+
+1. Open the `meloDrop` folder (the root of the project) in Android Studio.
+2. Wait for the Gradle sync to finish.
+3. Plug in your phone, or start an emulator.
+4. Link port 8000 of your phone to port 8000 of your computer:
 
    ```bash
    adb reverse tcp:8000 tcp:8000
    ```
 
-4. Run in Android Studio.
+5. Click Run in Android Studio.
 
-The release build calls the production API: `https://api.melodrop-app.com`.
+The debug version of the app calls the API on `http://localhost:8000`. The `adb reverse` command lets the phone reach your computer at this address. Run it again each time you plug in the phone.
 
-## Production
+`adb` comes with Android Studio. You can find it in the `platform-tools` folder of the Android SDK.
 
-The production server follows the `main` branch. `backend/docker-compose.prod.yml` runs three containers:
+## Useful commands
 
-- MySQL, which is not reachable from the internet;
-- the API;
-- Nginx, which handles HTTPS with Let's Encrypt certificates and serves the landing page.
-
-To deploy a new version, on the server, in the project folder:
+Run them in the `backend` folder.
 
 ```bash
-git pull origin main
-cd backend
-docker compose -f docker-compose.prod.yml up -d --build
+# Show the API logs (Ctrl + C to quit)
+docker compose logs -f api
+
+# Stop the backend
+docker compose down
+
+# Reset the database: this deletes all the data
+docker compose down -v
+docker compose up -d --build
 ```
 
-The Alembic migrations are applied automatically when the API starts. A cron job runs `backend/scripts/backup_db.sh` every night to back up the database.
+After a reset, load the demo data again (step 4).
 
-## Git workflow
+## Common problems
 
-- `main`: released versions only. This is the branch deployed in production.
-- `dev`: work branch. All the other branches start from it.
-- `feat/`, `fix/`, `doc/`, `build/`: one branch per task, merged into `dev` through a pull request.
+- If the `db` container does not start, port 3306 may already be used by a MySQL installed on your computer. Stop this MySQL, then start the backend again.
+- If the app shows a network error, check that the backend is running, then run `adb reverse tcp:8000 tcp:8000` again.
+- If you cannot log in with a new account, the confirmation email was not sent (no Brevo keys). You can log in with a demo account, or confirm your account by hand. In the `backend` folder, open MySQL:
 
-Commit messages start with `feat:`, `fix:` or `doc:`. Each release is tagged on `main` (for example `v0.5.0`) and listed in the GitHub Releases.
+  ```bash
+  docker compose exec db sh -c 'MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot $MYSQL_DATABASE'
+  ```
 
-## What's next
+  Then run this line, with your username, and type `exit` to quit:
 
-- Link a streaming account (Spotify, Deezer) to export the liked songs to a playlist.
-- Follow other users.
+  ```sql
+  UPDATE users SET email_verified = TRUE WHERE username = 'your_username';
+  ```
+
+## Project structure
+
+```
+meloDrop/
+├── app/         Android app
+├── backend/     API, Docker files and database migrations
+├── database/    demo data
+└── landing/     website melodrop-app.com
+```
 
 ## Author
 

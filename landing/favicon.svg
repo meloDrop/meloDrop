@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="12 4 96 96">
+  <!-- Striped drop from the meloDrop logo, without the ripples (too small in a tab) -->
+  <defs>
+    <clipPath id="drop">
+      <path d="M60 6 C60 6 28 44 28 66 a32 32 0 0 0 64 0 C92 44 60 6 60 6 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#drop)">
+    <rect x="20" y="0"    width="80" height="36"   fill="#ffa3c8"/>
+    <rect x="20" y="38.5" width="80" height="13.5" fill="#ffb48c"/>
+    <rect x="20" y="54.5" width="80" height="13.5" fill="#ffe28f"/>
+    <rect x="20" y="70.5" width="80" height="13.5" fill="#92e6c4"/>
+    <rect x="20" y="86.5" width="80" height="14"   fill="#b9a6ff"/>
+  </g>
+</svg>

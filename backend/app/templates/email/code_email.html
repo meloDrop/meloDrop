@@ -1,0 +1,132 @@
+{#
+meloDrop email template for 6-digit codes (ADR-0015).
+Expected variables:
+kind            "verify_email" or "reset_password" or "change_email"
+code            the 6-digit code
+expires_minutes how long the code stays valid
+header_src      "cid:" link to the header image attached to the email (see utils/mail.py)
+Email rules: table layout, inline styles only, no external CSS.
+The email texts stay in French, like the app interface.
+#}
+{% if kind == "reset_password" %}
+    {% set title = "Réinitialise ton mot de passe" %}
+    {% set intro = "Tu as demandé à changer ton mot de passe. Saisis ce code dans l'application :" %}
+    {% set ignore_text = "Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste inchangé." %}
+{% elif kind == "change_email" %}
+    {% set title = "Confirme ta nouvelle adresse e-mail" %}
+    {% set intro = "Pour que cette adresse devienne celle de ton compte meloDrop, saisis ce code dans l'application :" %}
+    {% set ignore_text = "Si tu n'es pas à l'origine de cette demande, ignore cet e-mail : cette adresse ne sera liée à aucun compte." %}
+{% else %}
+    {% set title = "Confirme ton adresse e-mail" %}
+    {% set intro = "Bienvenue sur meloDrop ! Pour activer ton compte, saisis ce code dans l'application :" %}
+    {% set ignore_text = "Si tu n'as pas créé de compte meloDrop, ignore cet e-mail." %}
+{% endif %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
+    <title>{{ title }}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#0c0c10;">
+
+{# Preheader: text shown in the inbox preview, hidden in the email #}
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#0c0c10;">
+    Ton code meloDrop : {{ code }}
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0c0c10"
+       style="background-color:#0c0c10;">
+    <tr>
+        <td align="center" style="padding:0 16px 40px;">
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="max-width:560px;">
+
+                {# Header image: logo and light beams, touching the top of the email #}
+                <tr>
+                    <td align="center" style="padding-bottom:8px;">
+                        <img src="{{ header_src }}" width="560" alt="meloDrop"
+                             style="display:block; width:100%; max-width:560px; height:auto; border:0; outline:none; text-decoration:none;
+                          color:#f2f0f7; font-family:Arial, Helvetica, sans-serif; font-size:24px; font-weight:bold;">
+                    </td>
+                </tr>
+
+                {# Card #}
+                <tr>
+                    <td bgcolor="#17171f"
+                        style="background-color:#17171f; border-radius:20px; padding:36px 32px 32px; font-family:Arial, Helvetica, sans-serif;">
+
+                        {# Pastel stripes, same colors and order as the drop of the logo #}
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+                               style="margin-bottom:24px;">
+                            <tr>
+                                <td width="22" height="4" bgcolor="#B4A7F5"
+                                    style="background-color:#B4A7F5; font-size:0; line-height:0; border-radius:2px;">
+                                    &nbsp;
+                                </td>
+                                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                                <td width="22" height="4" bgcolor="#F5A8C8"
+                                    style="background-color:#F5A8C8; font-size:0; line-height:0; border-radius:2px;">
+                                    &nbsp;
+                                </td>
+                                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                                <td width="22" height="4" bgcolor="#FFB38A"
+                                    style="background-color:#FFB38A; font-size:0; line-height:0; border-radius:2px;">
+                                    &nbsp;
+                                </td>
+                                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                                <td width="22" height="4" bgcolor="#FFE08A"
+                                    style="background-color:#FFE08A; font-size:0; line-height:0; border-radius:2px;">
+                                    &nbsp;
+                                </td>
+                                <td width="4" style="font-size:0; line-height:0;">&nbsp;</td>
+                                <td width="22" height="4" bgcolor="#9EE0B8"
+                                    style="background-color:#9EE0B8; font-size:0; line-height:0; border-radius:2px;">
+                                    &nbsp;
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h1 style="margin:0 0 12px; font-size:22px; line-height:30px; color:#f2f0f7; font-weight:bold;">
+                            {{ title }}</h1>
+                        <p style="margin:0 0 28px; font-size:15px; line-height:23px; color:#a9a6b8;">
+                            {{ intro }}</p>
+
+                        {# Code box #}
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                               border="0">
+                            <tr>
+                                <td align="center" bgcolor="#221f33"
+                                    style="background-color:#221f33; border:1px solid #B4A7F5; border-radius:14px; padding:22px 12px 22px 22px;">
+                                    <span style="font-family:'Courier New', Courier, monospace; font-size:34px; line-height:40px; font-weight:bold; letter-spacing:10px; color:#e4dcff;">{{ code }}</span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:24px 0 0; font-size:14px; line-height:21px; color:#a9a6b8;">
+                            Ce code expire dans <strong style="color:#f2f0f7;">{{ expires_minutes }}
+                            minutes</strong>.
+                        </p>
+                        <p style="margin:12px 0 0; font-size:13px; line-height:20px; color:#77748a;">
+                            {{ ignore_text }}</p>
+                    </td>
+                </tr>
+
+                {# Footer #}
+                <tr>
+                    <td align="center"
+                        style="padding-top:28px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#77748a;">
+                        meloDrop &middot; Une chanson par jour, choisie par quelqu'un.<br>
+                        E-mail envoyé automatiquement, merci de ne pas y répondre.
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

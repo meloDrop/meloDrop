@@ -173,8 +173,10 @@ meloDrop/
 ├── app/         Android app
 ├── backend/     API, Docker files and database migrations
 ├── database/    demo data
+├── docs/adr/    architecture decisions (ADR)
 └── landing/     website melodrop-app.com
 ```
+The changes of each version are listed in `CHANGELOG.md` (French version: `CHANGELOGFR.md`).
 
 ## Author
 

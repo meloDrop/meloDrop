@@ -28,7 +28,10 @@ data class DiscoverUiState(
     // True when the preview plays (or is about to): pause icon on the button
     val isPlaying: Boolean = false,
     // Short message when the preview of the card cannot be played
-    val previewError: String? = null
+    val previewError: String? = null,
+    // True right after a pick: the hint under the buttons says "Ajouté à Mes picks"
+    val justPicked: Boolean = false
+)
 )
 
 class DiscoverViewModel(application: Application) : AndroidViewModel(application) {
@@ -82,23 +85,43 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     }
 
     // The card on screen was swiped: right = like, left = skip
+    // The card on screen was swiped: right = like, left = skip
     fun onSwiped(drop: FeedItem, liked: Boolean) {
+        sendChoice(drop) {
+            if (liked) repository.save(drop.id) else repository.skip(drop.id)
+        }
+    }
+
+    // Up swipe or Pick button: a like that also goes to "Mes picks"
+    fun onPicked(drop: FeedItem) {
+        sendChoice(drop) { repository.pick(drop.id) }
+        // The hint under the buttons confirms it, until the next choice
+        uiState = uiState.copy(justPicked = true)
+    }
+
+    // The card leaves at once, then the choice is sent to the backend.
+    // send: the backend call to make (save, skip or pick)
+    private fun sendChoice(drop: FeedItem, send: suspend () -> Unit) {
         // The card leaves at once, without waiting for the backend
         uiState = uiState.copy(
             drops = uiState.drops - drop,
             swipeError = null,
             previewError = null,
+            justPicked = false,
         )
         // The next card's preview takes over
         playTop()
 
         viewModelScope.launch {
             try {
-                if (liked) repository.save(drop.id) else repository.skip(drop.id)
+                send()
             } catch (e: HttpException) {
                 // 404 (expired) or 409 (already seen): the card is gone anyway
             } catch (e: IOException) {
-                uiState = uiState.copy(swipeError = "Pas de connexion : ce choix n'a pas été enregistré.")
+                uiState = uiState.copy(
+                    swipeError = "Pas de connexion : ce choix n'a pas été enregistré.",
+                    justPicked = false,
+                )
             }
 
             // Last card done: ask for a new batch, once the choice is saved

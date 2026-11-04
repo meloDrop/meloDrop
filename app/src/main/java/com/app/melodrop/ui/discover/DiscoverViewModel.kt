@@ -11,6 +11,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DiscoverRepository
+import com.app.melodrop.data.WhatsNewStore
 import com.app.melodrop.network.dto.FeedItem
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -41,6 +42,11 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     var uiState by mutableStateOf(DiscoverUiState())
         private set
 
+    // True while the "Nouveautés" sheet is open. Kept apart from uiState:
+    // loadFeed() builds a new uiState, and that must not close the sheet
+    var showWhatsNew by mutableStateOf(false)
+        private set
+
     // Plays the previews, one at a time. It lives as long as the ViewModel,
 // so it survives a screen rotation or a change of tab
     private val player = buildPreviewPlayer(application)
@@ -64,6 +70,23 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
 
         // Loads a first batch as soon as the screen opens
         loadFeed()
+
+        // First launch after an update: the "Nouveautés" sheet opens by itself
+        viewModelScope.launch {
+            if (WhatsNewStore.checkNewVersion(application)) {
+                showWhatsNew = true
+            }
+        }
+    }
+
+    // "i" button: opens the sheet again, whenever the user wants
+    fun openWhatsNew() {
+        showWhatsNew = true
+    }
+
+    // Sheet closed: OK, swipe down, tap outside or back button
+    fun closeWhatsNew() {
+        showWhatsNew = false
     }
 
     fun loadFeed() {

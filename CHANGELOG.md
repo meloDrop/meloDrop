@@ -2,6 +2,22 @@
 
 All notable changes to Melodrop are documented in this file.
 
+
+## [0.6.0] - 2026-11-05
+
+### Added
+- Picks: a third choice in Discover, for a song you discover and love at first listen. Tap the yellow star or swipe the card up. A pick also counts as a like for the author of the drop.
+- Star on each song of "Mes likes": it turns a like into a pick, and a second tap removes it from the picks.
+- "Mes drops" and "Mes picks" tabs on your profile: the "Mes picks" tab shows your last 5 picks, and a "Tout voir" tile opens the "Mes picks" screen with all of them.
+- "Nouveautés" sheet: it opens by itself once after each update, and the drop-shaped "i" button of Discover opens it again at any time.
+- Backend: `POST /drops/{drop_id}/pick`, `GET /me/picks`, `POST /me/picks/{song_id}` and `DELETE /me/picks/{song_id}` routes, new `is_pick` column in `liked_songs` (Alembic migration), `is_pick` field in `GET /me/likes`.
+
+### Changed
+- The three buttons of Discover (skip, pick, like) have the same size, and the Pick button stands a little higher.
+- The hint under the cards now says "Glisse à droite pour Liker, à gauche pour Passer", with a second line for the picks.
+- "Mes skips" link of the profile in lavender: butter yellow is now the color of the picks.
+
+
 ## [0.5.0] - 2026-11-02
 
 ### Added

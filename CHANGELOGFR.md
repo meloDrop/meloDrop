@@ -2,6 +2,21 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.6.0] - 05-11-2026
+
+### Ajouté
+- Picks : un troisième choix dans Discover, pour un titre que tu découvres et qui te plaît dès la première écoute. Appuie sur l'étoile jaune ou glisse la carte vers le haut. Un pick compte aussi comme un like pour l'auteur du drop.
+- Étoile sur chaque titre de « Mes likes » : elle transforme un like en pick, et un deuxième appui le retire des picks.
+- Onglets « Mes drops » et « Mes picks » sur ton profil : l'onglet « Mes picks » montre tes 5 derniers picks, et une tuile « Tout voir » ouvre l'écran « Mes picks » avec tous les autres.
+- Feuille « Nouveautés » : elle s'ouvre toute seule une fois après chaque mise à jour, et le bouton « i » en forme de goutte de Discover la rouvre quand tu veux.
+- Backend : routes `POST /drops/{drop_id}/pick`, `GET /me/picks`, `POST /me/picks/{song_id}` et `DELETE /me/picks/{song_id}`, nouvelle colonne `is_pick` dans `liked_songs` (migration Alembic), champ `is_pick` dans `GET /me/likes`.
+
+### Modifié
+- Les trois boutons de Discover (passer, pick, like) ont la même taille, et le bouton Pick est un peu surélevé.
+- Le texte sous les cartes devient « Glisse à droite pour Liker, à gauche pour Passer », avec une deuxième ligne pour les picks.
+- Lien « Mes skips » du profil en lavande : le jaune beurre est maintenant la couleur des picks.
+
+
 ## [0.5.0] - 02-11-2026
 
 ### Ajouté

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, profile, admin, users
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, profile, admin, users
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("melodrop")
 
@@ -68,6 +68,8 @@ app.include_router(likes.router)
 # "Mes skips" list and rescue of a skipped song
 app.include_router(skips.router)
 
+# "Mes picks" list: a like can become a pick and back
+app.include_router(picks.router)
 
 # Profiles: the user's own and the others'
 app.include_router(profile.router)

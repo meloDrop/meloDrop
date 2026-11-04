@@ -55,6 +55,7 @@ import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
 import com.app.melodrop.ui.theme.Night
+import com.app.melodrop.ui.whatsnew.WhatsNewSheet
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import androidx.compose.material3.IconButton
@@ -105,7 +106,13 @@ fun DiscoverScreen(
         onPlayPause = viewModel::togglePlay,
         onAuthorClick = onAuthorClick,
         onSearchClick = onSearchClick,
+        onInfoClick = viewModel::openWhatsNew,
     )
+
+    // "Nouveautés" sheet, over the screen: by itself after an update, or with the "i" button
+    if (viewModel.showWhatsNew) {
+        WhatsNewSheet(onDismiss = viewModel::closeWhatsNew)
+    }
 }
 
 // Pure UI: only displays the state it receives
@@ -117,7 +124,9 @@ private fun DiscoverContent(
     onPicked: (FeedItem) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: (Int) -> Unit,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    // Tap on the "i": opens the "Nouveautés" sheet
+    onInfoClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -125,19 +134,31 @@ private fun DiscoverContent(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Title on the left, search button on the right
+        // Title on the left, "i" and search buttons on the right
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             MeloDropTitle()
-            IconButton(onClick = onSearchClick) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_search),
-                    contentDescription = "Rechercher un utilisateur",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
+            // The two buttons side by side, against the right edge
+            Row {
+                IconButton(onClick = onInfoClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_info_drop),
+                        contentDescription = "Nouveautés de la version",
+                        // Unspecified: the drop keeps its own pastel stripes
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+                IconButton(onClick = onSearchClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_search),
+                        contentDescription = "Rechercher un utilisateur",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             }
         }
 
@@ -531,7 +552,8 @@ private fun DiscoverEmptyPreview() {
             onPicked = {},
             onPlayPause = {},
             onAuthorClick = {},
-            onSearchClick = {}
+            onSearchClick = {},
+            onInfoClick = {},
         )
     }
 }
@@ -547,7 +569,8 @@ private fun DiscoverErrorPreview() {
             onPicked = {},
             onPlayPause = {},
             onAuthorClick = {},
-            onSearchClick = {}
+            onSearchClick = {},
+            onInfoClick = {},
         )
     }
 }
@@ -579,7 +602,8 @@ private fun DiscoverDeckPreview() {
             onPicked = {},
             onPlayPause = {},
             onAuthorClick = {},
-            onSearchClick = {}
+            onSearchClick = {},
+            onInfoClick = {},
         )
     }
 }

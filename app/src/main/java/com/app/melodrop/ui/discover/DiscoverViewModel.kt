@@ -32,7 +32,7 @@ data class DiscoverUiState(
     // True right after a pick: the hint under the buttons says "Ajouté à Mes picks"
     val justPicked: Boolean = false
 )
-)
+
 
 class DiscoverViewModel(application: Application) : AndroidViewModel(application) {
 

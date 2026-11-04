@@ -11,6 +11,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DiscoverRepository
+import com.app.melodrop.data.WhatsNewStore
 import com.app.melodrop.network.dto.FeedItem
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -28,14 +29,22 @@ data class DiscoverUiState(
     // True when the preview plays (or is about to): pause icon on the button
     val isPlaying: Boolean = false,
     // Short message when the preview of the card cannot be played
-    val previewError: String? = null
+    val previewError: String? = null,
+    // True right after a pick: the hint under the buttons says "Ajouté à Mes picks"
+    val justPicked: Boolean = false
 )
+
 
 class DiscoverViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = DiscoverRepository()
 
     var uiState by mutableStateOf(DiscoverUiState())
+        private set
+
+    // True while the "Nouveautés" sheet is open. Kept apart from uiState:
+    // loadFeed() builds a new uiState, and that must not close the sheet
+    var showWhatsNew by mutableStateOf(false)
         private set
 
     // Plays the previews, one at a time. It lives as long as the ViewModel,
@@ -61,6 +70,23 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
 
         // Loads a first batch as soon as the screen opens
         loadFeed()
+
+        // First launch after an update: the "Nouveautés" sheet opens by itself
+        viewModelScope.launch {
+            if (WhatsNewStore.checkNewVersion(application)) {
+                showWhatsNew = true
+            }
+        }
+    }
+
+    // "i" button: opens the sheet again, whenever the user wants
+    fun openWhatsNew() {
+        showWhatsNew = true
+    }
+
+    // Sheet closed: OK, swipe down, tap outside or back button
+    fun closeWhatsNew() {
+        showWhatsNew = false
     }
 
     fun loadFeed() {
@@ -82,23 +108,43 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     }
 
     // The card on screen was swiped: right = like, left = skip
+    // The card on screen was swiped: right = like, left = skip
     fun onSwiped(drop: FeedItem, liked: Boolean) {
+        sendChoice(drop) {
+            if (liked) repository.save(drop.id) else repository.skip(drop.id)
+        }
+    }
+
+    // Up swipe or Pick button: a like that also goes to "Mes picks"
+    fun onPicked(drop: FeedItem) {
+        sendChoice(drop) { repository.pick(drop.id) }
+        // The hint under the buttons confirms it, until the next choice
+        uiState = uiState.copy(justPicked = true)
+    }
+
+    // The card leaves at once, then the choice is sent to the backend.
+    // send: the backend call to make (save, skip or pick)
+    private fun sendChoice(drop: FeedItem, send: suspend () -> Unit) {
         // The card leaves at once, without waiting for the backend
         uiState = uiState.copy(
             drops = uiState.drops - drop,
             swipeError = null,
             previewError = null,
+            justPicked = false,
         )
         // The next card's preview takes over
         playTop()
 
         viewModelScope.launch {
             try {
-                if (liked) repository.save(drop.id) else repository.skip(drop.id)
+                send()
             } catch (e: HttpException) {
                 // 404 (expired) or 409 (already seen): the card is gone anyway
             } catch (e: IOException) {
-                uiState = uiState.copy(swipeError = "Pas de connexion : ce choix n'a pas été enregistré.")
+                uiState = uiState.copy(
+                    swipeError = "Pas de connexion : ce choix n'a pas été enregistré.",
+                    justPicked = false,
+                )
             }
 
             // Last card done: ask for a new batch, once the choice is saved

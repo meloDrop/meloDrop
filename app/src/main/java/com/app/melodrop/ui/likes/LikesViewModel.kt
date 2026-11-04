@@ -27,7 +27,7 @@ data class LikesUiState(
     val playingSongId: Int? = null,
     // True when the preview plays: pause icon on its button
     val isPlaying: Boolean = false,
-    // Short message above the list: preview or removal problem
+    // Short message above the list: preview, removal or pick problem
     val message: String? = null
 )
 
@@ -154,6 +154,30 @@ class LikesViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: IOException) {
                 // No network: the song comes back in the list
                 uiState = uiState.copy(likes = before, message = "Pas de connexion : le titre n'a pas été retiré.")
+            }
+        }
+    }
+
+    // Star of a song: a simple like becomes a pick, a pick becomes a simple like.
+    // The song stays in the list either way
+    fun togglePick(song: LikedSongOut) {
+        // The star changes at once, without waiting for the backend
+        val before = uiState.likes
+        val changed = song.copy(isPick = !song.isPick)
+        uiState = uiState.copy(
+            likes = before.map { if (it.songId == song.songId) changed else it },
+            message = null,
+        )
+
+        viewModelScope.launch {
+            try {
+                if (changed.isPick) repository.addPick(song.songId) else repository.removePick(song.songId)
+            } catch (e: HttpException) {
+                // Refused by the server: the star comes back as it was
+                uiState = uiState.copy(likes = before, message = "Le pick n'a pas pu être changé.")
+            } catch (e: IOException) {
+                // No network: the star comes back as it was
+                uiState = uiState.copy(likes = before, message = "Pas de connexion : le pick n'a pas été changé.")
             }
         }
     }

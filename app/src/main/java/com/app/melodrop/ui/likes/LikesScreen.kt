@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -39,9 +41,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.melodrop.R
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.ui.components.PlayPauseButton
+import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 
 // Connects the screen to its ViewModel
@@ -73,6 +77,7 @@ fun LikesScreen(
         onBack = onBack,
         onPlayClick = viewModel::togglePreview,
         onRemove = viewModel::remove,
+        onPickClick = viewModel::togglePick,
         onRetry = viewModel::load,
         onAuthorClick = onAuthorClick,
     )
@@ -85,6 +90,8 @@ private fun LikesContent(
     onBack: () -> Unit,
     onPlayClick: (LikedSongOut) -> Unit,
     onRemove: (LikedSongOut) -> Unit,
+    // Star of a song: a simple like becomes a pick, and back
+    onPickClick: (LikedSongOut) -> Unit,
     onRetry: () -> Unit,
     onAuthorClick: (Int) -> Unit,
 ) {
@@ -178,6 +185,7 @@ private fun LikesContent(
                             isPlaying = uiState.isPlaying && uiState.playingSongId == song.songId,
                             onPlayClick = { onPlayClick(song) },
                             onRemoveClick = { songToRemove = song },
+                            onPickClick = { onPickClick(song) },
                             onAuthorClick = onAuthorClick,
                             // Slides the rows below up when one is removed
                             modifier = Modifier.animateItem(),
@@ -214,20 +222,22 @@ private fun LikesContent(
     }
 }
 
-// One liked song: cover, title, artist, play button and remove button
+// One liked song: cover, title, artist, pick star, play button and remove button
 @Composable
 private fun LikedSongRow(
     song: LikedSongOut,
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
     onRemoveClick: () -> Unit,
+    onPickClick: () -> Unit,
     onAuthorClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // 8 dp, not 12: the star takes a place, the title keeps enough room
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Downloads the image from its URL, grey square while it loads
         CoverImage(
@@ -280,6 +290,24 @@ private fun LikedSongRow(
             }
         }
 
+        // Star: full and yellow for a pick, empty for a simple like. A tap switches
+        IconButton(
+            onClick = onPickClick,
+            modifier = Modifier.semantics {
+                contentDescription = if (song.isPick) "Retirer ${song.title} des picks"
+                else "Ajouter ${song.title} aux picks"
+            },
+        ) {
+            Icon(
+                painter = painterResource(
+                    if (song.isPick) R.drawable.ic_star else R.drawable.ic_star_outline
+                ),
+                // Already read aloud by the button
+                contentDescription = null,
+                tint = if (song.isPick) Butter else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         PlayPauseButton(
             isPlaying = isPlaying,
             onClick = onPlayClick,
@@ -301,7 +329,8 @@ private fun LikedSongRow(
 
 private val previewSongs = listOf(
     LikedSongOut(12, "Enter Sandman (Remastered 2021)", "Metallica", "", "2026-10-20T14:00:00Z"),
-    LikedSongOut(9, "Bohemian Rhapsody", "Queen", "", "2026-10-19T11:00:00Z"),
+    // A pick: full yellow star
+    LikedSongOut(9, "Bohemian Rhapsody", "Queen", "", "2026-10-19T11:00:00Z", isPick = true),
     LikedSongOut(7, "So What", "Miles Davis", "", "2026-10-19T10:00:00Z"),
     // Rescued from "Mes skips" after the drop expired
     LikedSongOut(17, "Dreams (2004 Remaster)", "Fleetwood Mac", "", "2026-10-18T09:00:00Z", likedLate = true),
@@ -321,6 +350,7 @@ private fun LikesScreenPreview() {
             onBack = {},
             onPlayClick = {},
             onRemove = {},
+            onPickClick = {},
             onRetry = {},
             onAuthorClick = {},
         )
@@ -336,6 +366,7 @@ private fun LikesEmptyPreview() {
             onBack = {},
             onPlayClick = {},
             onRemove = {},
+            onPickClick = {},
             onRetry = {},
             onAuthorClick = {},
         )

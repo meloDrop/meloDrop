@@ -31,6 +31,17 @@ def save_drop(drop_id: int, user: User = Depends(current_user), db: Session = De
     except DropAlreadySeenError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
+@router.post("/{drop_id}/pick", status_code=204, responses=ERRORS)
+def pick_drop(drop_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Pick a drop (up swipe): like it and add its song to "Mes picks"."""
+    try:
+        services.pick_drop(db, user.id, drop_id)
+    except DropNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except OwnDropError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except DropAlreadySeenError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.post("/{drop_id}/skip", status_code=204, responses=ERRORS)
 def skip_drop(drop_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):

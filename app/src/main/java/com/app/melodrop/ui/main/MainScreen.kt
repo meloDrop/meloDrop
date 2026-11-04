@@ -21,6 +21,7 @@ import com.app.melodrop.ui.components.HaloBackground
 import com.app.melodrop.ui.discover.DiscoverScreen
 import com.app.melodrop.ui.likes.LikesScreen
 import com.app.melodrop.ui.mydrops.MyDropsScreen
+import com.app.melodrop.ui.mypicks.MyPicksScreen
 import com.app.melodrop.ui.drop.DropScreen
 import com.app.melodrop.ui.navigation.BottomBar
 import com.app.melodrop.ui.navigation.Routes
@@ -44,7 +45,8 @@ fun MainScreen(onLogout: () -> Unit) {
             currentRoute == Routes.ACCOUNT ||
             currentRoute == Routes.USER_PROFILE ||
             currentRoute == Routes.SEARCH_USERS ||
-            currentRoute == Routes.MY_DROPS
+            currentRoute == Routes.MY_DROPS ||
+            currentRoute == Routes.MY_PICKS
 
     // Halos to show: the search is opened from Discover, so it keeps the Discover halos.
     // The other sub-screens take the halos of the Profile tab
@@ -106,6 +108,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         // launchSingleTop: a double tap does not open these lists twice
                         onDropsClick = { navController.navigate(Routes.MY_DROPS) { launchSingleTop = true } },
                         onSkipsClick = { navController.navigate(Routes.SKIPS) { launchSingleTop = true } },
+                        onPicksClick = { navController.navigate(Routes.MY_PICKS) { launchSingleTop = true } },
                         onAccountClick = { navController.navigate(Routes.ACCOUNT) },
                     )
                 }
@@ -123,6 +126,12 @@ fun MainScreen(onLogout: () -> Unit) {
                 }
                 composable(Routes.MY_DROPS) {
                     MyDropsScreen(
+                        // Back to the Profile tab, even after a double tap
+                        onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                    )
+                }
+                composable(Routes.MY_PICKS) {
+                    MyPicksScreen(
                         // Back to the Profile tab, even after a double tap
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                     )

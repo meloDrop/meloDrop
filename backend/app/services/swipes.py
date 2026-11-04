@@ -30,7 +30,7 @@ def check_drop(db: Session, user_id: int, drop_id: int) -> Drop:
     return drop
 
 
-def save_drop(db: Session, user_id: int, drop_id: int) -> None:
+def save_drop(db: Session, user_id: int, drop_id: int, is_pick: bool = False) -> None:
     """Like a drop: one row in saves and one row in liked_songs (ADR-0013)."""
     # Check the rules: the drop exists, is not mine, and is not seen yet
     drop = check_drop(db, user_id, drop_id)
@@ -45,14 +45,20 @@ def save_drop(db: Session, user_id: int, drop_id: int) -> None:
         .first()
     )
     if liked is None:
-        db.add(LikedSong(user_id=user_id, song_id=drop.song_id))
+        db.add(LikedSong(user_id=user_id, song_id=drop.song_id, is_pick=is_pick))
     else:
         # Rescued late before, from an expired drop: this like makes it a normal like
         liked.liked_late = False
+        # A pick marks the song; a simple like never removes an old pick
+        if is_pick:
+            liked.is_pick = True
 
     # Save both rows together
     db.commit()
 
+def pick_drop(db: Session, user_id: int, drop_id: int) -> None:
+    """Pick a drop (up swipe): a like that also marks the song as a pick."""
+    save_drop(db, user_id, drop_id, is_pick=True)
 
 def skip_drop(db: Session, user_id: int, drop_id: int) -> None:
     """Skip a drop: one row in skips."""

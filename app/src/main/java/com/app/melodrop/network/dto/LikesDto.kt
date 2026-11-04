@@ -16,5 +16,8 @@ data class LikedSongOut(
     @SerializedName("author_username") val authorUsername: String? = null,
     // True when rescued from "Mes skips" after the drop expired:
     // "Récupéré dans les skips" is shown instead of the author
-    @SerializedName("liked_late") val likedLate: Boolean = false
+    @SerializedName("liked_late") val likedLate: Boolean = false,
+    // True when the song is a pick: the star is full
+    @SerializedName("is_pick") val isPick: Boolean = false
 )
+

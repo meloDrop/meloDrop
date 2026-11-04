@@ -11,6 +11,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.ProfileRepository
+import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import kotlinx.coroutines.launch
@@ -24,8 +25,14 @@ data class ProfileUiState(
     // Shown only when there is no profile to display
     val error: String? = null,
     val profile: ProfileOut? = null,
+    // The user's picks, for the "Mes picks" tab, the most recent like first
+    val picks: List<LikedSongOut> = emptyList(),
+    // Shown in the "Mes picks" tab when the picks could not be loaded
+    val picksError: String? = null,
     // Drop whose preview is loaded in the player, null if none
     val playingDropId: Int? = null,
+    // Pick whose preview is loaded in the player (its song id), null if none
+    val playingPickId: Int? = null,
     // True when the preview plays: pause icon on its cover
     val isPlaying: Boolean = false,
     // Short message above the drops when a preview cannot be played
@@ -60,7 +67,11 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             // Link expired or file unreadable: stop and tell the user
             override fun onPlayerError(error: PlaybackException) {
                 player.pause()
-                uiState = uiState.copy(playingDropId = null, previewError = "Extrait indisponible pour ce titre.")
+                uiState = uiState.copy(
+                    playingDropId = null,
+                    playingPickId = null,
+                    previewError = "Extrait indisponible pour ce titre.",
+                )
             }
         })
     }
@@ -81,35 +92,73 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 uiState.copy(isLoading = false, error = "Impossible de joindre le serveur.")
             }
         }
+
+        // Loaded apart: if the picks fail, the profile still shows
+        loadPicks()
     }
 
-    // Tap on a cover: plays its preview, or pauses it if it is the one loaded
+    // The user's picks, fresh each time the tab opens (a star may have changed in "Mes likes")
+    private fun loadPicks() {
+        viewModelScope.launch {
+            try {
+                uiState = uiState.copy(picks = repository.getMyPicks(), picksError = null)
+            } catch (e: HttpException) {
+                uiState = uiState.copy(picksError = "Tes picks n'ont pas pu se charger.")
+            } catch (e: IOException) {
+                uiState = uiState.copy(picksError = "Tes picks n'ont pas pu se charger.")
+            }
+        }
+    }
+
+    // Tap on a drop cover: plays its preview, or pauses it if it is the one loaded
     fun togglePreview(drop: ProfileDropOut) {
         if (drop.id == uiState.playingDropId) {
             if (player.playWhenReady) player.pause() else player.play()
             return
         }
 
-        // Another drop: the current preview stops first
+        // Another drop: it becomes the one loaded, no pick is loaded any more
+        uiState = uiState.copy(playingDropId = drop.id, playingPickId = null, previewError = null)
+        startPreview(drop.songId) { uiState.playingDropId == drop.id }
+    }
+
+    // Tap on a pick cover: same as for a drop, for a song of "Mes picks"
+    fun togglePickPreview(pick: LikedSongOut) {
+        if (pick.songId == uiState.playingPickId) {
+            if (player.playWhenReady) player.pause() else player.play()
+            return
+        }
+
+        // Another pick: it becomes the one loaded, no drop is loaded any more
+        uiState = uiState.copy(playingDropId = null, playingPickId = pick.songId, previewError = null)
+        startPreview(pick.songId) { uiState.playingPickId == pick.songId }
+    }
+
+    // Stops the current preview, gets a fresh link, then plays the song.
+    // stillWanted: false when the user tapped another cover while we were waiting
+    private fun startPreview(songId: Int, stillWanted: () -> Boolean) {
         player.pause()
         player.clearMediaItems()
-        uiState = uiState.copy(playingDropId = drop.id, previewError = null)
 
         viewModelScope.launch {
             // try used as a value: the link, or null if the call failed
             val url = try {
-                repository.getPreviewUrl(drop.songId)
+                repository.getPreviewUrl(songId)
             } catch (e: HttpException) {
                 null
             } catch (e: IOException) {
                 null
             }
 
-            // The user tapped another cover while we were waiting: too late for this one
-            if (uiState.playingDropId != drop.id) return@launch
+            // Another cover was tapped meanwhile: too late for this one
+            if (!stillWanted()) return@launch
 
             if (url == null) {
-                uiState = uiState.copy(playingDropId = null, previewError = "Extrait indisponible pour ce titre.")
+                uiState = uiState.copy(
+                    playingDropId = null,
+                    playingPickId = null,
+                    previewError = "Extrait indisponible pour ce titre.",
+                )
                 return@launch
             }
 

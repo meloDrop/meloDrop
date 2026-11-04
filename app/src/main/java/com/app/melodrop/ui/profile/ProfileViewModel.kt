@@ -83,8 +83,11 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
         viewModelScope.launch {
             uiState = try {
+                // Wait for the answer first, then copy the state of that moment:
+                // the picks loaded meanwhile are kept
+                val profile = repository.getMyProfile()
                 // copy and not a new state: what the player shows is kept
-                uiState.copy(isLoading = false, profile = repository.getMyProfile())
+                uiState.copy(isLoading = false, profile = profile)
             } catch (e: HttpException) {
                 uiState.copy(isLoading = false, error = "Erreur du serveur (${e.code()}).")
             } catch (e: IOException) {
@@ -101,7 +104,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     private fun loadPicks() {
         viewModelScope.launch {
             try {
-                uiState = uiState.copy(picks = repository.getMyPicks(), picksError = null)
+                // Same as for the profile: the answer first, then the copy
+                val picks = repository.getMyPicks()
+                uiState = uiState.copy(picks = picks, picksError = null)
             } catch (e: HttpException) {
                 uiState = uiState.copy(picksError = "Tes picks n'ont pas pu se charger.")
             } catch (e: IOException) {

@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="260"
+    android:viewportHeight="260">
+    <!-- Same drop as the logo, with its 5 pastel stripes, moved to the middle of the icon -->
+    <group android:translateX="-382" android:translateY="-250">
+        <group>
+            <clip-path android:pathData="M512 260 C470 315 432 360 432 420 C432 468 468 503 512 503 C556 503 592 468 592 420 C592 360 554 315 512 260 Z"/>
+            <path android:fillColor="#FFB4A7F5" android:pathData="M420,250 h184 v56 h-184 z"/>
+            <path android:fillColor="#FFF5A8C8" android:pathData="M420,306 h184 v50 h-184 z"/>
+            <path android:fillColor="#FFFFB38A" android:pathData="M420,356 h184 v50 h-184 z"/>
+            <path android:fillColor="#FFFFE08A" android:pathData="M420,406 h184 v50 h-184 z"/>
+            <path android:fillColor="#FF9EE0B8" android:pathData="M420,456 h184 v60 h-184 z"/>
+        </group>
+        <!-- The "i", in the color of the screen background: a dot and a rounded bar -->
+        <path android:fillColor="#FF0C0C10" android:pathData="M496,368 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0 z"/>
+        <path android:fillColor="#FF0C0C10" android:pathData="M498,410 a14,14 0 0,1 28,0 v42 a14,14 0 0,1 -28,0 z"/>
+    </group>
+</vector>

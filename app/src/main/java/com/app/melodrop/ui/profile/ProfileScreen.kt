@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,12 +34,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,7 +53,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.melodrop.R
 import com.app.melodrop.ui.components.CoverImage
+import com.app.melodrop.network.dto.LikedSongOut
+import com.app.melodrop.ui.mypicks.PickThumbnail
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
@@ -67,8 +76,11 @@ import androidx.compose.ui.text.TextStyle
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.CREATOR_USERNAME
 
-// Number of covers on each line of "Mes derniers drops"
+// Number of covers on each line of "Mes drops" and "Mes picks"
 private const val COVERS_PER_ROW = 3
+
+// Picks shown in the "Mes picks" tab: the 6th place is the "Tout voir" tile
+private const val PICKS_ON_PROFILE = 5
 
 // Connects the screen to its ViewModel
 @Composable
@@ -80,6 +92,8 @@ fun ProfileScreen(
     onDropsClick: () -> Unit,
     // Tap on "Mes skips": opens the list of the skipped songs
     onSkipsClick: () -> Unit,
+    // Tap on the "Tout voir" tile of the picks: opens "Mes picks"
+    onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
@@ -106,8 +120,10 @@ fun ProfileScreen(
         onLikesClick = onLikesClick,
         onDropsClick = onDropsClick,
         onSkipsClick = onSkipsClick,
+        onPicksClick = onPicksClick,
         onAccountClick = onAccountClick,
         onPlayClick = viewModel::togglePreview,
+        onPickPlayClick = viewModel::togglePickPreview,
     )
 }
 
@@ -121,9 +137,12 @@ private fun ProfileContent(
     onLikesClick: () -> Unit,
     onDropsClick: () -> Unit,
     onSkipsClick: () -> Unit,
+    onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
+    // Same, for the cover of a pick
+    onPickPlayClick: (LikedSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -144,11 +163,16 @@ private fun ProfileContent(
                 onLikesClick = onLikesClick,
                 onDropsClick = onDropsClick,
                 onSkipsClick = onSkipsClick,
+                onPicksClick = onPicksClick,
                 onAccountClick = onAccountClick,
                 playingDropId = uiState.playingDropId,
                 isPlaying = uiState.isPlaying,
                 previewError = uiState.previewError,
                 onPlayClick = onPlayClick,
+                picks = uiState.picks,
+                picksError = uiState.picksError,
+                playingPickId = uiState.playingPickId,
+                onPickPlayClick = onPickPlayClick,
             )
 
             // First answer not there yet
@@ -164,7 +188,7 @@ private fun ProfileContent(
     }
 }
 
-// The profile itself: header, counters and last drops
+// The profile itself: header, counters, then the "Mes drops" and "Mes picks" tabs
 @Composable
 private fun ProfileBody(
     profile: ProfileOut,
@@ -173,14 +197,23 @@ private fun ProfileBody(
     onLikesClick: () -> Unit,
     onDropsClick: () -> Unit,
     onSkipsClick: () -> Unit,
+    onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
     playingDropId: Int?,
     isPlaying: Boolean,
     previewError: String?,
     onPlayClick: (ProfileDropOut) -> Unit,
+    picks: List<LikedSongOut>,
+    picksError: String?,
+    playingPickId: Int?,
+    onPickPlayClick: (LikedSongOut) -> Unit,
 ) {
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
+
+    // Tab shown under the counters: false = "Mes drops", true = "Mes picks".
+    // rememberSaveable: the choice survives a rotation and a trip to another tab
+    var showPicks by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -214,13 +247,14 @@ private fun ProfileBody(
                 Text(
                     text = "Mes skips ›",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Butter,
+                    // Lavender: butter yellow is now the color of the picks
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle("MES DERNIERS DROPS")
+            ProfileTabs(showPicks = showPicks, onSelect = { showPicks = it })
 
             // A preview could not be played
             if (previewError != null) {
@@ -231,20 +265,117 @@ private fun ProfileBody(
                 )
             }
 
-            if (drops.isEmpty()) {
-                Text(
+            when {
+                // "Mes drops" tab: the drop of the day and the last ones
+                !showPicks && drops.isEmpty() -> Text(
                     text = "Tu n'as encore déposé aucun titre. Ton premier drop apparaîtra ici.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            } else {
-                DropsGrid(
+
+                !showPicks -> DropsGrid(
                     drops = drops,
                     playingDropId = playingDropId,
                     isPlaying = isPlaying,
                     onPlayClick = onPlayClick,
                     onlineDropId = profile.currentDrop?.id,
                 )
+
+                // "Mes picks" tab: the picks could not be loaded
+                picksError != null -> Text(
+                    text = picksError,
+                    color = MaterialTheme.colorScheme.error,
+                )
+
+                picks.isEmpty() -> Text(
+                    text = "Aucun pick pour l'instant. Dans Discover, l'étoile garde un titre que tu découvres et qui te plaît.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                else -> PicksGrid(
+                    picks = picks,
+                    playingPickId = playingPickId,
+                    isPlaying = isPlaying,
+                    onPlayClick = onPickPlayClick,
+                    onSeeAllClick = onPicksClick,
+                )
             }
+        }
+    }
+}
+
+// Two tabs side by side under the counters: "Mes drops" and "Mes picks"
+@Composable
+private fun ProfileTabs(showPicks: Boolean, onSelect: (Boolean) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            ProfileTab(
+                text = "MES DROPS",
+                isSelected = !showPicks,
+                selectedColor = MaterialTheme.colorScheme.onBackground,
+                onClick = { onSelect(false) },
+                modifier = Modifier.weight(1f),
+            )
+            ProfileTab(
+                text = "MES PICKS",
+                isSelected = showPicks,
+                // Butter yellow, like the Pick button in Discover
+                selectedColor = Butter,
+                withStar = true,
+                onClick = { onSelect(true) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+// One tab: a pill, filled when it is the selected one
+@Composable
+private fun ProfileTab(
+    text: String,
+    isSelected: Boolean,
+    selectedColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    withStar: Boolean = false,
+) {
+    val color = if (isSelected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .height(48.dp)
+            // TalkBack says which tab is selected
+            .semantics { selected = isSelected },
+        shape = RoundedCornerShape(percent = 50),
+        color = if (isSelected) MaterialTheme.colorScheme.outline else Color.Transparent,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (withStar) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_star),
+                    // Decoration: the text already says "MES PICKS"
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                color = color,
+                letterSpacing = 1.5.sp,
+            )
         }
     }
 }
@@ -578,6 +709,91 @@ private fun DropThumbnail(
     }
 }
 
+// The last picks, 3 per line. With more than 5 picks, only 5 show,
+// and the 6th place is a "Tout voir" tile that opens "Mes picks"
+@Composable
+private fun PicksGrid(
+    picks: List<LikedSongOut>,
+    // Pick whose preview is loaded in the player (its song id), null if none
+    playingPickId: Int?,
+    // True when the loaded preview plays
+    isPlaying: Boolean,
+    // Tap on a cover: plays or pauses its preview
+    onPlayClick: (LikedSongOut) -> Unit,
+    // Tap on the "Tout voir" tile
+    onSeeAllClick: () -> Unit,
+) {
+    val hasMore = picks.size > PICKS_ON_PROFILE
+    val lines = picks.take(PICKS_ON_PROFILE).chunked(COVERS_PER_ROW)
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        lines.forEachIndexed { index, line ->
+            // The tile goes right after the last pick, on the last line
+            val withTile = hasMore && index == lines.lastIndex
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                line.forEach { pick ->
+                    // Same thumbnail as on the "Mes picks" screen
+                    PickThumbnail(
+                        pick = pick,
+                        // Pause icon only on the cover whose preview plays
+                        isPlaying = isPlaying && pick.songId == playingPickId,
+                        onPlayClick = { onPlayClick(pick) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (withTile) {
+                    SeeAllTile(
+                        hiddenCount = picks.size - PICKS_ON_PROFILE,
+                        onClick = onSeeAllClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                // Empty places on the last line, so the covers keep the same size
+                val used = line.size + if (withTile) 1 else 0
+                repeat(COVERS_PER_ROW - used) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+// 6th place of the picks: how many are not shown, and "Tout voir". Opens "Mes picks"
+@Composable
+private fun SeeAllTile(
+    hiddenCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        // Square, the same size as a cover
+        modifier = modifier.aspectRatio(1f),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "+$hiddenCount",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Butter,
+            )
+            Text(
+                text = "Tout voir ›",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 // Shown when the profile could not be loaded
 @Composable
 private fun ErrorView(message: String, onRetry: () -> Unit) {
@@ -650,8 +866,10 @@ private fun ProfileScreenPreview() {
             onLikesClick = {},
             onDropsClick = {},
             onSkipsClick = {},
+            onPicksClick = {},
             onAccountClick = {},
             onPlayClick = {},
+            onPickPlayClick = {},
         )
     }
 }
@@ -668,8 +886,10 @@ private fun ProfileErrorPreview() {
             onLikesClick = {},
             onDropsClick = {},
             onSkipsClick = {},
+            onPicksClick = {},
             onAccountClick = {},
             onPlayClick = {},
+            onPickPlayClick = {},
         )
     }
 }

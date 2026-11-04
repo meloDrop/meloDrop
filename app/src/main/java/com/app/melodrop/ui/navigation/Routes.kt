@@ -21,6 +21,8 @@ object Routes {
     const val ACCOUNT = "account"
     // All the user's drops, opened from the "drops" counter
     const val MY_DROPS = "my_drops"
+    // All the user's picks, opened from the "Tout voir" tile of the "Mes picks" tab
+    const val MY_PICKS = "my_picks"
 
     // Opened from "Mes likes"
     const val SKIPS = "skips"

@@ -4,6 +4,7 @@ import com.app.melodrop.network.RetrofitClient
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.ProfileUpdate
+import com.app.melodrop.network.dto.LikedSongOut
 
 // Talks to the backend routes used by the profile screens
 class ProfileRepository {
@@ -25,6 +26,8 @@ class ProfileRepository {
         return api.getUserDrops(me.id)
     }
 
+    // The logged-in user's picks, for the "Mes picks" tab (private: only on their own profile)
+    suspend fun getMyPicks(): List<LikedSongOut> = api.getPicks()
 
     // Saves the display name and the avatar, and gives back the updated profile
     suspend fun updateProfile(displayName: String, avatarColor: String, avatarStyle: String): ProfileOut =

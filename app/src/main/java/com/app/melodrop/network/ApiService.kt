@@ -77,6 +77,10 @@ interface ApiService {
     @POST("drops/{drop_id}/skip")
     suspend fun skipDrop(@Path("drop_id") dropId: Int)
 
+    // Up swipe or Pick button: a like that also marks the song as a pick. 204 with no body
+    @POST("drops/{drop_id}/pick")
+    suspend fun pickDrop(@Path("drop_id") dropId: Int)
+
     // song_id is the meloDrop id of the song, not the Deezer id
     @GET("songs/{song_id}/preview")
     suspend fun getPreview(@Path("song_id") songId: Int): PreviewOut
@@ -113,6 +117,18 @@ interface ApiService {
     // Removes a song from "Mes likes". 204 with no body: nothing to read back
     @DELETE("me/likes/{song_id}")
     suspend fun removeLike(@Path("song_id") songId: Int)
+
+    // The user's "Mes picks" list: the songs of "Mes likes" marked as a pick (or an empty list)
+    @GET("me/picks")
+    suspend fun getPicks(): List<LikedSongOut>
+
+    // Turns a song of "Mes likes" into a pick. 204 with no body
+    @POST("me/picks/{song_id}")
+    suspend fun addPick(@Path("song_id") songId: Int)
+
+    // Turns a pick back into a simple like: the song stays in "Mes likes". 204 with no body
+    @DELETE("me/picks/{song_id}")
+    suspend fun removePick(@Path("song_id") songId: Int)
 
     // The songs skipped in the last 7 days and not liked since (or an empty list)
     @GET("me/skips")

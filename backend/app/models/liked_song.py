@@ -25,6 +25,9 @@ class LikedSong(Base):
     # True when the song was rescued from "Mes skips" after its drop expired:
     # the author gets no like and the app shows "Récupéré dans les skips"
     liked_late = Column(Boolean, nullable=False, server_default=text("0"))
+    # True when the song is a pick: a discovery the user loved. Set by a pick
+    # in Discover, or later from "Mes likes". A pick is also a like
+    is_pick = Column(Boolean, nullable=False, server_default=text("0"))
 
     __table_args__ = (
         UniqueConstraint("user_id", "song_id", name="uq_liked_songs_user_song"),

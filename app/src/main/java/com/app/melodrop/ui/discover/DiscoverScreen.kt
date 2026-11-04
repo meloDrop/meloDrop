@@ -7,7 +7,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,8 +51,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.MeloDropTitle
+import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
+import com.app.melodrop.ui.theme.Night
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import androidx.compose.material3.IconButton
@@ -65,6 +67,16 @@ private const val MAX_TILT = 12f
 
 // Time for the card to fly off the screen (ms)
 private const val FLY_OUT_MS = 250
+
+// Size of the three round buttons under the card
+private val CHOICE_BUTTON_SIZE = 64.dp
+
+// How much higher the Pick button sits than the two others
+private val PICK_RAISE = 16.dp
+
+// The three choices on a card. Each one sends the card a different way:
+// skip to the left, like to the right, pick to the top
+private enum class Choice { SKIP, LIKE, PICK }
 
 // Connects the screen to its ViewModel
 @Composable
@@ -89,6 +101,7 @@ fun DiscoverScreen(
         uiState = viewModel.uiState,
         onRefresh = viewModel::loadFeed,
         onSwiped = viewModel::onSwiped,
+        onPicked = viewModel::onPicked,
         onPlayPause = viewModel::togglePlay,
         onAuthorClick = onAuthorClick,
         onSearchClick = onSearchClick,
@@ -101,6 +114,7 @@ private fun DiscoverContent(
     uiState: DiscoverUiState,
     onRefresh: () -> Unit,
     onSwiped: (FeedItem, Boolean) -> Unit,
+    onPicked: (FeedItem) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: (Int) -> Unit,
     onSearchClick: () -> Unit
@@ -154,6 +168,7 @@ private fun DiscoverContent(
                 else -> DropDeck(
                     uiState = uiState,
                     onSwiped = onSwiped,
+                    onPicked = onPicked,
                     onPlayPause = onPlayPause,
                     onAuthorClick = onAuthorClick,
                 )
@@ -162,41 +177,61 @@ private fun DiscoverContent(
     }
 }
 
-// The card on top, the next one waiting behind it, the two buttons and a hint below
+// The card on top, the next one waiting behind it, the three buttons and a hint below
 @Composable
 private fun DropDeck(
     uiState: DiscoverUiState,
     onSwiped: (FeedItem, Boolean) -> Unit,
+    onPicked: (FeedItem) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: (Int) -> Unit,
 ) {
     val drops = uiState.drops
     val top = drops.first()
-    // First message found wins: swipe problem, then preview problem, then the hint
+    // First message found wins: swipe problem, then preview problem,
+    // then the pick confirmation, then the hint
     val message = uiState.swipeError ?: uiState.previewError
-    val hint = message ?: "Glisse à droite pour garder, à gauche pour passer"
+    val hint = when {
+        message != null -> message
+        uiState.justPicked -> "Ajouté à Mes picks"
+        else -> "Glisse à droite pour Liker, à gauche pour Passer\nVers le haut pour un Pick : une découverte qui te plaît"
+    }
+    val hintColor = when {
+        message != null -> MaterialTheme.colorScheme.error
+        uiState.justPicked -> Butter
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     val scope = rememberCoroutineScope()
-    // Horizontal shift of the card on top in pixels (0 = centered).
+    // Shift of the card on top in pixels (0 = centered): across, and up or down.
     // remember(top.id): each new card starts again from the center
     val offsetX = remember(top.id) { Animatable(0f) }
+    val offsetY = remember(top.id) { Animatable(0f) }
     // True once the card on top flies away: a second choice on it is ignored
     var isLeaving by remember(top.id) { mutableStateOf(false) }
     // Card width in pixels, known after the first layout
     var cardWidth by remember { mutableFloatStateOf(1f) }
 
     // Sends the card on top off the screen, then the choice counts.
-    // Used by the swipe and by the two buttons, so both look the same
-    val flyOut: (Boolean) -> Unit = { liked ->
+    // Used by the swipes and by the three buttons, so both look the same
+    val flyOut: (Choice) -> Unit = { choice ->
         if (!isLeaving) {
             isLeaving = true
             scope.launch {
-                val target = if (liked) cardWidth * 1.5f else -cardWidth * 1.5f
                 try {
-                    offsetX.animateTo(target, tween(FLY_OUT_MS))
+                    // Far enough to leave the screen: left, right or up
+                    when (choice) {
+                        Choice.SKIP -> offsetX.animateTo(-cardWidth * 1.5f, tween(FLY_OUT_MS))
+                        Choice.LIKE -> offsetX.animateTo(cardWidth * 1.5f, tween(FLY_OUT_MS))
+                        Choice.PICK -> offsetY.animateTo(-cardWidth * 2.5f, tween(FLY_OUT_MS))
+                    }
                 } finally {
                     // Even if the animation is cut short, the choice is made
-                    onSwiped(top, liked)
+                    when (choice) {
+                        Choice.SKIP -> onSwiped(top, false)
+                        Choice.LIKE -> onSwiped(top, true)
+                        Choice.PICK -> onPicked(top)
+                    }
                 }
             }
         }
@@ -227,6 +262,7 @@ private fun DropDeck(
                     drop = top,
                     isPlaying = uiState.isPlaying,
                     offsetX = offsetX,
+                    offsetY = offsetY,
                     width = cardWidth,
                     isLeaving = isLeaving,
                     onWidthChange = { cardWidth = it },
@@ -237,38 +273,51 @@ private fun DropDeck(
             }
         }
 
-        // Same choices as the swipe, for those who prefer to tap
+        // Same choices as the swipes, for those who prefer to tap.
+        // Aligned at the bottom: the raised Pick button stands out in the middle
         Row(
-            horizontalArrangement = Arrangement.spacedBy(32.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.Bottom,
         ) {
             ChoiceButton(
                 iconRes = R.drawable.ic_close,
                 description = "Passer",
                 containerColor = MaterialTheme.colorScheme.surface,
                 iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                buttonSize = 56.dp,
+                buttonSize = CHOICE_BUTTON_SIZE,
                 enabled = !isLeaving,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                onClick = { flyOut(false) },
+                onClick = { flyOut(Choice.SKIP) },
+            )
+            ChoiceButton(
+                iconRes = R.drawable.ic_star,
+                description = "Pick : je découvre ce titre et il me plaît",
+                containerColor = Butter,
+                iconColor = Night,
+                buttonSize = CHOICE_BUTTON_SIZE,
+                enabled = !isLeaving,
+                onClick = { flyOut(Choice.PICK) },
+                // Raised above the two others
+                modifier = Modifier.padding(bottom = PICK_RAISE),
             )
             ChoiceButton(
                 iconRes = R.drawable.ic_favorite,
                 description = "J'aime",
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 iconColor = MaterialTheme.colorScheme.onTertiary,
-                buttonSize = 64.dp,
+                buttonSize = CHOICE_BUTTON_SIZE,
                 enabled = !isLeaving,
-                onClick = { flyOut(true) },
+                onClick = { flyOut(Choice.LIKE) },
             )
         }
 
         Text(
             text = hint,
             style = MaterialTheme.typography.bodySmall,
-            color = if (message != null) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = hintColor,
             textAlign = TextAlign.Center,
+            // Always two lines high: the card does not move when the text changes
+            minLines = 2,
         )
     }
 }
@@ -280,10 +329,11 @@ private fun SwipeableDropCard(
     drop: FeedItem,
     isPlaying: Boolean,
     offsetX: Animatable<Float, AnimationVector1D>,
+    offsetY: Animatable<Float, AnimationVector1D>,
     width: Float,
     isLeaving: Boolean,
     onWidthChange: (Float) -> Unit,
-    onFlyOut: (liked: Boolean) -> Unit,
+    onFlyOut: (Choice) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: () -> Unit,
 ) {
@@ -297,35 +347,45 @@ private fun SwipeableDropCard(
                 // Already leaving (swipe or button): the finger can no longer move it
                 if (isLeaving) return@pointerInput
 
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { change, dragAmount ->
+                // Drag in any direction: across for like and skip, up for pick
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
                         change.consume()
-                        // The card follows the finger
-                        scope.launch { offsetX.snapTo(offsetX.value + dragAmount) }
+                        // The card follows the finger, across and up or down
+                        scope.launch {
+                            offsetX.snapTo(offsetX.value + dragAmount.x)
+                            offsetY.snapTo(offsetY.value + dragAmount.y)
+                        }
                     },
                     onDragEnd = {
-                        val progress = offsetX.value / width
-                        if (abs(progress) > SWIPE_THRESHOLD) {
-                            // Far enough: same exit as the buttons
-                            onFlyOut(progress > 0)
-                        } else {
+                        // Distance moved, as a fraction of the card width
+                        val progressX = offsetX.value / width
+                        val progressY = offsetY.value / width
+                        when {
+                            // Up far enough, and more up than across: pick
+                            -progressY > SWIPE_THRESHOLD && abs(progressY) > abs(progressX) ->
+                                onFlyOut(Choice.PICK)
+                            // Far enough to the right or to the left: same exit as the buttons
+                            progressX > SWIPE_THRESHOLD -> onFlyOut(Choice.LIKE)
+                            progressX < -SWIPE_THRESHOLD -> onFlyOut(Choice.SKIP)
                             // Not far enough: back to the center with a small bounce
-                            scope.launch {
-                                offsetX.animateTo(
-                                    0f,
-                                    spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                                )
+                            else -> {
+                                val bounce = spring<Float>(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                scope.launch { offsetX.animateTo(0f, bounce) }
+                                scope.launch { offsetY.animateTo(0f, bounce) }
                             }
                         }
                     },
                     onDragCancel = {
                         scope.launch { offsetX.animateTo(0f) }
+                        scope.launch { offsetY.animateTo(0f) }
                     },
                 )
             }
             .graphicsLayer {
                 translationX = offsetX.value
-                // Tilts toward the swipe, like a card held by its bottom
+                translationY = offsetY.value
+                // Tilts toward a side swipe, like a card held by its bottom
                 rotationZ = MAX_TILT * offsetX.value / (width * SWIPE_THRESHOLD)
             },
     ) {
@@ -336,8 +396,10 @@ private fun SwipeableDropCard(
             onAuthorClick = onAuthorClick,
         )
 
-        // 0 at rest, 1 (or -1) at the threshold
+        // 0 at rest, 1 (or -1) at the threshold, to the right (or to the left)
         val progress = offsetX.value / (width * SWIPE_THRESHOLD)
+        // 0 at rest, 1 at the threshold going up
+        val progressUp = -offsetY.value / (width * SWIPE_THRESHOLD)
 
         SwipeLabel(
             text = "J'AIME",
@@ -356,6 +418,14 @@ private fun SwipeableDropCard(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(32.dp),
+        )
+        SwipeLabel(
+            text = "PICK",
+            color = Butter,
+            visibility = progressUp.coerceIn(0f, 1f),
+            tilt = 0f,
+            // In the middle of the card: it rises with it
+            modifier = Modifier.align(Alignment.Center),
         )
     }
 }
@@ -400,11 +470,12 @@ private fun ChoiceButton(
     enabled: Boolean,
     onClick: () -> Unit,
     border: BorderStroke? = null,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(buttonSize),
+        modifier = modifier.size(buttonSize),
         shape = CircleShape,
         color = containerColor,
         border = border,
@@ -457,6 +528,7 @@ private fun DiscoverEmptyPreview() {
             uiState = DiscoverUiState(),
             onRefresh = {},
             onSwiped = { _, _ -> },
+            onPicked = {},
             onPlayPause = {},
             onAuthorClick = {},
             onSearchClick = {}
@@ -472,6 +544,7 @@ private fun DiscoverErrorPreview() {
             uiState = DiscoverUiState(error = "Impossible de joindre le serveur."),
             onRefresh = {},
             onSwiped = { _, _ -> },
+            onPicked = {},
             onPlayPause = {},
             onAuthorClick = {},
             onSearchClick = {}
@@ -503,6 +576,7 @@ private fun DiscoverDeckPreview() {
             ),
             onRefresh = {},
             onSwiped = { _, _ -> },
+            onPicked = {},
             onPlayPause = {},
             onAuthorClick = {},
             onSearchClick = {}

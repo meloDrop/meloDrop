@@ -58,6 +58,7 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
                 author_id=author.id if author else None,
                 author_username=author.username if author else None,
                 liked_late=liked.liked_late,
+                is_pick=liked.is_pick,
             )
         )
     return likes

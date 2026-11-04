@@ -19,3 +19,5 @@ class LikedSongOut(BaseModel):
     author_username: str | None = None
     # True when rescued from "Mes skips" after the drop expired: "Récupéré dans les skips"
     liked_late: bool = False
+    # True when the song is a pick: the star is full in "Mes likes"
+    is_pick: bool = False

@@ -15,7 +15,14 @@ from app.exceptions import (
 from app.models.badge import Badge
 from app.models.user import User
 from app.models.user_badge import UserBadge
-from app.schemas.badges import BadgeCreate, BadgeHolderOut, BadgeOut, BadgeUpdate, UserBadgeOut
+from app.schemas.badges import (
+    BadgeAwardOut,
+    BadgeCreate,
+    BadgeHolderOut,
+    BadgeOut,
+    BadgeUpdate,
+    UserBadgeOut,
+)
 
 
 def find_badge(db: Session, badge_id: int) -> Badge:
@@ -176,6 +183,40 @@ def award_badge(db: Session, user_id: int, badge_id: int) -> list[UserBadgeOut]:
     db.add(UserBadge(user_id=user_id, badge_id=badge_id))
     db.commit()
     return get_user_badges(db, user_id)
+
+
+def award_badge_many(db: Session, badge_id: int, user_ids: list[int]) -> BadgeAwardOut:
+    """Give a badge to several users at once. Those who already have it are skipped."""
+    badge = find_badge(db, badge_id)
+
+    # The same id twice counts once, in the order of the list
+    wanted = list(dict.fromkeys(user_ids))
+
+    # Every user must exist: if one is missing, nobody gets the badge
+    found = {user.id for user in db.query(User).filter(User.id.in_(wanted)).all()}
+    if len(found) != len(wanted):
+        raise UserNotFoundError("user_not_found")
+
+    # The users who already have the badge
+    rows = (
+        db.query(UserBadge.user_id)
+        .filter(UserBadge.badge_id == badge.id, UserBadge.user_id.in_(wanted))
+        .all()
+    )
+    owners = {row.user_id for row in rows}
+
+    awarded = []
+    already_had = []
+    for user_id in wanted:
+        if user_id in owners:
+            already_had.append(user_id)
+        else:
+            db.add(UserBadge(user_id=user_id, badge_id=badge.id))
+            awarded.append(user_id)
+
+    # All the new badges are saved together
+    db.commit()
+    return BadgeAwardOut(awarded=awarded, already_had=already_had, badge=build_badge(db, badge))
 
 
 def revoke_badge(db: Session, user_id: int, badge_id: int) -> None:

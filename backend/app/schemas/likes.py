@@ -12,6 +12,8 @@ class LikedSongOut(BaseModel):
     title: str
     artist: str
     cover_url: str | None = None
+    # Genre of the album on Deezer, or null: the lists can be sorted by genre
+    genre: str | None = None
     # When the user liked it, in UTC
     liked_at: datetime
     # Author of the drop the user liked: null if the account was deleted (ADR-0013)

@@ -12,7 +12,14 @@ from app.exceptions import (
     UserBadgeNotFoundError,
     UserNotFoundError,
 )
-from app.schemas.badges import BadgeCreate, BadgeOut, BadgeUpdate, UserBadgeOut
+from app.schemas.badges import (
+    BadgeAwardMany,
+    BadgeAwardOut,
+    BadgeCreate,
+    BadgeOut,
+    BadgeUpdate,
+    UserBadgeOut,
+)
 from app.services import badges as services
 
 # Every route needs an admin: 401 if not logged in, 403 if not admin
@@ -87,6 +94,27 @@ def delete_badge(
     try:
         services.delete_badge(db, badge_id)
     except BadgeNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/badges/{badge_id}/award",
+    response_model=BadgeAwardOut,
+    responses={
+        200: {"description": "Badge given to the users who did not have it yet"},
+        404: {"description": "No badge with this id, or one of the users does not exist (nobody gets it)"},
+        422: {"description": "Empty list, or more than 500 users"},
+    },
+)
+def award_badge_many(
+    body: BadgeAwardMany,
+    badge_id: int = Path(description="Badge id (id in GET /admin/badges)"),
+    db: Session = Depends(get_db),
+):
+    """Give a badge to several users at once, chosen in the Badges tab."""
+    try:
+        return services.award_badge_many(db, badge_id, body.user_ids)
+    except (BadgeNotFoundError, UserNotFoundError) as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 

@@ -283,10 +283,11 @@ def catalog_track(
 )
 def recap(
     days: Literal["1", "7", "30", "all"] = Query("7", description="1, 7 or 30 days, or all since the start"),
+    seed: int = Query(0, ge=0, description="Changes the tester drawn for the surprise podium"),
     db: Session = Depends(get_db),
 ):
     """Podium, rankings and totals of a period, without any email."""
-    return get_recap(db, None if days == "all" else int(days))
+    return get_recap(db, None if days == "all" else int(days), seed)
 
 
 @router.get(

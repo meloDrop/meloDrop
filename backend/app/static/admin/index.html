@@ -30,8 +30,9 @@
     --rose: #f5a8c8;
     /* Series: deeper steps of the pastels, checked for color blindness on --card */
     --likes: #2fa875;
+    --picks: #b5860f;
     --drops: #8f7fea;
-    --signups: #b5860f;
+    --signups: #9aa3b5;
     --skips: #d45a8e;
     --swipes: #d46e3a;
   }
@@ -593,6 +594,93 @@
   .song-list img, .song-list .cover { width: 36px; height: 36px; border-radius: 8px; flex: none; background: var(--outline); }
   .song-list .side { text-align: right; color: var(--muted); font-size: 12px; white-space: nowrap; }
   .badge.live { color: var(--mint); border-color: rgb(158 224 184 / .4); }
+  .badge.pick { color: #e7c25a; border-color: rgb(181 134 15 / .55); }
+  .badge.alert { color: #ff8a8a; border-color: rgb(240 72 72 / .5); }
+
+  /* Open reports: a red counter on the tab, a red tile on the overview */
+  .tabs a { position: relative; }
+  .tab-count {
+    position: absolute; top: -5px; right: -4px; display: inline-grid; place-items: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+    background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 1;
+    box-shadow: 0 0 0 2px var(--night);
+  }
+  .tile.alert { border-color: rgb(240 72 72 / .55); background: rgb(240 72 72 / .07); }
+  .tile.alert .value { color: #ff8a8a; }
+
+  /* Follows on the overview and on the page of a user */
+  .follow-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 24px; }
+  .follow-cols h3, .mx-title {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--lavender); margin: 0 0 6px;
+  }
+  .people-list { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
+  .people-list li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--outline); font-size: 13px; }
+  .people-list li:first-child { border-top: 0; }
+  .people-list .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .people-list .side { color: var(--muted); font-size: 12px; white-space: nowrap; text-align: right; }
+
+  /* Profile of a user, like in the app: header, counters, Mixtape and Activité */
+  .detail-row.profile-row { grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr); align-items: start; }
+  .stack-col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .follow-counts { display: flex; gap: 18px; margin: -4px 0 14px; color: var(--muted); font-size: 13px; }
+  .follow-counts b { color: var(--text); font-size: 15px; margin-right: 4px; }
+  .mx-pages { margin-bottom: 14px; width: max-content; }
+  .mx-page { display: grid; gap: 18px; }
+  .mx-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .mx-row img, .mx-row .cover { width: 44px; height: 44px; border-radius: 10px; flex: none; background: var(--outline); object-fit: cover; }
+  .mx-row .what { flex: 1; min-width: 0; }
+  .mx-row .what b { display: block; overflow-wrap: anywhere; }
+  .mx-row .what small { color: var(--muted); font-size: 12px; }
+  .mx-place { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%;
+    color: var(--night); font-weight: 700; font-size: 12px; }
+  .mx-label { display: block; font-size: 12px; font-weight: 600; color: var(--c, var(--lavender)); margin-bottom: 2px; }
+  .mx-badges { display: flex; flex-wrap: wrap; gap: 14px; }
+  .mx-badges figure { margin: 0; width: 76px; display: grid; justify-items: center; gap: 4px; text-align: center; }
+  .mx-badges figcaption { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+  .mx-empty { color: var(--muted); font-size: 13px; margin: 0; }
+
+  /* Signalements tab */
+  .reports-toolbar { margin-bottom: 12px; }
+  .reports-toolbar .filter-chips { margin-top: 0; }
+  .reports-list { display: grid; gap: 12px; }
+  .report { display: grid; gap: 10px; }
+  .report p { margin: 0; }
+  .report.closed { opacity: .82; }
+  .report-head { display: flex; align-items: flex-start; gap: 12px; }
+  .report-head .what { flex: 1; min-width: 0; }
+  .report-head .what b { font-size: 15px; overflow-wrap: anywhere; }
+  .report-head .what small { display: block; color: var(--muted); font-size: 12px; }
+  .report-head .side { display: grid; justify-items: end; gap: 4px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .report-reason { font-weight: 700; color: var(--peach); }
+  .report-message { margin: 0; padding: 10px 14px; border-left: 3px solid var(--outline); background: rgb(255 255 255 / .03);
+    border-radius: 0 10px 10px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .report-meta { color: var(--muted); font-size: 12px; }
+  .report-state { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--outline); border-radius: 12px; font-size: 13px; }
+  .report-state .song-list { max-height: none; }
+  .report-note { margin: 0; color: var(--muted); font-size: 13px; }
+  .report-note b { color: var(--text); font-weight: 600; }
+  .report-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .report-actions input[type="text"] { flex: 1 1 200px; min-width: 0; }
+  .report-confirm { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+
+  /* Badge given to several users: the list of users with a box each */
+  .pick-users { list-style: none; margin: 0; padding: 0; max-height: min(52vh, 460px); overflow-y: auto; }
+  .pick-users label { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-top: 1px solid var(--outline); cursor: pointer; }
+  .pick-users li:first-child label { border-top: 0; }
+  .pick-users input { width: 18px; height: 18px; accent-color: var(--lavender); flex: none; }
+  .pick-users .what { flex: 1; min-width: 0; }
+  .pick-users .what b, .pick-users .what small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick-users .what small { color: var(--muted); font-size: 12px; }
+  .pick-users label.owned { cursor: default; opacity: .6; }
+  .bulk-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .bulk-tools input[type="search"] { flex: 1 1 200px; min-width: 0; }
+  .bulk-tools .filter-chips { margin-top: 0; }
+
+  /* Récap: the picks and the surprise podium */
+  .rc-section > .rc-label { margin: 10px 0 2px; }
+  .rc-section > h3 + .rc-label { margin-top: 0; }
+  .rc-surprise { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .rc-block { display: block; }
 
   @media (max-width: 900px) {
     .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "daily" "hourly" "feed"; }
@@ -607,7 +695,9 @@
     .status button { padding: 5px 12px; font-size: 13px; }
     /* The tabs scroll sideways instead of breaking the words */
     .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-    .users-layout, .detail-row.wide, .catalog-layout, .badges-layout { grid-template-columns: minmax(0, 1fr); }
+    /* The bar scrolls: the bubble stays inside it */
+    .tab-count { top: 0; right: 0; }
+    .users-layout, .detail-row.wide, .detail-row.profile-row, .catalog-layout, .badges-layout { grid-template-columns: minmax(0, 1fr); }
     .badge-form { position: static; }
     .catalog-detail { position: static; max-height: none; }
     .user-picker { position: static; }
@@ -656,6 +746,8 @@
     .tab-icon { display: block; }
     .tab-long { display: none; }
     .tab-short { display: inline; }
+    /* The counter of the reports sits on the icon */
+    .tab-count { top: 2px; right: auto; left: calc(50% + 4px); min-width: 16px; height: 16px; font-size: 10px; }
     /* Bigger text and touch targets (44 px is the size of a finger) */
     h2 { font-size: 16px; }
     .card { padding: 14px; border-radius: 16px; }
@@ -673,6 +765,11 @@
     /* 16 px: the phone does not zoom in when a field gets the focus */
     input[type="password"], input[type="email"], input[type="text"], input[type="search"], select, .badge-form textarea { font-size: 16px; padding: 12px; }
     .badge-list li { flex-wrap: wrap; }
+    /* Report: the status and the date go under the name */
+    .report-head { flex-wrap: wrap; }
+    .report-head .side { order: 3; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .report-actions button { flex: 1 1 auto; }
+    .report-actions input[type="text"] { flex-basis: 100%; }
     .badge-list .actions { width: 100%; justify-content: flex-start; }
     /* Tables: each row becomes a small card, with the name of the column above each value */
     table.stack thead { display: none; }
@@ -754,6 +851,7 @@
       <a href="#songs" data-tab="songs"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span class="tab-long">Sons</span><span class="tab-short">Sons</span></a>
       <a href="#catalog" data-tab="catalog"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="tab-long">Catalogue</span><span class="tab-short">Deezer</span></a>
       <a href="#users" data-tab="users"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-long">Utilisateurs</span><span class="tab-short">Comptes</span></a>
+      <a href="#reports" data-tab="reports"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><span class="tab-long">Signalements</span><span class="tab-short">Signal.</span><span class="tab-count" id="reports-count" hidden></span></a>
       <a href="#badges" data-tab="badges"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 21l5-2.5 5 2.5-1.5-7"/></svg><span class="tab-long">Badges</span><span class="tab-short">Badges</span></a>
       <a href="#recap" data-tab="recap"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg><span class="tab-long">Récap</span><span class="tab-short">Récap</span></a>
     </nav>
@@ -806,13 +904,13 @@
 
       <article class="card hourly">
         <h2>Swipes par heure</h2>
-        <p class="subtitle">Likes et skips des dernières 24 heures</p>
+        <p class="subtitle">Likes, picks et skips des dernières 24 heures</p>
         <div class="chart-box"><canvas id="hourly-chart" aria-label="Swipes par heure"></canvas></div>
       </article>
 
       <article class="card feed">
         <h2>Activité récente</h2>
-        <p class="subtitle">Drops, likes, skips, repêchages et nouveaux comptes</p>
+        <p class="subtitle">Drops, swipes, repêchages, abonnements, signalements et nouveaux comptes</p>
         <ul class="events" id="events"></ul>
       </article>
     </section>
@@ -821,6 +919,15 @@
       <h2>Les drops bientôt expirés</h2>
       <p class="subtitle">Les prochains à quitter Discover, le plus pressé en premier</p>
       <ul class="expiring" id="expiring"></ul>
+    </section>
+
+    <section class="card table-card">
+      <h2>Abonnements</h2>
+      <p class="subtitle" id="follows-subtitle">Qui suit qui</p>
+      <div class="follow-cols">
+        <div><h3>Les plus suivis</h3><ul class="people-list" id="top-followed"></ul></div>
+        <div><h3>Derniers abonnements</h3><ul class="people-list" id="last-follows"></ul></div>
+      </div>
     </section>
 
     <section class="card table-card">
@@ -857,7 +964,7 @@
         </select></label>
       <label class="field"><span>Genre</span>
         <select id="drop-genre"><option value="">Tous les genres</option></select></label>
-      <label class="field"><span>Swipes min.</span>
+      <label class="field"><span>Vues min.</span>
         <select id="drop-min">
           <option value="0">0</option>
           <option value="1">1</option>
@@ -889,6 +996,7 @@
         <button type="button" data-format="portrait">Portrait</button>
       </div>
       <div class="recap-buttons">
+        <button type="button" id="recap-reroll" class="ghost small" title="Tire au sort un autre testeur pour « Le podium surprise »">Autre podium</button>
         <button type="button" id="recap-share" class="small" hidden>Partager</button>
         <button type="button" id="recap-copy-image" class="small">Copier l'image</button>
         <button type="button" id="recap-download" class="ghost small">Télécharger l'image</button>
@@ -962,6 +1070,18 @@
     </section>
    </div>
 
+   <!-- Signalements tab: the profiles reported from the app, the open ones first -->
+   <div id="tab-reports" hidden>
+    <section class="card reports-toolbar" aria-label="Filtrer les signalements">
+      <div>
+        <h2 id="reports-title">Signalements</h2>
+        <p class="subtitle">Envoyés depuis le bouton « Signaler le profil » de l'appli. Une action sur le compte classe le signalement en « Traité ».</p>
+        <div class="filter-chips" id="report-filters" role="group" aria-label="Statut"></div>
+      </div>
+    </section>
+    <section class="reports-list" id="reports-list"><p class="card empty">Chargement…</p></section>
+   </div>
+
    <!-- Badges tab: create the badges here, then give them from the page of a user -->
    <div id="tab-badges" class="badges-layout" hidden>
     <form id="badge-form" class="card badge-form" novalidate>
@@ -986,7 +1106,7 @@
     </form>
     <section class="card">
       <h2 id="badges-title">Badges</h2>
-      <p class="subtitle">Le plus récent en premier. Pour donner ou retirer un badge : la page de l'utilisateur.</p>
+      <p class="subtitle">Le plus récent en premier. « Donner à plusieurs » coche les testeurs d'un coup ; pour en retirer un : la page de l'utilisateur.</p>
       <div id="badges-list"><p class="empty">Chargement…</p></div>
     </section>
    </div>
@@ -1012,7 +1132,7 @@ const REFRESH_SECONDS = 20;
 // The token is kept in sessionStorage: it survives a refresh, and is gone when the tab closes
 const TOKEN_KEY = "melodrop_admin_token";
 // Tabs open in production: everything but Logs, which stays in the local dashboard
-const ENABLED_TABS = ["overview", "drops", "songs", "catalog", "users", "badges", "recap"];
+const ENABLED_TABS = ["overview", "drops", "songs", "catalog", "users", "reports", "badges", "recap"];
 
 // Error codes of the API (the "detail" field), as messages for the admin
 const ERROR_MESSAGES = {
@@ -1038,18 +1158,24 @@ const ERROR_MESSAGES = {
   badge_name_taken: "Un autre badge porte déjà ce nom.",
   badge_already_awarded: "Il a déjà ce badge.",
   user_badge_not_found: "Il n'a plus ce badge.",
+  report_not_found: "Signalement introuvable.",
 };
 
-// Series of the daily chart, in this order (checked for color blindness)
+// Series of the daily chart, in this order (checked for color blindness).
+// The likes and the picks are apart: a view is a like, a pick or a skip
 const SERIES = [
-  { key: "saves",  label: "Likes",        color: "--likes" },
+  { key: "likes",  label: "Likes",        color: "--likes" },
+  { key: "picks",  label: "Picks",        color: "--picks" },
   { key: "drops",  label: "Drops",        color: "--drops" },
   { key: "users",  label: "Inscriptions", color: "--signups" },
   { key: "skips",  label: "Skips",        color: "--skips" },
 ];
 
 // What each event type looks like in the activity list
-const EVENT_COLORS = { like: "--likes", skip: "--skips", drop: "--drops", signup: "--signups", rescue: "--swipes" };
+const EVENT_COLORS = {
+  like: "--likes", pick: "--picks", skip: "--skips", drop: "--drops", signup: "--signups",
+  rescue: "--swipes", follow: "--lavender", report: "--danger",
+};
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const pad = (n) => String(n).padStart(2, "0");
@@ -1170,6 +1296,16 @@ function likeRate(saves, skips) {
   return saves + skips === 0 ? "—" : `${Math.round((100 * saves) / (saves + skips))} %`;
 }
 
+// "saves" counts the likes and the picks together: the simple likes are the rest
+function simpleLikes(row) {
+  return row.saves - row.picks;
+}
+
+// "3 likes · 1 pick · 4 skips"
+function swipeText(likes, picks, skips) {
+  return `${plural(likes, "like")} · ${plural(picks, "pick")} · ${plural(skips, "skip")}`;
+}
+
 // Below this number of swipes, a like rate says little: it is shown in grey
 const RELIABLE_SWIPES = 5;
 
@@ -1215,11 +1351,19 @@ function renderTiles(data) {
       sub: `+${d.signups} en 24 h · ${t.unverified} non vérifié${t.unverified > 1 ? "s" : ""}` },
     { label: "Actifs (24 h)", value: d.active_users, sub: "ont déposé ou swipé" },
     { label: "Drops en ligne", value: t.online_drops, sub: `${d.drops} déposé${d.drops > 1 ? "s" : ""} en 24 h` },
-    { label: "Likes (24 h)", value: d.saves, sub: `${numberFormat.format(t.saves)} au total`, color: "--likes" },
+    { label: "Likes (24 h)", value: simpleLikes(d), sub: `${numberFormat.format(simpleLikes(t))} au total`, color: "--likes" },
+    { label: "Picks (24 h)", value: d.picks, color: "--picks",
+      sub: `${numberFormat.format(t.picks)} au total · ${t.picked_songs} dans des Mes picks` },
     { label: "Skips (24 h)", value: d.skips, color: "--skips",
       sub: `${numberFormat.format(t.skips)} au total · ${d.rescues} repêché${d.rescues > 1 ? "s" : ""} en 24 h` },
-    { label: "Taux de like (24 h)", value: likeRate(d.saves, d.skips), sub: "des swipes sont des likes" },
+    { label: "Taux de like (24 h)", value: likeRate(d.saves, d.skips),
+      sub: `likes et picks sur ${plural(d.saves + d.skips, "vue")}` },
+    { label: "Abonnements", value: t.follows, color: "--lavender",
+      sub: `+${d.follows} en 24 h · ${plural(t.followers, "abonné actif", "abonnés actifs")}` },
   ];
+  // Reports still to handle: red while there is one
+  tiles.push({ label: "Signalements", value: t.open_reports, href: "#reports", alert: t.open_reports > 0,
+    sub: t.open_reports ? `à traiter · ${d.reports} reçu${d.reports > 1 ? "s" : ""} en 24 h` : "rien à traiter" });
   // Validated accounts without a drop online, and those that never dropped
   const noDrop = usersMatching("no-drop", data).length;
   const never = usersMatching("never", data).length;
@@ -1232,7 +1376,7 @@ function renderTiles(data) {
     label.append(tile.label);
     const value = typeof tile.value === "number" ? numberFormat.format(tile.value) : tile.value;
     // A tile with href opens a filtered list
-    return el(tile.href ? "a" : "div", { className: "card tile", href: tile.href }, [
+    return el(tile.href ? "a" : "div", { className: `card tile${tile.alert ? " alert" : ""}`, href: tile.href }, [
       label,
       el("div", { className: "value", text: value }),
       el("div", { className: "sub", text: tile.sub }),
@@ -1394,12 +1538,13 @@ function renderHourly(data) {
     const key = hourKey(start);
     hours.push({
       start,
-      likes: data.hourly.saves[key] || 0,
+      likes: data.hourly.likes[key] || 0,
+      picks: data.hourly.picks[key] || 0,
       skips: data.hourly.skips[key] || 0,
     });
   }
   const labels = hours.map((h) => `${h.start.getHours()} h`);
-  const swipes = hours.map((h) => h.likes + h.skips);
+  const swipes = hours.map((h) => h.likes + h.picks + h.skips);
 
   if (!hourlyChart) {
     hourlyChart = new Chart(document.getElementById("hourly-chart"), {
@@ -1433,7 +1578,7 @@ function renderHourly(data) {
               label: (item) => `${item.formattedValue} swipes`,
               afterLabel: (item) => {
                 const h = hourlyChart.$hours[item.dataIndex];
-                return `${h.likes} likes · ${h.skips} skips · ${likeRate(h.likes, h.skips)}`;
+                return `${swipeText(h.likes, h.picks, h.skips)} · ${likeRate(h.likes + h.picks, h.skips)}`;
               },
             },
           },
@@ -1458,6 +1603,13 @@ function eventText(event) {
   if (event.type === "signup") p.append(" a créé son compte");
   if (event.type === "drop") p.append(` a déposé ${song} — ${event.artist}`);
   if (event.type === "like") p.append(` a liké ${song}, drop de `, userLink(event.author_id, event.author));
+  if (event.type === "pick") p.append(` a pické ${song}, drop de `, userLink(event.author_id, event.author));
+  if (event.type === "follow") p.append(" s'est abonné à ", userLink(event.author_id, event.author));
+  // The reported user can be deleted since: the username stays
+  if (event.type === "report") {
+    p.append(" a signalé ", event.author_id ? userLink(event.author_id, event.author) : `@${event.author}`, " · ",
+      el("a", { className: "user-link", href: "#reports", text: "voir" }));
+  }
   if (event.type === "skip") p.append(` a passé ${song}, drop de `, userLink(event.author_id, event.author));
   // Rescued from "Mes skips" after the drop expired: no like for the author
   if (event.type === "rescue") p.append(` a repêché ${song} dans ses skips, drop expiré de `, userLink(event.author_id, event.author));
@@ -1472,7 +1624,7 @@ function renderEvents(data) {
   }
   const keys = new Set();
   list.replaceChildren(...data.activity.map((event) => {
-    const key = `${event.at}|${event.type}|${event.username}|${event.title}`;
+    const key = `${event.at}|${event.type}|${event.username}|${event.title}|${event.author}`;
     keys.add(key);
     const time = el("time", { text: `${relativeTime(event.at)} · ${timeFormat.format(new Date(event.at))}` });
     time.dateTime = event.at;
@@ -1538,7 +1690,7 @@ function renderExpiring(data) {
         el("b", { text: drop.title }),
         el("small", {}, [`${drop.artist} · `, userLink(drop.user_id, drop.username)]),
         el("small", { className: "exp-stats" }, [
-          `${plural(drop.saves, "like")} · ${plural(drop.skips, "skip")} · `, rateSpan(drop.saves, drop.skips)]),
+          `${swipeText(simpleLikes(drop), drop.picks, drop.skips)} · `, rateSpan(drop.saves, drop.skips)]),
       ]),
       el("div", { className: "exp-left" }, [
         el("small", { text: "expire dans" }),
@@ -1561,38 +1713,85 @@ function renderOnline(data) {
     el("td", {}, [songCell(drop)]),
     el("td", {}, [userLink(drop.user_id, drop.username)]),
     el("td", { className: "num", text: timeLeft(drop.expires_at) }),
-    el("td", { className: "num", text: drop.saves }),
+    el("td", { className: "num", text: drop.saves + drop.skips }),
+    el("td", { className: "num", text: simpleLikes(drop) }),
+    el("td", { className: "num", text: drop.picks }),
     el("td", { className: "num", text: drop.skips }),
     el("td", { className: "num" }, [rateSpan(drop.saves, drop.skips)]),
   ]));
   box.replaceChildren(table(
-    [["Titre"], ["Par"], ["Reste", true], ["Likes", true], ["Skips", true], ["Taux de like", true]],
+    [["Titre"], ["Par"], ["Reste", true], ["Vues", true], ["Likes", true], ["Picks", true], ["Skips", true], ["Taux de like", true]],
     rows,
   ));
+}
+
+// Red dot next to a user with reports still to handle
+function reportDot(user) {
+  if (!user.open_reports) return "";
+  const node = dot("--danger");
+  node.title = `${plural(user.open_reports, "signalement")} à traiter`;
+  return node;
 }
 
 function renderUsers(data) {
   const rows = data.users.map((user) => el("tr", {}, [
     el("td", {}, [el("span", { className: "who-cell" }, [
-      avatar(user.avatar_color, user.avatar_style, 26), userLink(user.id, user.username)])]),
+      avatar(user.avatar_color, user.avatar_style, 26), userLink(user.id, user.username), reportDot(user)])]),
     el("td", {}, [el("span", {
       className: user.verified ? "badge" : "badge no",
       text: user.verified ? "Vérifié" : "Non vérifié",
     })]),
     el("td", { className: "muted", text: dateFormat.format(new Date(user.created_at)) }),
     el("td", { className: "num", text: user.drops }),
-    el("td", { className: "num", text: user.saves }),
+    el("td", { className: "num", text: simpleLikes(user) }),
+    el("td", { className: "num", text: user.picks }),
     el("td", { className: "num", text: user.skips }),
-    el("td", { className: "num", text: user.saves_received }),
-    el("td", { className: "num", text: user.liked_songs }),
+    el("td", { className: "num", text: user.saves_received - user.picks_received }),
+    el("td", { className: "num", text: user.picks_received }),
+    el("td", { className: "num", text: user.followers }),
     el("td", { className: "muted", text: relativeTime(user.last_activity) }),
     el("td", {}, [actionButton("Gérer", "ghost small", () => openManage(user.id))]),
   ]));
   document.getElementById("users").replaceChildren(table(
-    [["Utilisateur"], ["E-mail"], ["Inscrit le"], ["Drops", true], ["Likes donnés", true],
-     ["Skips", true], ["Likes reçus", true], ["Mes likes", true], ["Dernière activité"], [""]],
+    [["Utilisateur"], ["E-mail"], ["Inscrit le"], ["Drops", true], ["Likes donnés", true], ["Picks donnés", true],
+     ["Skips", true], ["Likes reçus", true], ["Picks reçus", true], ["Abonnés", true], ["Dernière activité"], [""]],
     rows,
   ));
+}
+
+// A user in a short list: avatar, @username, and a text on the right
+function personRow(user, side, extra = []) {
+  return el("li", {}, [
+    avatar(user.avatar_color, user.avatar_style, 28),
+    el("div", { className: "what" }, [userLink(user.user_id ?? user.id, user.username), ...extra]),
+    el("div", { className: "side" }, side),
+  ]);
+}
+
+function renderFollows(data) {
+  const f = data.follows;
+  document.getElementById("follows-subtitle").textContent =
+    `${plural(data.totals.follows, "abonnement")} · ${plural(data.totals.followers, "utilisateur suit", "utilisateurs suivent")} quelqu'un`;
+  document.getElementById("top-followed").replaceChildren(...(f.top.length
+    ? f.top.map((u) => personRow(u, [plural(u.followers, "abonné")]))
+    : [el("li", { className: "empty", text: "Personne ne suit personne pour l'instant." })]));
+  document.getElementById("last-follows").replaceChildren(...(f.last.length
+    ? f.last.map((x) => el("li", {}, [
+        el("div", { className: "what" }, [
+          userLink(x.follower_id, x.follower), " → ", userLink(x.followed_id, x.followed),
+          ...(x.mutual ? [" ", el("span", { className: "badge live", text: "mutuel" })] : []),
+        ]),
+        el("div", { className: "side", text: relativeTime(x.at) }),
+      ]))
+    : [el("li", { className: "empty", text: "Aucun abonnement pour l'instant." })]));
+}
+
+// Red counter on the Signalements tab
+function renderReportCount(open) {
+  const badge = document.getElementById("reports-count");
+  badge.textContent = open > 99 ? "99+" : String(open);
+  badge.hidden = !open;
+  badge.title = `${plural(open, "signalement")} à traiter`;
 }
 
 function actionButton(text, className, onClick) {
@@ -1660,7 +1859,7 @@ function openManage(userId) {
   const dropPart = el("div", { className: "dialog-part" }, [el("h3", { text: "Drop en cours" })]);
   if (drop) {
     dropPart.append(
-      el("p", { text: `« ${drop.title} » — ${drop.artist} · ${drop.saves} likes, ${drop.skips} skips, reste ${timeLeft(drop.expires_at)}` }),
+      el("p", { text: `« ${drop.title} » — ${drop.artist} · ${swipeText(simpleLikes(drop), drop.picks, drop.skips)}, reste ${timeLeft(drop.expires_at)}` }),
       actionButton("Supprimer le drop", "ghost small", () => {
         if (confirm(`Supprimer le drop « ${drop.title} » de @${user.username} ? Ses likes et skips seront effacés.`)) {
           runAction("DELETE", `/admin/users/${user.id}/drop`, undefined, `Drop « ${drop.title} » de @${user.username} supprimé.`);
@@ -1761,7 +1960,9 @@ function render(data) {
   renderEvents(data);
   renderExpiring(data);
   renderOnline(data);
+  renderFollows(data);
   renderUsers(data);
+  renderReportCount(data.totals.open_reports);
 }
 
 function showError(message) {
@@ -1813,6 +2014,8 @@ async function refresh() {
     if (currentTab === "songs") loadSongs();
     if (currentTab === "recap") loadRecap();
     if (currentTab === "badges") loadBadges();
+    // While the admin types a note or a username, the list is not drawn again
+    if (currentTab === "reports" && !document.activeElement?.closest?.(".report")) loadReports();
     document.getElementById("error").hidden = true;
   } catch (error) {
     showError(error.message);
@@ -1834,10 +2037,24 @@ const AVATAR_STYLES = { admin: "spéciale admin", simple: "Simple", rock: "Rock"
 const CODE_PURPOSES = { verify_email: "Validation de l'e-mail", reset_password: "Mot de passe oublié", change_email: "Changement d'e-mail" };
 // Series of the user's chart (validated order)
 const USER_SERIES = [
-  { key: "saves", label: "Likes", color: "--likes" },
+  { key: "likes", label: "Likes", color: "--likes" },
+  { key: "picks", label: "Picks", color: "--picks" },
   { key: "drops", label: "Drops", color: "--drops" },
   { key: "skips", label: "Skips", color: "--skips" },
 ];
+// Labels of the Mixtape songs: same codes, texts and colors as SongLabels.kt
+const SONG_LABELS = {
+  feel_good: ["Le son qui me met bien", "mint"],
+  party: ["Le son qui retourne la soirée", "peach"],
+  never_skip: ["Le son que je skippe jamais", "lavender"],
+  theme_song: ["Mon générique préféré", "rose"],
+  chills: ["Le son qui me file des frissons", "mint"],
+  cry: ["Le son qui me fait chialer", "lavender"],
+  guilty_pleasure: ["Le son que j'assume pas de ouf", "rose"],
+  cant_stand: ["Le son que je supporte pas", "peach"],
+};
+// Colors of the places of a podium, like the Récap
+const PLACE_COLORS = { 1: "#ffe08a", 2: "#b4a7f5", 3: "#ffb38a" };
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 // ---------- Avatars, drawn like ui/components/Avatar.kt ----------
@@ -1967,12 +2184,14 @@ const USER_FILTERS = [
   ["no-drop", "Sans drop en ligne"],
   ["never", "Jamais droppé"],
   ["unverified", "Non validés"],
+  ["reported", "Signalés"],
 ];
 const EMPTY_FILTER_TEXT = {
   online: "Personne n'a de drop en ligne.",
   "no-drop": "Tout le monde a un drop en ligne.",
   never: "Tout le monde a déjà droppé.",
   unverified: "Tous les e-mails sont validés.",
+  reported: "Aucun signalement à traiter.",
 };
 let userFilter = "all";
 
@@ -1983,6 +2202,7 @@ function usersMatching(filter, data = currentData) {
     if (filter === "no-drop") return u.verified && !online.has(u.id);
     if (filter === "never") return u.verified && u.drops === 0;
     if (filter === "unverified") return !u.verified;
+    if (filter === "reported") return u.open_reports > 0;
     return true;
   });
 }
@@ -2002,6 +2222,7 @@ function userInfo(user) {
   const swipes = user.saves + user.skips;
   if (userFilter === "never") return `inscrit ${relativeTime(user.created_at)} · ${swipes} swipe${swipes > 1 ? "s" : ""}`;
   if (userFilter === "no-drop") return user.last_drop ? `dernier drop ${relativeTime(user.last_drop)}` : "jamais droppé";
+  if (userFilter === "reported") return `${plural(user.open_reports, "signalement")} à traiter`;
   return user.display_name || (user.verified ? user.email : "e-mail non validé");
 }
 
@@ -2028,6 +2249,7 @@ function renderUserList() {
       el("span", { className: "when", text: relativeTime(user.last_activity) }),
     ]);
     if (online.has(user.id)) link.querySelector(".who b").append(" ", dot("--likes"));
+    if (user.open_reports) link.querySelector(".who b").append(" ", reportDot(user));
     if (user.id === selectedUserId) link.setAttribute("aria-current", "true");
     return el("li", {}, [link]);
   }));
@@ -2092,11 +2314,103 @@ function countLabel(shown, total) {
   return total > shown.length ? `${shown.length} plus récents sur ${total}` : `${total}`;
 }
 
+// Page of the profile shown (Mixtape or Activité): kept when the page refreshes itself
+let profilePage = "mixtape";
+
+// A song of the Mixtape: place or label above, play button, cover, title and artist
+function mixtapeRow(song, lead, above) {
+  return el("div", { className: "mx-row" }, [
+    lead || "",
+    playButton(song),
+    cover(song.cover_url),
+    el("div", { className: "what" }, [above || "", el("b", { text: song.title }), el("small", { text: song.artist })]),
+  ]);
+}
+
+// Mixtape page: the podium, the labeled songs and the badges, like UserProfileScreen.kt
+function mixtapePage(profile) {
+  const podium = profile.podium.length
+    ? profile.podium.map((song) => mixtapeRow(song,
+        el("span", { className: "mx-place", text: song.place, style: { background: PLACE_COLORS[song.place] } })))
+    : [el("p", { className: "mx-empty", text: `@${profile.username} n'a pas encore fait sa mixtape.` })];
+  const parts = [el("section", {}, [el("h3", { className: "mx-title", text: "Ses titres préférés" }), ...podium])];
+  // Hidden in the app while empty: shown here with a line, to know it is empty
+  parts.push(el("section", {}, [
+    el("h3", { className: "mx-title", text: "Ses chansons" }),
+    ...(profile.labeled_songs.length
+      ? profile.labeled_songs.map((song) => {
+          const [text, color] = SONG_LABELS[song.label] || [song.label, "lavender"];
+          return mixtapeRow(song, null, el("span", { className: "mx-label", text, style: { "--c": AVATAR_COLORS[color] } }));
+        })
+      : [el("p", { className: "mx-empty", text: "Aucune chanson à label (caché dans l'appli)." })]),
+  ]));
+  parts.push(el("section", {}, [
+    el("h3", { className: "mx-title", text: "Ses badges" }),
+    profile.badges.length
+      ? el("div", { className: "mx-badges" }, profile.badges.map((b) => {
+          const figure = el("figure", {}, [medal(b.icon, b.color, 52), el("figcaption", { text: b.name })]);
+          figure.title = b.description;
+          return figure;
+        }))
+      : el("p", { className: "mx-empty", text: "Aucun badge (caché dans l'appli)." }),
+  ]));
+  return el("div", { className: "mx-page" }, parts);
+}
+
+// Activité page: the counters, the drop of the day and the last drops
+function activityPage(profile) {
+  const parts = [el("div", { className: "counters" }, [
+    el("div", {}, [el("b", { text: profile.stats.drops_count }), el("span", { text: "drops" })]),
+    el("div", {}, [el("b", { text: profile.stats.likes_received }), el("span", { text: "likes reçus" })]),
+    el("div", {}, [el("b", { text: profile.stats.likes_count }), el("span", { text: "dans Mes likes" })]),
+  ])];
+  const drop = profile.current_drop;
+  parts.push(el("section", {}, [
+    el("h3", { className: "mx-title", text: "Drop du jour" }),
+    drop
+      ? songList("profile-drop", [drop], (d) => ({
+          below: d.genre ? [` · ${d.genre}`] : [],
+          side: [swipeText(d.saves_count - d.picks_count, d.picks_count, d.views_count - d.saves_count), el("br"),
+            `${plural(d.views_count, "vue")} · ${likeRate(d.saves_count, d.views_count - d.saves_count)}`],
+        }), "")
+      : el("p", { className: "mx-empty", text: "Pas de drop en ligne aujourd'hui." }),
+  ]));
+  parts.push(el("section", {}, [
+    el("h3", { className: "mx-title", text: "Derniers drops" }),
+    profile.recent_drops.length
+      ? el("div", { className: "covers" }, profile.recent_drops.map((d) => {
+          const node = cover(d.cover_url);
+          node.title = `${d.title} — ${d.artist} · ${swipeText(d.saves_count - d.picks_count, d.picks_count, d.views_count - d.saves_count)}`;
+          return node;
+        }))
+      : el("p", { className: "mx-empty", text: "Aucun drop passé pour l'instant." }),
+  ]));
+  return el("div", { className: "mx-page" }, parts);
+}
+
 function profileCard(data) {
   const profile = data.profile;
   const name = profile.display_name || profile.username;
   const since = new Date(profile.created_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const parts = [
+  const pages = { mixtape: mixtapePage(profile), activity: activityPage(profile) };
+  const switcher = el("div", { className: "segmented mx-pages" });
+  switcher.setAttribute("role", "group");
+  switcher.setAttribute("aria-label", "Page du profil");
+  for (const [key, label] of [["mixtape", "Mixtape"], ["activity", "Activité"]]) {
+    const button = actionButton(label, "", () => {
+      profilePage = key;
+      switcher.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+      Object.entries(pages).forEach(([k, page]) => { page.hidden = k !== key; });
+    });
+    button.setAttribute("aria-pressed", String(key === profilePage));
+    switcher.append(button);
+  }
+  Object.entries(pages).forEach(([k, page]) => { page.hidden = k !== profilePage; });
+  const counts = el("div", { className: "follow-counts" }, [
+    el("span", {}, [el("b", { text: profile.followers_count }), profile.followers_count > 1 ? "abonnés" : "abonné"]),
+    el("span", {}, [el("b", { text: profile.following_count }), profile.following_count > 1 ? "abonnements" : "abonnement"]),
+  ]);
+  return card("Profil", "Comme dans l'appli : sa Mixtape et son activité", [
     el("div", { className: "profile-head" }, [
       avatar(profile.avatar_color, profile.avatar_style, 72),
       el("div", {}, [
@@ -2104,30 +2418,11 @@ function profileCard(data) {
         el("div", { className: "muted", text: `@${profile.username} · membre depuis ${since}` }),
       ]),
     ]),
-    el("div", { className: "counters" }, [
-      el("div", {}, [el("b", { text: profile.stats.drops_count }), el("span", { text: "drops" })]),
-      el("div", {}, [el("b", { text: profile.stats.likes_received }), el("span", { text: "ajouts reçus" })]),
-      el("div", {}, [el("b", { text: profile.stats.likes_count }), el("span", { text: "dans Mes likes" })]),
-    ]),
-  ];
-  if (profile.current_drop) {
-    const drop = profile.current_drop;
-    parts.push(el("h3", { className: "subtitle", text: "Drop du jour" }), songList("profile-drop", [drop], (d) => ({
-      below: d.genre ? [` · ${d.genre}`] : [],
-      side: [`ajouté par ${d.saves_count}`],
-    }), ""));
-  }
-  if (profile.recent_drops.length) {
-    parts.push(
-      el("h3", { className: "subtitle", text: "Derniers drops" }),
-      el("div", { className: "covers" }, profile.recent_drops.map((d) => {
-        const node = cover(d.cover_url);
-        node.title = `${d.title} — ${d.artist}`;
-        return node;
-      })),
-    );
-  }
-  return card("Profil", "Tel qu'il apparaît dans l'appli", parts);
+    counts,
+    switcher,
+    pages.mixtape,
+    pages.activity,
+  ]);
 }
 
 function accountCard(data) {
@@ -2167,17 +2462,21 @@ function accountCard(data) {
 
 function statTiles(data) {
   const s = data.stats;
+  const views = s.saves_received + s.skips_received;
   const tiles = [
     ["Drops", s.drops, null],
-    ["Likes donnés", s.saves, "--likes"],
+    ["Likes donnés", s.saves - s.picks, "--likes"],
+    ["Picks donnés", s.picks, "--picks"],
     ["Skips", s.skips, "--skips"],
-    ["Taux de like donné", likeRate(s.saves, s.skips), null, `sur ${plural(s.saves + s.skips, "swipe")}`],
-    ["Likes reçus", s.saves_received, null],
-    ["Skips reçus", s.skips_received, null],
-    ["Taux de like reçu", likeRate(s.saves_received, s.skips_received), null,
-      `sur ${plural(s.saves_received + s.skips_received, "swipe")} reçu${s.saves_received + s.skips_received > 1 ? "s" : ""}`],
-    ["Dans Mes likes", s.liked_songs, null],
+    ["Taux de like donné", likeRate(s.saves, s.skips), null, `likes et picks sur ${plural(s.saves + s.skips, "swipe")}`],
+    ["Vues de ses drops", views, null, `${perItem(views, s.drops)} par drop`],
+    ["Likes reçus", s.saves_received - s.picks_received, "--likes"],
+    ["Picks reçus", s.picks_received, "--picks"],
+    ["Skips reçus", s.skips_received, "--skips"],
+    ["Taux de like reçu", likeRate(s.saves_received, s.skips_received), null, `likes et picks sur ${plural(views, "vue")}`],
+    ["Dans Mes likes", s.liked_songs, null, `dont ${s.picked_songs} dans Mes picks`],
     ["Repêchés dans ses skips", s.rescues, "--swipes"],
+    ["Abonnés", s.followers, "--lavender", `${plural(s.following, "abonnement")}`],
   ];
   return el("section", { className: "tiles" }, tiles.map(([label, value, color, sub]) => {
     const head = el("div", { className: "label" });
@@ -2263,16 +2562,19 @@ function currentDropCard(data) {
   if (!drop) return card("Drop en cours", "Visible 24 h dans Discover", [el("p", { className: "empty", text: "Aucun drop en cours." })]);
   const online = currentData?.online_drops.find((d) => d.drop_id === drop.id);
   const swipes = data.current_drop_swipes;
-  const likes = swipes.filter((s) => s.type === "like").length;
+  const count = (type) => swipes.filter((s) => s.type === type).length;
+  const [likes, picks, skips] = [count("like"), count("pick"), count("skip")];
   const children = [
     songList("current", [drop], () => ({ side: online ? [`reste ${timeLeft(online.expires_at)}`] : [] }), ""),
-    el("h3", { className: "subtitle", text: `${likes} likes · ${swipes.length - likes} skips · ${likeRate(likes, swipes.length - likes)}` }),
+    el("h3", { className: "subtitle",
+      text: `${plural(swipes.length, "vue")} · ${swipeText(likes, picks, skips)} · ${likeRate(likes + picks, skips)}` }),
   ];
+  const verbs = { like: " l'a liké", pick: " l'a pické", skip: " l'a passé" };
   if (swipes.length) {
     const list = el("ul", { className: "events" }, swipes.map((s) => el("li", {}, [
-      dot(s.type === "like" ? "--likes" : "--skips"),
+      dot(EVENT_COLORS[s.type]),
       el("div", {}, [
-        el("p", {}, [userLink(s.user_id, s.username), s.type === "like" ? " l'a liké" : " l'a passé"]),
+        el("p", {}, [userLink(s.user_id, s.username), verbs[s.type]]),
         el("time", { text: `${relativeTime(s.at)} · ${timeFormat.format(new Date(s.at))}` }),
       ]),
     ])));
@@ -2280,7 +2582,42 @@ function currentDropCard(data) {
     list.style.maxHeight = "240px";
     children.push(list);
   }
-  return card("Drop en cours", "Qui l'a liké ou passé", children);
+  return card("Drop en cours", "Qui l'a liké, pické ou passé", children);
+}
+
+function followsCard(data) {
+  const list = (items, emptyText, mutualText) => (items.length
+    ? el("ul", { className: "people-list" }, items.map((p) => personRow(p, [relativeTime(p.at)],
+        p.mutual ? [" ", el("span", { className: "badge live", text: mutualText })] : [])))
+    : el("p", { className: "empty", text: emptyText }));
+  const { followers, following } = data.follows;
+  return card(`Abonnements`, "Le plus récent en premier", [el("div", { className: "follow-cols" }, [
+    el("div", {}, [el("h3", { text: `Ses abonnés (${data.stats.followers})` }),
+      list(followers, "Personne ne le suit.", "il le suit aussi")]),
+    el("div", {}, [el("h3", { text: `Ses abonnements (${data.stats.following})` }),
+      list(following, "Il ne suit personne.", "le suit aussi")]),
+  ])]);
+}
+
+function userReportsCard(data) {
+  const { received, sent } = data.reports;
+  const open = received.filter((r) => r.status === "open").length;
+  const subtitle = `${plural(received.length, "signalement reçu", "signalements reçus")}, dont ${open} à traiter · `
+    + `${plural(sent, "envoyé", "envoyés")} par lui`;
+  const items = received.length
+    ? el("ul", { className: "people-list" }, received.map((r) => el("li", {}, [
+        dot(r.status === "open" ? "--danger" : "--outline"),
+        el("div", { className: "what" }, [
+          el("b", { text: REPORT_REASONS[r.reason] || r.reason }),
+          r.message ? el("small", { className: "muted", text: ` · « ${r.message} »` }) : "",
+          el("br"),
+          el("small", { className: "muted" }, ["par ", r.reporter ? userLink(r.reporter.id, r.reporter.username) : "un compte supprimé"]),
+        ]),
+        el("div", { className: "side" }, [REPORT_STATUS[r.status], el("br"), relativeTime(r.created_at)]),
+      ])))
+    : el("p", { className: "empty", text: "Personne ne l'a signalé." });
+  const link = el("a", { className: "user-link", href: "#reports", text: "Ouvrir l'onglet Signalements →" });
+  return card("Signalements", subtitle, [items, ...(received.length ? [el("p", {}, [link])] : [])]);
 }
 
 // Badges of a skip: rescued, or still in "Mes skips" in the app (with a like possible if online)
@@ -2300,15 +2637,19 @@ function renderUserDetail(data) {
   keepScroll(box, () => {
     const activity = activityCard(data);
     box.replaceChildren(
-      el("div", { className: "detail-row" }, [profileCard(data), accountCard(data), badgesCard(data)]),
+      el("div", { className: "detail-row profile-row" }, [
+        profileCard(data),
+        el("div", { className: "stack-col" }, [accountCard(data), badgesCard(data)]),
+      ]),
       statTiles(data),
       el("div", { className: "detail-row wide" }, [activity, affinitiesCard(data)]),
+      el("div", { className: "detail-row" }, [followsCard(data), userReportsCard(data)]),
       el("div", { className: "detail-row" }, [
         currentDropCard(data),
         card(`Son fil Discover (${data.feed.length})`, "Drops en ligne qu'il n'a pas encore vus. L'appli lui en tire 10 au hasard.", [
           songList("feed", data.feed, (d) => ({
             below: [" · drop de ", userLink(d.author_id, d.author_username)],
-            side: [`reste ${timeLeft(d.expires_at)}`, el("br"), `${d.saves} likes`],
+            side: [`reste ${timeLeft(d.expires_at)}`, el("br"), plural(d.saves, "like")],
           }), "Rien à découvrir : il a tout vu."),
         ]),
         card(`Mes likes (${data.likes.length})`, "Sa liste dans l'appli, la plus récente en premier", [
@@ -2317,13 +2658,15 @@ function renderUserDetail(data) {
             below: l.liked_late
               ? [" · ", el("span", { className: "badge rescue", text: "récupéré dans les skips" })]
               : [" · drop de ", userLink(l.author_id, l.author_username)],
-            side: [relativeTime(l.liked_at)],
+            side: [relativeTime(l.liked_at), ...(l.is_pick ? [el("br"), el("span", { className: "badge pick", text: "dans Mes picks" })] : [])],
           }), "Sa liste est vide."),
         ]),
-        card(`Likes donnés (${countLabel(data.saves, s.saves)})`, "Drops gardés en swipant à droite", [
+        card(`Likes et picks donnés (${countLabel(data.saves, s.saves)})`, "Swipe à droite : like · swipe en haut : pick", [
           songList("saves", data.saves, (v) => ({
             below: [" · drop de ", userLink(v.author_id, v.author_username)],
-            side: [relativeTime(v.at), ...(v.in_likes ? [] : [el("br"), el("span", { className: "badge no", text: "retiré de Mes likes" })])],
+            side: [relativeTime(v.at),
+              ...(v.is_pick ? [el("br"), el("span", { className: "badge pick", text: "pick" })] : []),
+              ...(v.in_likes ? [] : [el("br"), el("span", { className: "badge no", text: "retiré de Mes likes" })])],
           }), "Aucun like pour l'instant."),
         ]),
         card(`Skips (${countLabel(data.skips, s.skips)})`,
@@ -2333,7 +2676,7 @@ function renderUserDetail(data) {
             side: [relativeTime(v.at), ...skipBadges(v, inMySkips.get(v.drop_id))],
           }), "Aucun skip pour l'instant."),
         ]),
-        card(`Ses drops (${countLabel(data.drops, s.drops)})`, "Avec les likes et skips reçus", [
+        card(`Ses drops (${countLabel(data.drops, s.drops)})`, "Avec les vues, likes, picks et skips reçus", [
           songList("drops", data.drops, (d) => {
             const live = new Date(d.expires_at) > Date.now();
             return {
@@ -2341,7 +2684,8 @@ function renderUserDetail(data) {
               side: [
                 live ? el("span", { className: "badge live", text: "en ligne" }) : "",
                 live ? el("br") : "",
-                `${d.saves} likes · ${d.skips} skips`, el("br"), likeRate(d.saves, d.skips),
+                swipeText(simpleLikes(d), d.picks, d.skips), el("br"),
+                `${plural(d.saves + d.skips, "vue")} · ${likeRate(d.saves, d.skips)}`,
               ],
             };
           }, "Aucun drop pour l'instant."),
@@ -2356,8 +2700,10 @@ function renderUserDetail(data) {
 
 // Value used to sort a row; a row without swipe has no rate, so it goes last
 function sortValue(row, key) {
+  // A view is a swipe: like, pick or skip
   const swipes = row.saves + row.skips;
-  if (key === "swipes") return swipes;
+  if (key === "swipes" || key === "views") return swipes;
+  if (key === "likes") return row.saves - row.picks;
   // Ranked with the prudent rate: 2 likes out of 2 does not beat 45 out of 50
   if (key === "rate") return prudentRate(row.saves, swipes);
   if (["created_at", "last_drop"].includes(key)) return row[key] ? new Date(row[key]).getTime() : 0;
@@ -2424,7 +2770,7 @@ function stackTable(columns, sort, onSort, rows) {
   return [sortMenu(columns, sort, onSort), table];
 }
 
-const NUMBER_COLUMNS = new Set(["rank", "drops", "saves", "skips", "swipes", "rate", "in_likes"]);
+const NUMBER_COLUMNS = new Set(["rank", "drops", "saves", "likes", "picks", "skips", "swipes", "views", "rate", "in_likes", "in_picks"]);
 
 function rateCell(saves, skips) {
   const swipes = saves + skips;
@@ -2482,7 +2828,7 @@ function perItem(total, count) {
 // ---------- Drops tab ----------
 
 let dropsData = null;
-let dropSort = { key: "saves", dir: "desc" };
+let dropSort = { key: "rate", dir: "desc" };
 let dropLimit = 100;
 let openDropId = null;
 
@@ -2490,7 +2836,8 @@ const PERIOD_DAYS = { "": null, 1: 1, 7: 7, 30: 30 };
 // Columns: [key, title, sortable]
 const DROP_COLUMNS = [
   ["rank", "#"], ["title", "Titre"], ["author", "Par"], ["created_at", "Déposé", true], ["status", "Statut"],
-  ["saves", "Likes", true], ["skips", "Skips", true], ["swipes", "Swipes", true], ["rate", "Taux de like", true],
+  ["views", "Vues", true], ["likes", "Likes", true], ["picks", "Picks", true], ["skips", "Skips", true],
+  ["rate", "Taux de like", true],
 ];
 
 async function loadDrops() {
@@ -2536,9 +2883,10 @@ function dropRow(d, rank) {
     el("td", {}, [online
       ? el("span", { className: "badge live", text: `en ligne · ${timeLeft(d.expires_at)}` })
       : el("span", { className: "muted", text: "expiré" })]),
-    el("td", { className: "num", text: d.saves }),
-    el("td", { className: "num", text: d.skips }),
     el("td", { className: "num", text: d.saves + d.skips }),
+    el("td", { className: "num", text: simpleLikes(d) }),
+    el("td", { className: "num", text: d.picks }),
+    el("td", { className: "num", text: d.skips }),
     rateCell(d.saves, d.skips),
   ]);
   row.tabIndex = 0;
@@ -2563,8 +2911,10 @@ function renderDrops() {
   if (!dropsData) return;
   const drops = filteredDrops();
   const saves = drops.reduce((n, d) => n + d.saves, 0);
+  const picks = drops.reduce((n, d) => n + d.picks, 0);
   const skips = drops.reduce((n, d) => n + d.skips, 0);
-  // Drop of the selection that got the most likes in the last 24 hours
+  const views = saves + skips;
+  // Drop of the selection that got the most likes (picks included) in the last 24 hours
   // (ties: the most liked overall); null if nobody liked anything
   const best = drops.reduce((top, d) => {
     if (d.saves_24h === 0) return top;
@@ -2573,14 +2923,17 @@ function renderDrops() {
   }, null);
   const tiles = [
     tile("Drops", drops.length, `${drops.filter((d) => new Date(d.expires_at) > Date.now()).length} en ligne`),
-    tile("Likes", saves, `${perItem(saves, drops.length)} par drop`, "--likes"),
+    tile("Vues", views, `${perItem(views, drops.length)} par drop · une vue = un swipe`),
+    tile("Likes", saves - picks, `${perItem(saves - picks, drops.length)} par drop`, "--likes"),
+    tile("Picks", picks, `${perItem(picks, drops.length)} par drop`, "--picks"),
     tile("Skips", skips, `${perItem(skips, drops.length)} par drop`, "--skips"),
-    tile("Taux de like", likeRate(saves, skips), "sur la sélection"),
-    tile("Sans aucun swipe", drops.filter((d) => d.saves + d.skips === 0).length, "personne ne les a vus"),
+    tile("Taux de like", likeRate(saves, skips), "likes et picks sur les vues"),
+    tile("Sans aucune vue", drops.filter((d) => d.saves + d.skips === 0).length, "personne ne les a swipés"),
   ];
   const top = best
     ? tile("Le plus liké ces dernières 24 h", best.title, el("span", {}, [
-        `${best.saves_24h} like${best.saves_24h > 1 ? "s" : ""} en 24 h · `, userLink(best.author_id, best.author_username)]))
+        `${plural(best.saves_24h - best.picks_24h, "like")} et ${plural(best.picks_24h, "pick")} en 24 h · `,
+        userLink(best.author_id, best.author_username)]))
     : tile("Le plus liké ces dernières 24 h", "—", "aucun like depuis 24 h");
   if (best) top.querySelector(".value").style.fontSize = "16px";
   tiles.push(top);
@@ -2588,7 +2941,7 @@ function renderDrops() {
 
   const rows = sortRows(drops, dropSort);
   document.getElementById("drops-subtitle").textContent =
-    `${rows.length} drop${rows.length > 1 ? "s" : ""} · clique sur une ligne pour voir qui l'a liké ou passé`;
+    `${rows.length} drop${rows.length > 1 ? "s" : ""} · clique sur une ligne pour voir qui l'a liké, pické ou passé`;
   const box = document.getElementById("drops-table");
   if (!rows.length) {
     box.replaceChildren(el("p", { className: "empty", text: "Aucun drop ne correspond aux filtres." }));
@@ -2623,6 +2976,7 @@ async function loadDropSwipes(dropId) {
     };
     const parts = [el("div", { className: "swipe-columns" }, [
       column("like", "Ont liké", "--likes"),
+      column("pick", "Ont pické", "--picks"),
       column("skip", "Ont passé", "--skips"),
     ])];
     // Same action as "Supprimer le drop" in the account dialog
@@ -2651,13 +3005,14 @@ document.getElementById("drops-more").addEventListener("click", () => { dropLimi
 // ---------- Sons tab ----------
 
 let songsData = null;
-let songSort = { key: "saves", dir: "desc" };
+let songSort = { key: "views", dir: "desc" };
 let songLimit = 100;
 
 const SONG_COLUMNS = [
   ["rank", "#"], ["title", "Titre"], ["ids", "ISRC · Deezer"], ["created_at", "En base depuis", true],
-  ["drops", "Drops", true], ["saves", "Likes", true], ["skips", "Skips", true], ["rate", "Taux de like", true],
-  ["in_likes", "Dans Mes likes", true], ["last_drop", "Dernier drop", true],
+  ["drops", "Drops", true], ["views", "Vues", true], ["likes", "Likes", true], ["picks", "Picks", true],
+  ["skips", "Skips", true], ["rate", "Taux de like", true],
+  ["in_likes", "Dans Mes likes", true], ["in_picks", "Dans Mes picks", true], ["last_drop", "Dernier drop", true],
 ];
 
 async function loadSongs() {
@@ -2700,10 +3055,13 @@ function songRow(s, rank) {
     ids,
     el("td", { className: "muted", text: s.created_at ? dateFormat.format(new Date(s.created_at)) : "—" }),
     el("td", { className: "num", text: s.drops }),
-    el("td", { className: "num", text: s.saves }),
+    el("td", { className: "num", text: s.saves + s.skips }),
+    el("td", { className: "num", text: simpleLikes(s) }),
+    el("td", { className: "num", text: s.picks }),
     el("td", { className: "num", text: s.skips }),
     rateCell(s.saves, s.skips),
     el("td", { className: "num", text: s.in_likes }),
+    el("td", { className: "num", text: s.in_picks }),
     el("td", { className: "muted", text: s.last_drop ? relativeTime(s.last_drop) : "jamais" }),
   ]);
 }
@@ -2717,6 +3075,7 @@ function renderSongs() {
     tile("Sons", songs.length, `${songsData.length} en base au total`),
     tile("Déposés plusieurs fois", songs.filter((s) => s.drops > 1).length, "même titre, plusieurs drops"),
     tile("Dans des Mes likes", songs.filter((s) => s.in_likes > 0).length, `${songs.reduce((n, s) => n + s.in_likes, 0)} ajouts en tout`, "--likes"),
+    tile("Dans des Mes picks", songs.filter((s) => s.in_picks > 0).length, `${songs.reduce((n, s) => n + s.picks, 0)} picks reçus en swipant`, "--picks"),
     tile("Taux de like", likeRate(saves, skips), "sur la sélection"),
     tile("Sans genre", songs.filter((s) => !s.genre).length, `${songs.filter((s) => !s.isrc).length} sans ISRC`),
   );
@@ -3046,6 +3405,8 @@ try {
 }
 let recapData = null;
 let recapRequest = 0;
+// Draw of "Le podium surprise": the same tester all day, "Autre podium" adds 1
+let recapSeed = 0;
 
 const RECAP_TITLES = {
   1: "Les stats des dernières 24 h",
@@ -3087,7 +3448,7 @@ async function loadRecap() {
   const card = document.getElementById("recap-card");
   card.classList.add("loading");
   try {
-    const data = await api(`/admin/recap?days=${recapDays}`);
+    const data = await api(`/admin/recap?days=${recapDays}&seed=${recapSeed}`);
     await loadRecapCovers(data);
     if (request !== recapRequest) return;
     recapData = data;
@@ -3106,7 +3467,7 @@ async function loadRecap() {
 const recapCovers = new Map();
 
 async function loadRecapCovers(data) {
-  const urls = [...data.podium, data.tube, data.unanimity]
+  const urls = [...data.podium, data.tube, data.unanimity, data.most_picked, ...(data.random_podium?.podium || [])]
     .map((drop) => drop?.cover_url)
     .filter((url) => url && url.startsWith("https://") && !recapCovers.has(url));
   await Promise.all(urls.map(async (url) => {
@@ -3158,6 +3519,12 @@ function rcUserRow(user, value, label, rank) {
 }
 
 
+// "likes" or "likes, dont 2 picks": the likes of the recap count the picks too
+function likesLabel(drop) {
+  const word = drop.likes > 1 ? "likes" : "like";
+  return drop.picks ? `${word}, dont ${plural(drop.picks, "pick")}` : word;
+}
+
 // A special mention: one or two avatars, a title, the name(s) and a number
 function rcMention(title, users, value, unit) {
   const names = el("b", {});
@@ -3203,11 +3570,13 @@ function renderRecap() {
   }
 
   // Big numbers
+  // In the recap data, "likes" counts the picks too: the card shows them apart
+  const simple = t.likes - t.picks;
   parts.push(el("div", { className: "rc-kpis" }, [
     [t.drops, t.drops > 1 ? "drops partagés" : "drop partagé"],
-    [t.likes, t.likes > 1 ? "likes donnés" : "like donné"],
+    [simple, simple > 1 ? "likes donnés" : "like donné"],
+    [t.picks, t.picks > 1 ? "picks donnés" : "pick donné"],
     [t.active_users, `testeur${t.active_users > 1 ? "s" : ""} actif${t.active_users > 1 ? "s" : ""} sur ${t.testers}`],
-    [t.liked_songs, t.liked_songs > 1 ? "titres ajoutés aux Mes likes" : "titre ajouté aux Mes likes"],
   ].map(([value, label]) => el("div", { className: "rc-kpi" }, [el("b", { text: numberFormat.format(value) }), el("span", { text: label })]))));
 
   // Three columns in landscape (one after the other in portrait):
@@ -3218,7 +3587,20 @@ function renderRecap() {
 
   if (data.podium.length) {
     drops.push(rcSection("Le podium des drops", data.podium.map((drop, i) =>
-      rcDropRow(drop, [el("b", { text: numberFormat.format(drop.likes) }), el("small", { text: drop.likes > 1 ? "likes" : "like" })], i + 1))));
+      rcDropRow(drop, [el("b", { text: numberFormat.format(drop.likes) }), el("small", { text: likesLabel(drop) })], i + 1))));
+  }
+  // The picks: the most picked drop, and those whose drops get the most picks
+  if (data.most_picked) {
+    const m = data.most_picked;
+    const rows = [
+      el("small", { className: "rc-label", text: "Le plus pické" }),
+      rcDropRow(m, [el("b", { text: numberFormat.format(m.picks) }), el("small", { text: m.picks > 1 ? "picks" : "pick" })]),
+    ];
+    if (data.pick_finders.length) {
+      rows.push(el("small", { className: "rc-label", text: "Les rois du pick" }),
+        ...data.pick_finders.map((user, i) => rcUserRow(user, user.picks, user.picks > 1 ? "picks reçus" : "pick reçu", i + 1)));
+    }
+    drops.push(rcSection("Les picks", rows));
   }
   if (data.tube) {
     drops.push(rcSection("Le tube", [rcDropRow(data.tube,
@@ -3226,12 +3608,12 @@ function renderRecap() {
   }
   if (data.unanimity) {
     drops.push(rcSection("L'unanimité", [rcDropRow(data.unanimity,
-      [el("b", { text: data.unanimity.likes }), el("small", { text: "likes, 0 skip" })])]));
+      [el("b", { text: data.unanimity.likes }), el("small", { text: `${likesLabel(data.unanimity)}, 0 skip` })])]));
   }
 
   if (data.finders.length) {
     people.push(rcSection("Les meilleurs dénicheurs", data.finders.map((user, i) =>
-      rcUserRow(user, user.likes, user.likes > 1 ? "likes reçus" : "like reçu", i + 1))));
+      rcUserRow(user, user.likes, `${user.likes > 1 ? "likes reçus" : "like reçu"}${user.picks ? `, dont ${plural(user.picks, "pick")}` : ""}`, i + 1))));
   }
   const mentions = [];
   if (data.generous.length) {
@@ -3264,6 +3646,16 @@ function renderRecap() {
       ]);
     })));
   }
+  if (data.random_podium) {
+    const { user, podium } = data.random_podium;
+    music.push(rcSection("Le podium surprise", [
+      el("div", { className: "rc-surprise" }, [
+        avatar(user.avatar_color, user.avatar_style, 44),
+        el("div", { className: "rc-what" }, [rcName(user), el("small", { className: "rc-block", text: "À découvrir sur sa Mixtape" })]),
+      ]),
+      ...podium.map((song) => rcDropRow({ ...song, author: user }, [], song.place, false)),
+    ]));
+  }
   const time = recapHours(data);
   if (time.total) {
     const max = time.hours[time.peak];
@@ -3288,6 +3680,7 @@ function renderRecap() {
 
   // Footer
   const extras = [];
+  extras.push(`${plural(t.liked_songs, "titre ajouté", "titres ajoutés")} aux Mes likes`);
   if (t.rescues) extras.push(`${plural(t.rescues, "titre repêché", "titres repêchés")} dans les skips`);
   if (t.new_testers && data.days) extras.push(`${plural(t.new_testers, "nouveau testeur", "nouveaux testeurs")}`);
   extras.push(`${plural(t.songs, "titre différent", "titres différents")} droppés`);
@@ -3304,10 +3697,17 @@ function recapText() {
   const t = data.totals;
   const lines = [`meloDrop · ${RECAP_TITLES[recapDays]} (${recapRange(data)})`, ""];
   if (!t.drops && !t.likes && !t.skips) return lines.concat("Pas encore d'activité sur cette période. À vos drops !").join("\n");
-  lines.push(`${plural(t.drops, "drop partagé", "drops partagés")} · ${plural(t.likes, "like")} · ${plural(t.active_users, "testeur actif", "testeurs actifs")}`);
+  lines.push(`${plural(t.drops, "drop partagé", "drops partagés")} · ${plural(t.likes - t.picks, "like")} · ${plural(t.picks, "pick")} · ${plural(t.active_users, "testeur actif", "testeurs actifs")}`);
   if (data.podium.length) {
     lines.push("", "Le podium des drops");
-    data.podium.forEach((d, i) => lines.push(`${i + 1}. « ${d.title} » de ${d.artist}, droppé par @${d.author.username} (${plural(d.likes, "like")})`));
+    data.podium.forEach((d, i) => lines.push(`${i + 1}. « ${d.title} » de ${d.artist}, droppé par @${d.author.username} (${plural(d.likes, "like")}${d.picks ? `, dont ${plural(d.picks, "pick")}` : ""})`));
+  }
+  if (data.most_picked) {
+    const m = data.most_picked;
+    lines.push("", `Le plus pické : « ${m.title} » de ${m.artist}, droppé par @${m.author.username} (${plural(m.picks, "pick")})`);
+    if (data.pick_finders.length) {
+      lines.push(`Les rois du pick : ${data.pick_finders.map((u) => `@${u.username} (${plural(u.picks, "pick reçu", "picks reçus")})`).join(", ")}`);
+    }
   }
   if (data.finders.length) {
     lines.push("", `Les meilleurs dénicheurs : ${data.finders.map((u) => `@${u.username} (${plural(u.likes, "like reçu", "likes reçus")})`).join(", ")}`);
@@ -3325,6 +3725,11 @@ function recapText() {
   const time = recapHours(data);
   if (time.total) lines.push(`L'heure de pointe : entre ${time.peak} h et ${(time.peak + 1) % 24} h`);
   if (t.rescues) lines.push(`${plural(t.rescues, "titre repêché", "titres repêchés")} dans les skips`);
+  if (data.random_podium) {
+    const { user, podium } = data.random_podium;
+    lines.push("", `Le podium surprise : celui de @${user.username}`);
+    podium.forEach((s) => lines.push(`${s.place}. « ${s.title} » de ${s.artist}`));
+  }
   lines.push("", "Merci à tous, et à demain pour le prochain drop !");
   return lines.join("\n");
 }
@@ -3347,6 +3752,11 @@ document.querySelectorAll("#recap-format button").forEach((button) => button.add
   renderFormatButtons();
   if (recapData) renderRecap();
 }));
+
+document.getElementById("recap-reroll").addEventListener("click", () => {
+  recapSeed += 1;
+  loadRecap();
+});
 
 document.querySelectorAll("#recap-period button").forEach((button) => button.addEventListener("click", () => {
   recapDays = button.dataset.days;
@@ -3646,6 +4056,7 @@ function renderBadges() {
         el("small", {}, [created, ...holders]),
       ]),
       el("div", { className: "actions" }, [
+        actionButton("Donner à plusieurs", "small", () => openBulkAward(badge)),
         actionButton("Modifier", "ghost small", () => editBadge(badge)),
         remove,
       ]),
@@ -3707,6 +4118,113 @@ function badgesCard(data) {
   return card(`Badges (${owned.length})`, "Sur sa Mixtape dans l'appli, le plus récent en premier", parts);
 }
 
+// ---- Give a badge to several users at once ----
+
+// Filters of the list: everyone, the users with a drop online, those active in the last 7 days
+const BULK_FILTERS = [["all", "Tous"], ["online", "Drop en ligne"], ["active", "Actifs 7 j"], ["missing", "Sans ce badge"]];
+
+function openBulkAward(badge) {
+  if (!currentData) return;
+  const dialog = document.getElementById("manage");
+  const owners = new Set(badge.holders.map((h) => h.user_id));
+  const chosen = new Set();
+  let filter = "missing";
+
+  const search = Object.assign(el("input"), { type: "search", placeholder: "Pseudo ou nom", autocomplete: "off" });
+  search.setAttribute("aria-label", "Rechercher un utilisateur");
+  const chips = el("div", { className: "filter-chips" });
+  chips.setAttribute("role", "group");
+  chips.setAttribute("aria-label", "Filtrer");
+  const list = el("ul", { className: "pick-users" });
+  const give = actionButton("", "small", () => giveMany());
+  const count = el("span", { className: "muted" });
+
+  // Users kept by the filter and the search
+  function visible() {
+    const online = new Set(currentData.online_drops.map((d) => d.user_id));
+    const weekAgo = Date.now() - 7 * 86400000;
+    const text = search.value.trim().toLowerCase().replace(/^@/, "");
+    return currentData.users.filter((u) => {
+      if (filter === "online" && !online.has(u.id)) return false;
+      if (filter === "active" && new Date(u.last_activity) < weekAgo) return false;
+      if (filter === "missing" && owners.has(u.id)) return false;
+      return !text || [u.username, u.display_name || ""].some((t) => t.toLowerCase().includes(text));
+    });
+  }
+
+  function update() {
+    give.textContent = chosen.size ? `Donner à ${plural(chosen.size, "utilisateur")}` : "Coche des utilisateurs";
+    give.disabled = !chosen.size;
+    count.textContent = `${chosen.size} coché${chosen.size > 1 ? "s" : ""}`;
+  }
+
+  function draw() {
+    chips.replaceChildren(...BULK_FILTERS.map(([key, label]) => {
+      const button = actionButton(label, "", () => { filter = key; draw(); });
+      button.setAttribute("aria-pressed", String(key === filter));
+      return button;
+    }));
+    const users = visible();
+    list.replaceChildren(...(users.length ? users.map((u) => {
+      const owned = owners.has(u.id);
+      const box = Object.assign(el("input"), { type: "checkbox", checked: owned || chosen.has(u.id), disabled: owned });
+      box.addEventListener("change", () => {
+        if (box.checked) chosen.add(u.id);
+        else chosen.delete(u.id);
+        update();
+      });
+      const info = owned ? "a déjà ce badge" : `${u.display_name ? `${u.display_name} · ` : ""}actif ${relativeTime(u.last_activity)}`;
+      return el("li", {}, [el("label", { className: owned ? "owned" : "" }, [
+        box,
+        avatar(u.avatar_color, u.avatar_style, 30),
+        el("span", { className: "what" }, [el("b", { text: `@${u.username}` }), el("small", { text: info })]),
+        u.verified ? "" : el("span", { className: "badge no", text: "non validé" }),
+      ])]);
+    }) : [el("li", { className: "empty", text: "Personne dans cette liste." })]));
+    update();
+  }
+
+  // Checks or unchecks every user shown
+  const checkAll = actionButton("Tout cocher", "ghost small", () => {
+    visible().forEach((u) => { if (!owners.has(u.id)) chosen.add(u.id); });
+    draw();
+  });
+  const uncheckAll = actionButton("Tout décocher", "ghost small", () => { chosen.clear(); draw(); });
+
+  async function giveMany() {
+    give.disabled = true;
+    try {
+      const result = await api(`/admin/badges/${badge.id}/award`, { method: "POST", body: { user_ids: [...chosen] } });
+      const already = result.already_had.length ? ` (${result.already_had.length} l'avai${result.already_had.length > 1 ? "ent" : "t"} déjà)` : "";
+      showToast(`Badge « ${badge.name} » donné à ${plural(result.awarded.length, "utilisateur")}${already}.`, true);
+      dialog.close();
+      loadBadges();
+    } catch (error) {
+      if (loggedIn) showToast(error.message, false);
+      give.disabled = false;
+    }
+  }
+
+  search.addEventListener("input", draw);
+  dialog.replaceChildren(
+    el("div", { className: "dialog-head" }, [
+      el("div", { className: "row" }, [medal(badge.icon, badge.color, 44), el("div", {}, [
+        el("h2", { text: `Donner « ${badge.name} »` }),
+        el("p", { className: "subtitle", text: `${plural(owners.size, "utilisateur l'a", "utilisateurs l'ont")} déjà` }),
+      ])]),
+      actionButton("Fermer", "ghost small", () => dialog.close()),
+    ]),
+    el("div", { className: "dialog-part" }, [
+      el("div", { className: "bulk-tools" }, [search, chips]),
+      el("div", { className: "bulk-tools" }, [checkAll, uncheckAll, count]),
+      list,
+    ]),
+    el("div", { className: "dialog-part" }, [el("div", { className: "row" }, [give])]),
+  );
+  draw();
+  dialog.showModal();
+}
+
 // Gives or takes back a badge, then draws the user again
 async function badgeAction(button, method, path, message) {
   button.disabled = true;
@@ -3722,7 +4240,214 @@ async function badgeAction(button, method, path, message) {
 
 setupBadgeForm();
 
-// ---------- Tabs (the address ends with #overview, #drops, #songs, #users, #badges or #user/12) ----------
+// ---------- Signalements tab ----------
+
+// Same codes as ReportReason in schemas/reports.py, same texts as the form of the app
+const REPORT_REASONS = {
+  name: "Nom ou pseudo inapproprié",
+  content: "Drop ou Mixtape choquant",
+  spam: "Spam ou faux compte",
+  harassment: "Harcèlement",
+  other: "Autre raison",
+};
+const REPORT_STATUS = { open: "À traiter", resolved: "Traité", dismissed: "Classé sans suite" };
+const REPORT_FILTERS = [["open", "À traiter"], ["resolved", "Traités"], ["dismissed", "Sans suite"], ["all", "Tous"]];
+
+let reportsData = null;
+let reportsRequest = 0;
+let reportFilter = "open";
+// Notes typed and not sent yet, by report: kept when the page refreshes itself
+const reportNotes = new Map();
+// Report whose "Supprimer le compte" field is open
+let confirmingReport = null;
+
+async function loadReports() {
+  const request = ++reportsRequest;
+  try {
+    const reports = await api("/admin/reports");
+    if (request !== reportsRequest) return;
+    reportsData = reports;
+    renderReports();
+  } catch (error) {
+    if (request === reportsRequest) showError(error.message);
+  }
+}
+
+// Closes (or opens again) a report. The note of an action is added after the old note
+async function setReport(report, status, note) {
+  await api(`/admin/reports/${report.id}`, { method: "PATCH", body: { status, note } });
+}
+
+function addNote(report, text) {
+  return [report.note, text].filter(Boolean).join(" · ");
+}
+
+// An action from a report: the action, then the report is closed as handled
+async function reportAction(button, task, message) {
+  const buttons = button.closest(".report").querySelectorAll("button");
+  buttons.forEach((b) => { b.disabled = true; });
+  try {
+    await task();
+    showToast(message, true);
+    confirmingReport = null;
+  } catch (error) {
+    if (loggedIn) showToast(error.message, false);
+  }
+  await loadReports();
+  refresh();
+}
+
+function reportCard(report) {
+  const user = report.reported;
+  const others = reportsData.filter((r) => r.reported && user && r.reported.id === user.id);
+  const openOthers = others.filter((r) => r.status === "open").length;
+  const drop = user ? currentData?.online_drops.find((d) => d.user_id === user.id) : null;
+  const isOpen = report.status === "open";
+
+  // Who is reported, and the status
+  const who = user
+    ? [userLink(user.id, user.username), user.display_name ? el("small", { text: `Nom affiché : « ${user.display_name} »` }) : ""]
+    : [el("b", { text: `@${report.reported_username}` }), el("small", { text: "Compte supprimé" })];
+  const parts = [el("div", { className: "report-head" }, [
+    user ? avatar(user.avatar_color, user.avatar_style, 44) : el("span", { className: "cover" }),
+    el("div", { className: "what" }, [
+      ...who,
+      others.length > 1 ? el("small", { text: `${plural(others.length, "signalement")} sur ce profil, dont ${openOthers} à traiter` }) : "",
+    ]),
+    el("div", { className: "side" }, [
+      el("span", { className: isOpen ? "badge alert" : report.status === "resolved" ? "badge live" : "badge", text: REPORT_STATUS[report.status] }),
+      el("span", { text: `${relativeTime(report.created_at)} · ${longDate(report.created_at)}` }),
+    ]),
+  ])];
+
+  // Why, in the words of the user
+  parts.push(el("div", {}, [el("span", { className: "report-reason", text: REPORT_REASONS[report.reason] || report.reason })]));
+  parts.push(report.message
+    ? el("p", { className: "report-message", text: report.message })
+    : el("p", { className: "report-meta", text: "Pas de message." }));
+  parts.push(el("p", { className: "report-meta" }, [
+    "Signalé par ", report.reporter ? userLink(report.reporter.id, report.reporter.username) : "un compte supprimé"]));
+
+  // What the reported user shows now: the drop online, if any
+  if (user) {
+    parts.push(el("div", { className: "report-state" }, [
+      drop
+        ? songList(`report-drop-${report.id}`, [drop], (d) => ({
+            below: [" · drop en ligne"],
+            side: [`reste ${timeLeft(d.expires_at)}`],
+          }), "")
+        : el("span", { className: "muted", text: "Pas de drop en ligne." }),
+      el("a", { className: "user-link", href: `#user/${user.id}`, text: "Voir son profil et sa Mixtape →" }),
+    ]));
+  }
+
+  if (report.note || report.closed_at) {
+    parts.push(el("p", { className: "report-note" }, [
+      el("b", { text: report.closed_at ? `${REPORT_STATUS[report.status]} ${relativeTime(report.closed_at)}` : "Note" }),
+      report.note ? ` · ${report.note}` : "",
+    ]));
+  }
+
+  // Actions on the account: each one closes the report as handled, with a note
+  if (user) {
+    const done = (text) => (isOpen ? setReport(report, "resolved", addNote(report, text)) : setReport(report, report.status, addNote(report, text)));
+    const actions = el("div", { className: "report-actions" });
+    const reset = actionButton("Retirer nom et avatar", "ghost small", () => {
+      if (!confirm(`Retirer le nom affiché et l'avatar de @${user.username} ? L'appli montrera son pseudo et la goutte simple.`)) return;
+      reportAction(reset, async () => {
+        await api(`/admin/users/${user.id}/profile`, { method: "PATCH",
+          body: { display_name: "", avatar_color: "lavender", avatar_style: "simple" } });
+        await done("Nom et avatar retirés");
+      }, `Nom et avatar de @${user.username} retirés.`);
+    });
+    actions.append(reset);
+    if (drop) {
+      const remove = actionButton("Supprimer le drop en cours", "ghost small", () => {
+        if (!confirm(`Supprimer le drop « ${drop.title} » de @${user.username} ? Ses likes, picks et skips seront effacés.`)) return;
+        reportAction(remove, async () => {
+          await api(`/admin/users/${user.id}/drop`, { method: "DELETE" });
+          await done(`Drop « ${drop.title} » supprimé`);
+        }, `Drop « ${drop.title} » de @${user.username} supprimé.`);
+      });
+      actions.append(remove);
+    }
+    if (user.username !== currentAdmin) {
+      const askDelete = actionButton("Supprimer le compte", "ghost small", () => {
+        confirmingReport = confirmingReport === report.id ? null : report.id;
+        renderReports();
+      });
+      actions.append(askDelete);
+    }
+    parts.push(actions);
+
+    // Delete the account: the username must be typed, like in the account window
+    if (confirmingReport === report.id) {
+      const input = Object.assign(el("input"), { type: "text", placeholder: user.username, autocomplete: "off" });
+      input.setAttribute("aria-label", "Pseudo à taper pour confirmer");
+      const destroy = actionButton("Supprimer définitivement", "danger small", () => reportAction(destroy, async () => {
+        await api(`/admin/users/${user.id}`, { method: "DELETE", body: { username: input.value } });
+        // Every open report on this account is handled with it
+        for (const r of others.filter((o) => o.status === "open" || o.id === report.id)) {
+          await setReport(r, r.status === "open" ? "resolved" : r.status, addNote(r, "Compte supprimé"));
+        }
+      }, `Compte @${user.username} supprimé.`));
+      destroy.disabled = true;
+      input.addEventListener("input", () => { destroy.disabled = input.value !== user.username; });
+      parts.push(el("div", { className: "report-confirm" }, [
+        el("p", { className: "report-meta", text: "Efface le compte, ses drops, ses likes et ses skips. Tape son pseudo pour confirmer." }),
+        input, destroy,
+      ]));
+      setTimeout(() => input.focus(), 0);
+    }
+  }
+
+  // Close without an account action, with a note, or open again
+  const close = el("div", { className: "report-actions" });
+  if (isOpen) {
+    const note = Object.assign(el("input"), { type: "text", maxLength: 300, placeholder: "Note (facultatif) : ce que tu as vu ou fait",
+      value: reportNotes.get(report.id) || "" });
+    note.setAttribute("aria-label", "Note du signalement");
+    note.addEventListener("input", () => reportNotes.set(report.id, note.value));
+    const classify = (status, button, message) => reportAction(button, async () => {
+      await setReport(report, status, note.value.trim() ? addNote(report, note.value.trim()) : undefined);
+      reportNotes.delete(report.id);
+    }, message);
+    const resolved = actionButton("Classer : traité", "small", () => classify("resolved", resolved, "Signalement classé : traité."));
+    const dismissed = actionButton("Classer sans suite", "ghost small", () => classify("dismissed", dismissed, "Signalement classé sans suite."));
+    close.append(note, resolved, dismissed);
+  } else {
+    const reopen = actionButton("Rouvrir", "ghost small", () => reportAction(reopen,
+      () => setReport(report, "open"), "Signalement rouvert : il est de nouveau à traiter."));
+    close.append(reopen);
+  }
+  parts.push(close);
+
+  return el("article", { className: `card report${isOpen ? "" : " closed"}` }, parts);
+}
+
+function renderReports() {
+  if (!reportsData) return;
+  const counts = { all: reportsData.length };
+  for (const r of reportsData) counts[r.status] = (counts[r.status] || 0) + 1;
+  document.getElementById("reports-title").textContent = `Signalements (${counts.open || 0} à traiter)`;
+  document.getElementById("report-filters").replaceChildren(...REPORT_FILTERS.map(([key, label]) => {
+    const button = actionButton(`${label} (${counts[key] || 0})`, "", () => { reportFilter = key; renderReports(); });
+    button.setAttribute("aria-pressed", String(key === reportFilter));
+    return button;
+  }));
+  // The open ones: the oldest first, so nothing waits too long. The others: the newest first
+  const reports = reportsData.filter((r) => reportFilter === "all" || r.status === reportFilter);
+  if (reportFilter === "open") reports.reverse();
+  const box = document.getElementById("reports-list");
+  if (!reports.length) {
+    const text = reportFilter === "open" ? "Rien à traiter : aucun signalement en attente." : "Aucun signalement ici.";
+    box.replaceChildren(el("p", { className: "card empty", text }));
+    return;
+  }
+  box.replaceChildren(...reports.map(reportCard));
+}
+
+// ---------- Tabs (the address ends with #overview, #drops, #songs, #users, #reports, #badges or #user/12) ----------
 
 // Halo layouts of HaloBackground.kt: x, y, radius, strength for lavender, butter, mint, rose
 const HALO_LAYOUTS = {
@@ -3733,6 +4458,7 @@ const HALO_LAYOUTS = {
   catalog: [[0, .2, .8, .14], [1, .1, .7, .1], [.2, 1, .8, .16], [1, .8, .6, .1]],                // like the Drop screen search
   recap: [[.5, .15, .9, .2], [.05, .6, .7, .14], [.95, .85, .7, .12], [.9, .1, .6, .14]],          // festive
   badges: [[.95, .2, .8, .16], [.1, .05, .7, .14], [0, .85, .75, .12], [.8, 1, .7, .12]],           // like the Mixtape
+  reports: [[.1, .1, .7, .1], [.9, .05, .6, .1], [.05, .95, .7, .08], [.95, .7, .8, .16]],          // calm, a bit of rose
 };
 
 function setHalos(layout) {
@@ -3751,6 +4477,7 @@ function showTab(tab) {
   document.getElementById("tab-catalog").hidden = tab !== "catalog";
   document.getElementById("tab-recap").hidden = tab !== "recap";
   document.getElementById("tab-badges").hidden = tab !== "badges";
+  document.getElementById("tab-reports").hidden = tab !== "reports";
   document.querySelectorAll("#tabs a").forEach((a) => {
     if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
@@ -3761,7 +4488,7 @@ function showTab(tab) {
 function route() {
   // A tab that is not open yet in production: back to the overview
   const tab = location.hash.slice(1).split("/")[0];
-  if (["drops", "songs", "catalog", "recap", "logs"].includes(tab) && !ENABLED_TABS.includes(tab)) {
+  if (["drops", "songs", "catalog", "recap", "reports", "logs"].includes(tab) && !ENABLED_TABS.includes(tab)) {
     history.replaceState(null, "", "#overview");
   }
   const match = location.hash.match(/^#user\/(\d+)$/);
@@ -3790,6 +4517,10 @@ function route() {
   } else if (location.hash === "#recap") {
     showTab("recap");
     if (currentData) loadRecap();
+  } else if (location.hash === "#reports") {
+    showTab("reports");
+    if (reportsData) renderReports();
+    if (currentData) loadReports();
   } else if (location.hash === "#badges") {
     showTab("badges");
     if (badgesData) renderBadges();

@@ -6,12 +6,29 @@ from datetime import timedelta
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.services.reports import count_open_reports
 from app.utils.time import iso, utc_now
 
 # Length of the daily curves, in days
 DAYS = 14
 # Number of events in the activity list
 ACTIVITY_SIZE = 40
+# Number of users in "Les plus suivis"
+TOP_FOLLOWED_SIZE = 5
+# Number of follows in "Derniers abonnements"
+LAST_FOLLOWS_SIZE = 8
+
+# Rows counted per hour for the curves: name, table and filter.
+# "saves" are all the likes, picks included; "likes" the simple ones only
+HOURLY_SOURCES = {
+    "users": ("users", ""),
+    "drops": ("drops", ""),
+    "saves": ("saves", ""),
+    "likes": ("saves", "AND is_pick = 0"),
+    "picks": ("saves", "AND is_pick = 1"),
+    "skips": ("skips", ""),
+    "follows": ("follows", ""),
+}
 
 
 def count(db: Session, sql: str, params: dict | None = None) -> int:
@@ -26,10 +43,19 @@ def get_totals(db: Session, now) -> dict:
         "unverified": count(db, "SELECT COUNT(*) FROM users WHERE email_verified = 0"),
         "drops": count(db, "SELECT COUNT(*) FROM drops"),
         "online_drops": count(db, "SELECT COUNT(*) FROM drops WHERE expires_at > :now", {"now": now}),
+        # saves: likes and picks together. picks: the up swipes only
         "saves": count(db, "SELECT COUNT(*) FROM saves"),
+        "picks": count(db, "SELECT COUNT(*) FROM saves WHERE is_pick = 1"),
         "skips": count(db, "SELECT COUNT(*) FROM skips"),
         "liked_songs": count(db, "SELECT COUNT(*) FROM liked_songs"),
+        # Songs marked as picks in "Mes likes", during a swipe or later
+        "picked_songs": count(db, "SELECT COUNT(*) FROM liked_songs WHERE is_pick = 1"),
         "rescues": count(db, "SELECT COUNT(*) FROM liked_songs WHERE liked_late = 1"),
+        "follows": count(db, "SELECT COUNT(*) FROM follows"),
+        # Users who follow at least one user
+        "followers": count(db, "SELECT COUNT(DISTINCT follower_id) FROM follows"),
+        # Reports still to handle in the Signalements tab
+        "open_reports": count_open_reports(db),
     }
 
 
@@ -40,7 +66,10 @@ def get_last_24h(db: Session, now) -> dict:
         "signups": count(db, "SELECT COUNT(*) FROM users WHERE created_at >= :since", params),
         "drops": count(db, "SELECT COUNT(*) FROM drops WHERE created_at >= :since", params),
         "saves": count(db, "SELECT COUNT(*) FROM saves WHERE created_at >= :since", params),
+        "picks": count(db, "SELECT COUNT(*) FROM saves WHERE is_pick = 1 AND created_at >= :since", params),
         "skips": count(db, "SELECT COUNT(*) FROM skips WHERE created_at >= :since", params),
+        "follows": count(db, "SELECT COUNT(*) FROM follows WHERE created_at >= :since", params),
+        "reports": count(db, "SELECT COUNT(*) FROM reports WHERE created_at >= :since", params),
         # Songs rescued from "Mes skips" after their drop expired
         "rescues": count(db, """
             SELECT COUNT(*) FROM liked_songs WHERE liked_late = 1 AND created_at >= :since
@@ -66,18 +95,18 @@ def get_hourly(db: Session, now) -> dict:
     # One day more than the curves, so the oldest French day is complete
     since = now - timedelta(days=DAYS + 1)
     hourly = {}
-    for table in ("users", "drops", "saves", "skips"):
+    for name, (table, condition) in HOURLY_SOURCES.items():
         rows = db.execute(
-            text(f"SELECT created_at FROM {table} WHERE created_at >= :since"),
+            text(f"SELECT created_at FROM {table} WHERE created_at >= :since {condition}"),
             {"since": since},
         )
         hours = Counter(row.created_at.strftime("%Y-%m-%dT%H:00:00Z") for row in rows)
-        hourly[table] = dict(hours)
+        hourly[name] = dict(hours)
     return hourly
 
 
 def get_activity(db: Session) -> list[dict]:
-    """Last events of all users: drops, likes, skips, rescues and new accounts.
+    """Last events of all users: drops, likes, picks, skips, rescues, follows, reports and new accounts.
 
     A rescue on a drop still online becomes a normal save: it shows as a like.
     A rescue on an expired drop keeps its skip and adds a liked_songs row with
@@ -92,7 +121,8 @@ def get_activity(db: Session) -> list[dict]:
             JOIN songs AS s ON s.id = d.song_id
 
             UNION ALL
-            SELECT sv.created_at, 'like', u.id, u.username, s.title, s.artist_name, a.id, a.username
+            SELECT sv.created_at, CASE WHEN sv.is_pick = 1 THEN 'pick' ELSE 'like' END,
+                   u.id, u.username, s.title, s.artist_name, a.id, a.username
             FROM saves AS sv
             JOIN users AS u ON u.id = sv.user_id
             JOIN drops AS d ON d.id = sv.drop_id
@@ -125,6 +155,19 @@ def get_activity(db: Session) -> list[dict]:
             UNION ALL
             SELECT u.created_at, 'signup', u.id, u.username, NULL, NULL, NULL, NULL
             FROM users AS u
+
+            -- "author" is the followed user
+            UNION ALL
+            SELECT f.created_at, 'follow', u.id, u.username, NULL, NULL, a.id, a.username
+            FROM follows AS f
+            JOIN users AS u ON u.id = f.follower_id
+            JOIN users AS a ON a.id = f.followed_id
+
+            -- "author" is the reported user; the username stays after a deletion
+            UNION ALL
+            SELECT r.created_at, 'report', u.id, u.username, NULL, NULL, r.reported_id, r.reported_username
+            FROM reports AS r
+            LEFT JOIN users AS u ON u.id = r.reporter_id
         ) AS events
         ORDER BY at DESC
         LIMIT :size
@@ -133,11 +176,12 @@ def get_activity(db: Session) -> list[dict]:
 
 
 def get_online_drops(db: Session, now) -> list[dict]:
-    """Drops still online, the most liked first."""
+    """Drops still online, the most liked first (picks included)."""
     rows = db.execute(text("""
         SELECT d.id AS drop_id, u.id AS user_id, u.username, s.id AS song_id,
                s.title, s.artist_name AS artist, s.cover_url, d.expires_at,
                (SELECT COUNT(*) FROM saves AS sv WHERE sv.drop_id = d.id) AS saves,
+               (SELECT COUNT(*) FROM saves AS sv WHERE sv.drop_id = d.id AND sv.is_pick = 1) AS picks,
                (SELECT COUNT(*) FROM skips AS sk WHERE sk.drop_id = d.id) AS skips
         FROM drops AS d
         JOIN users AS u ON u.id = d.user_id
@@ -154,12 +198,22 @@ def get_users(db: Session) -> list[dict]:
         SELECT u.id, u.username, u.display_name, u.avatar_color, u.avatar_style, u.email, u.email_verified, u.created_at,
                (SELECT COUNT(*) FROM drops AS d WHERE d.user_id = u.id)       AS drops,
                (SELECT COUNT(*) FROM saves AS sv WHERE sv.user_id = u.id)     AS saves,
+               (SELECT COUNT(*) FROM saves AS sv
+                 WHERE sv.user_id = u.id AND sv.is_pick = 1)                   AS picks,
                (SELECT COUNT(*) FROM skips AS sk WHERE sk.user_id = u.id)     AS skips,
                (SELECT COUNT(*)
                   FROM saves AS sv
                   JOIN drops AS d ON d.id = sv.drop_id
                  WHERE d.user_id = u.id)                                       AS saves_received,
+               (SELECT COUNT(*)
+                  FROM saves AS sv
+                  JOIN drops AS d ON d.id = sv.drop_id
+                 WHERE d.user_id = u.id AND sv.is_pick = 1)                    AS picks_received,
                (SELECT COUNT(*) FROM liked_songs AS l WHERE l.user_id = u.id) AS liked_songs,
+               (SELECT COUNT(*) FROM follows AS f WHERE f.followed_id = u.id) AS followers,
+               (SELECT COUNT(*) FROM follows AS f WHERE f.follower_id = u.id) AS following,
+               (SELECT COUNT(*) FROM reports AS r
+                 WHERE r.reported_id = u.id AND r.status = 'open')            AS open_reports,
                (SELECT MAX(d.created_at) FROM drops AS d WHERE d.user_id = u.id)    AS last_drop,
                (SELECT MAX(sv.created_at) FROM saves AS sv WHERE sv.user_id = u.id) AS last_save,
                (SELECT MAX(sk.created_at) FROM skips AS sk WHERE sk.user_id = u.id) AS last_skip
@@ -182,14 +236,48 @@ def get_users(db: Session) -> list[dict]:
             "created_at": iso(row["created_at"]),
             "drops": row["drops"],
             "saves": row["saves"],
+            "picks": row["picks"],
             "skips": row["skips"],
             "saves_received": row["saves_received"],
+            "picks_received": row["picks_received"],
             "liked_songs": row["liked_songs"],
+            "followers": row["followers"],
+            "following": row["following"],
+            "open_reports": row["open_reports"],
             "last_activity": iso(last_activity),
             "last_drop": iso(row["last_drop"]),
         })
     users.sort(key=lambda user: user["last_activity"], reverse=True)
     return users
+
+
+def get_follows(db: Session) -> dict:
+    """The most followed users, and the last follows."""
+    top = db.execute(text("""
+        SELECT u.id, u.username, u.avatar_color, u.avatar_style, COUNT(*) AS followers,
+               MAX(f.created_at) AS last_follow
+        FROM follows AS f
+        JOIN users AS u ON u.id = f.followed_id
+        GROUP BY u.id, u.username, u.avatar_color, u.avatar_style
+        ORDER BY followers DESC, last_follow DESC
+        LIMIT :size
+    """), {"size": TOP_FOLLOWED_SIZE}).mappings()
+    last = db.execute(text("""
+        SELECT f.created_at AS at, u.id AS follower_id, u.username AS follower,
+               a.id AS followed_id, a.username AS followed,
+               -- Followed back: the two users follow each other
+               EXISTS (SELECT 1 FROM follows AS b
+                        WHERE b.follower_id = f.followed_id AND b.followed_id = f.follower_id) AS mutual
+        FROM follows AS f
+        JOIN users AS u ON u.id = f.follower_id
+        JOIN users AS a ON a.id = f.followed_id
+        ORDER BY f.created_at DESC, f.id DESC
+        LIMIT :size
+    """), {"size": LAST_FOLLOWS_SIZE}).mappings()
+    return {
+        "top": [{**row, "last_follow": iso(row["last_follow"])} for row in top],
+        "last": [{**row, "at": iso(row["at"]), "mutual": bool(row["mutual"])} for row in last],
+    }
 
 
 def get_overview(db: Session) -> dict:
@@ -205,4 +293,5 @@ def get_overview(db: Session) -> dict:
         "activity": get_activity(db),
         "online_drops": get_online_drops(db, now),
         "users": get_users(db),
+        "follows": get_follows(db),
     }

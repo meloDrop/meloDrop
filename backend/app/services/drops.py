@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.exceptions import DeezerError, DropAlreadyActiveError
 from app.models.drop import Drop
 from app.models.save import Save
+from app.models.skip import Skip
 from app.models.song import Song
 from app.providers.deezer import DeezerProvider
 from app.schemas.drops import DropOut, MyDropOut
@@ -21,6 +22,19 @@ def get_active_drop(db: Session, user_id: int) -> Drop | None:
     """Return the user's drop that has not expired yet, or None."""
     # A drop is active if it ends later than now
     return db.query(Drop).filter(Drop.user_id == user_id, Drop.expires_at > utc_now()).first()
+
+
+def count_swipes(db: Session, drop_id: int) -> dict:
+    """Count the swipes of a drop: likes (picks included), picks, and views."""
+    saves_count = db.query(Save).filter(Save.drop_id == drop_id).count()
+    picks_count = db.query(Save).filter(Save.drop_id == drop_id, Save.is_pick.is_(True)).count()
+    skips_count = db.query(Skip).filter(Skip.drop_id == drop_id).count()
+    return {
+        "saves_count": saves_count,
+        "picks_count": picks_count,
+        # A view is a swipe: the user saw the drop and liked, picked or skipped it
+        "views_count": saves_count + skips_count,
+    }
 
 def get_album_genre(album_id: int) -> str | None:
     """Return the name of the album's first genre, or None (ADR-0017)."""
@@ -112,10 +126,7 @@ def get_my_drop(db: Session, user_id: int) -> MyDropOut | None:
     # Get the song of the drop
     song = db.get(Song, drop.song_id)
 
-    # Count the likes of the drop
-    saves_count = db.query(Save).filter(Save.drop_id == drop.id).count()
-
-    # Send the drop back with its stats
+    # Send the drop back with its stats: likes, picks and views
     return MyDropOut(
         id=drop.id,
         song_id=song.id,
@@ -124,5 +135,5 @@ def get_my_drop(db: Session, user_id: int) -> MyDropOut | None:
         cover_url=song.cover_url,
         genre=song.genre,
         expires_at=drop.expires_at.replace(tzinfo=timezone.utc),
-        saves_count=saves_count,
+        **count_swipes(db, drop.id),
     )

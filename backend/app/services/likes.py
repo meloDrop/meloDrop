@@ -54,6 +54,7 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
                 title=song.title,
                 artist=song.artist_name,
                 cover_url=song.cover_url,
+                genre=song.genre,
                 liked_at=liked.created_at.replace(tzinfo=timezone.utc),
                 author_id=author.id if author else None,
                 author_username=author.username if author else None,

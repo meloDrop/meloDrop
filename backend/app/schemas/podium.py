@@ -19,6 +19,8 @@ class PodiumSongOut(BaseModel):
     # 1, 2 or 3
     place: int
     song_id: int
+    # Deezer id of the song: the app sends it back to save the podium again
+    deezer_track_id: int
     title: str
     artist: str
     cover_url: str | None = None

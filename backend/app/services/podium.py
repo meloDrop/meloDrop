@@ -26,6 +26,7 @@ def get_podium(db: Session, user_id: int) -> list[PodiumSongOut]:
             PodiumSongOut(
                 place=row.place,
                 song_id=song.id,
+                deezer_track_id=song.deezer_track_id,
                 title=song.title,
                 artist=song.artist_name,
                 cover_url=song.cover_url,

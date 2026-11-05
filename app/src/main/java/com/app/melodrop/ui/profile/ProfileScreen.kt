@@ -211,7 +211,7 @@ private fun ProfileContent(
     }
 }
 
-// The profile itself: the header stays at the top, the Mixtape and the activity slide under it
+// The profile itself: the header stays at the top, the activity and the Mixtape slide under it
 @Composable
 private fun ProfileBody(
     profile: ProfileOut,
@@ -303,6 +303,8 @@ private fun ProfileBody(
             },
             // Takes all the height left under the header
             modifier = Modifier.weight(1f),
+            // The user's own profile opens on the activity: the Mixtape is on its right
+            mixtapeFirst = false,
         )
     }
 }

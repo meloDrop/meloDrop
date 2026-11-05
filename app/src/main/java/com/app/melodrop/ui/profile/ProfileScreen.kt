@@ -97,6 +97,8 @@ fun ProfileScreen(
     // Tap on the "Tout voir" tile of the picks: opens "Mes picks"
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
+    // Tap on "Modifier" on the podium: opens the podium screen
+    onEditPodium: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -124,6 +126,7 @@ fun ProfileScreen(
         onSkipsClick = onSkipsClick,
         onPicksClick = onPicksClick,
         onAccountClick = onAccountClick,
+        onEditPodium = onEditPodium,
         onPlayClick = viewModel::togglePreview,
         onPickPlayClick = viewModel::togglePickPreview,
         onPodiumPlayClick = viewModel::togglePodiumPreview,
@@ -142,6 +145,7 @@ private fun ProfileContent(
     onSkipsClick: () -> Unit,
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
+    onEditPodium: () -> Unit,
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
     // Same, for the cover of a pick
@@ -170,6 +174,7 @@ private fun ProfileContent(
                 onSkipsClick = onSkipsClick,
                 onPicksClick = onPicksClick,
                 onAccountClick = onAccountClick,
+                onEditPodium = onEditPodium,
                 playingDropId = uiState.playingDropId,
                 isPlaying = uiState.isPlaying,
                 previewError = uiState.previewError,
@@ -206,6 +211,7 @@ private fun ProfileBody(
     onSkipsClick: () -> Unit,
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
+    onEditPodium: () -> Unit,
     playingDropId: Int?,
     isPlaying: Boolean,
     previewError: String?,
@@ -247,10 +253,11 @@ private fun ProfileBody(
                     PodiumCard(
                         title = "MES TITRES PRÉFÉRÉS",
                         podium = profile.podium,
-                        emptyText = "Ton podium est vide. Bientôt, tu pourras y mettre tes 3 titres préférés de tous les temps.",
+                        emptyText = "Ton podium est vide. Touche « Modifier » pour y mettre tes 3 titres préférés de tous les temps.",
                         playingSongId = playingPodiumSongId,
                         isPlaying = isPlaying,
                         onPlayClick = onPodiumPlayClick,
+                        onEditClick = onEditPodium,
                     )
                 }
             },
@@ -940,6 +947,7 @@ private fun ProfileScreenPreview() {
             onSkipsClick = {},
             onPicksClick = {},
             onAccountClick = {},
+            onEditPodium = {},
             onPlayClick = {},
             onPickPlayClick = {},
             onPodiumPlayClick = {},
@@ -961,6 +969,7 @@ private fun ProfileErrorPreview() {
             onSkipsClick = {},
             onPicksClick = {},
             onAccountClick = {},
+            onEditPodium = {},
             onPlayClick = {},
             onPickPlayClick = {},
             onPodiumPlayClick = {},

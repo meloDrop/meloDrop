@@ -23,6 +23,8 @@ object Routes {
     const val MY_DROPS = "my_drops"
     // All the user's picks, opened from the "Tout voir" tile of the "Mes picks" tab
     const val MY_PICKS = "my_picks"
+    // The podium of the Mixtape, opened from "Modifier" on the podium
+    const val EDIT_PODIUM = "edit_podium"
 
     // Opened from "Mes likes"
     const val SKIPS = "skips"

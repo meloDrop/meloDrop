@@ -11,6 +11,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.ProfileRepository
+import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import kotlinx.coroutines.launch
@@ -26,6 +27,8 @@ data class UserProfileUiState(
     val profile: ProfileOut? = null,
     // Drop whose preview is loaded in the player, null if none
     val playingDropId: Int? = null,
+    // Song of the podium whose preview is loaded in the player (its song id), null if none
+    val playingPodiumSongId: Int? = null,
     // True when the preview plays: pause icon on its cover
     val isPlaying: Boolean = false,
     // Short message above the drops when a preview cannot be played
@@ -60,7 +63,11 @@ class UserProfileViewModel(application: Application) : AndroidViewModel(applicat
             // Link expired or file unreadable: stop and tell the user
             override fun onPlayerError(error: PlaybackException) {
                 player.pause()
-                uiState = uiState.copy(playingDropId = null, previewError = "Extrait indisponible pour ce titre.")
+                uiState = uiState.copy(
+                    playingDropId = null,
+                    playingPodiumSongId = null,
+                    previewError = "Extrait indisponible pour ce titre.",
+                )
             }
         })
     }
@@ -84,33 +91,55 @@ class UserProfileViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    // Tap on a cover: plays its preview, or pauses it if it is the one loaded
+    // Tap on a drop cover: plays its preview, or pauses it if it is the one loaded
     fun togglePreview(drop: ProfileDropOut) {
         if (drop.id == uiState.playingDropId) {
             if (player.playWhenReady) player.pause() else player.play()
             return
         }
 
-        // Another drop: the current preview stops first
+        // Another drop: it becomes the one loaded, no podium song is loaded any more
+        uiState = uiState.copy(playingDropId = drop.id, playingPodiumSongId = null, previewError = null)
+        startPreview(drop.songId) { uiState.playingDropId == drop.id }
+    }
+
+    // Tap on a cover of the podium: same as for a drop, for a song of the Mixtape
+    fun togglePodiumPreview(song: PodiumSongOut) {
+        if (song.songId == uiState.playingPodiumSongId) {
+            if (player.playWhenReady) player.pause() else player.play()
+            return
+        }
+
+        // Another song: it becomes the one loaded, no drop is loaded any more
+        uiState = uiState.copy(playingDropId = null, playingPodiumSongId = song.songId, previewError = null)
+        startPreview(song.songId) { uiState.playingPodiumSongId == song.songId }
+    }
+
+    // Stops the current preview, gets a fresh link, then plays the song.
+    // stillWanted: false when the user tapped another cover while we were waiting
+    private fun startPreview(songId: Int, stillWanted: () -> Boolean) {
         player.pause()
         player.clearMediaItems()
-        uiState = uiState.copy(playingDropId = drop.id, previewError = null)
 
         viewModelScope.launch {
             // try used as a value: the link, or null if the call failed
             val url = try {
-                repository.getPreviewUrl(drop.songId)
+                repository.getPreviewUrl(songId)
             } catch (e: HttpException) {
                 null
             } catch (e: IOException) {
                 null
             }
 
-            // The user tapped another cover while we were waiting: too late for this one
-            if (uiState.playingDropId != drop.id) return@launch
+            // Another cover was tapped meanwhile: too late for this one
+            if (!stillWanted()) return@launch
 
             if (url == null) {
-                uiState = uiState.copy(playingDropId = null, previewError = "Extrait indisponible pour ce titre.")
+                uiState = uiState.copy(
+                    playingDropId = null,
+                    playingPodiumSongId = null,
+                    previewError = "Extrait indisponible pour ce titre.",
+                )
                 return@launch
             }
 

@@ -56,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.LikedSongOut
+import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.ui.mypicks.PickThumbnail
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
@@ -125,6 +126,7 @@ fun ProfileScreen(
         onAccountClick = onAccountClick,
         onPlayClick = viewModel::togglePreview,
         onPickPlayClick = viewModel::togglePickPreview,
+        onPodiumPlayClick = viewModel::togglePodiumPreview,
     )
 }
 
@@ -144,6 +146,8 @@ private fun ProfileContent(
     onPlayClick: (ProfileDropOut) -> Unit,
     // Same, for the cover of a pick
     onPickPlayClick: (LikedSongOut) -> Unit,
+    // Same, for a cover of the podium
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -174,6 +178,8 @@ private fun ProfileContent(
                 picksError = uiState.picksError,
                 playingPickId = uiState.playingPickId,
                 onPickPlayClick = onPickPlayClick,
+                playingPodiumSongId = uiState.playingPodiumSongId,
+                onPodiumPlayClick = onPodiumPlayClick,
             )
 
             // First answer not there yet
@@ -208,6 +214,8 @@ private fun ProfileBody(
     picksError: String?,
     playingPickId: Int?,
     onPickPlayClick: (LikedSongOut) -> Unit,
+    playingPodiumSongId: Int?,
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -226,11 +234,25 @@ private fun ProfileBody(
             // The line under the labels takes the color of the avatar
             accent = avatarColor(profile.avatarColor),
             mixtape = {
-                // Filled in the next steps: podium, songs and badges
-                Text(
-                    text = "Ta mixtape arrive bientôt : ton podium, tes chansons et tes badges.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // A preview could not be played
+                    if (previewError != null) {
+                        Text(
+                            text = previewError,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    PodiumCard(
+                        title = "MES TITRES PRÉFÉRÉS",
+                        podium = profile.podium,
+                        emptyText = "Ton podium est vide. Bientôt, tu pourras y mettre tes 3 titres préférés de tous les temps.",
+                        playingSongId = playingPodiumSongId,
+                        isPlaying = isPlaying,
+                        onPlayClick = onPodiumPlayClick,
+                    )
+                }
             },
             activity = {
                 ActivityPage(
@@ -920,6 +942,7 @@ private fun ProfileScreenPreview() {
             onAccountClick = {},
             onPlayClick = {},
             onPickPlayClick = {},
+            onPodiumPlayClick = {},
         )
     }
 }
@@ -940,6 +963,7 @@ private fun ProfileErrorPreview() {
             onAccountClick = {},
             onPlayClick = {},
             onPickPlayClick = {},
+            onPodiumPlayClick = {},
         )
     }
 }

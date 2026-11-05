@@ -5,6 +5,8 @@ import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.ProfileUpdate
 import com.app.melodrop.network.dto.LikedSongOut
+import com.app.melodrop.network.dto.PodiumSongOut
+import com.app.melodrop.network.dto.PodiumUpdate
 
 // Talks to the backend routes used by the profile screens
 class ProfileRepository {
@@ -32,6 +34,10 @@ class ProfileRepository {
     // Saves the display name and the avatar, and gives back the updated profile
     suspend fun updateProfile(displayName: String, avatarColor: String, avatarStyle: String): ProfileOut =
         api.updateProfile(ProfileUpdate(displayName, avatarColor, avatarStyle))
+
+    // Saves the whole podium of the Mixtape, the first id at the 1st place, and gives back the new podium
+    suspend fun updatePodium(deezerTrackIds: List<Long>): List<PodiumSongOut> =
+        api.updatePodium(PodiumUpdate(deezerTrackIds))
 
     // Fresh preview link of a song: Deezer links expire after about 15 minutes
     suspend fun getPreviewUrl(songId: Int): String? = api.getPreview(songId).previewUrl

@@ -34,6 +34,9 @@ import com.app.melodrop.network.dto.PasswordUpdate
 import com.app.melodrop.network.dto.RescueOut
 import com.app.melodrop.network.dto.SkippedSongOut
 import com.app.melodrop.network.dto.UserSearchOut
+import com.app.melodrop.network.dto.PodiumSongOut
+import com.app.melodrop.network.dto.PodiumUpdate
+import retrofit2.http.PUT
 
 interface ApiService {
 
@@ -109,6 +112,9 @@ interface ApiService {
     @PATCH("me/profile")
     suspend fun updateProfile(@Body body: ProfileUpdate): ProfileOut
 
+    // Replaces the whole podium of the Mixtape, sends back the new podium
+    @PUT("me/podium")
+    suspend fun updatePodium(@Body body: PodiumUpdate): List<PodiumSongOut>
 
     // The user's "Mes likes" list, the most recent first (or an empty list)
     @GET("me/likes")

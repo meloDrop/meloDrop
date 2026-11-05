@@ -9,3 +9,5 @@ from app.models.liked_song import LikedSong
 from app.models.email_code import EmailCode
 from app.models.podium_song import PodiumSong
 from app.models.labeled_song import LabeledSong
+from app.models.badge import Badge
+from app.models.user_badge import UserBadge

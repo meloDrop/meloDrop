@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.schemas.stats import StatsOut
+from app.schemas.badges import UserBadgeOut
 from app.schemas.labeled_songs import LabeledSongOut
 from app.schemas.podium import PodiumSongOut
 
@@ -52,6 +53,8 @@ class ProfileOut(BaseModel):
     podium: list[PodiumSongOut]
     # The labeled songs of the Mixtape, in the order of the labels: empty if none yet
     labeled_songs: list[LabeledSongOut]
+    # The badges given from the dashboard, the most recently given first: empty if none yet
+    badges: list[UserBadgeOut]
 
 
 class ProfileUpdate(BaseModel):

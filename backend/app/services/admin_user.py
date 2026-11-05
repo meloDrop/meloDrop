@@ -7,16 +7,27 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.exceptions import UserNotFoundError
+from app.models.report import Report
 from app.models.user import User
 from app.services.likes import get_likes
 from app.services.profile import get_profile
+from app.services.reports import build_report
 from app.services.skips import get_skips
 from app.utils.time import iso, utc_now
 
 # Length of the activity curve, in days
 DAYS = 14
-# Most recent lines kept in each history (likes, skips, drops)
+# Most recent lines kept in each history (likes, skips, drops, follows)
 HISTORY_SIZE = 100
+
+# Rows of the user counted per hour for the curve: name, table and filter
+HOURLY_SOURCES = {
+    "drops": ("drops", ""),
+    "saves": ("saves", ""),
+    "likes": ("saves", "AND is_pick = 0"),
+    "picks": ("saves", "AND is_pick = 1"),
+    "skips": ("skips", ""),
+}
 
 # A skip rescued after its drop expired: the skip stays, and the song is
 # in "Mes likes" with liked_late = 1 (a rescue on a drop online becomes a save)
@@ -68,12 +79,19 @@ def get_stats(db: Session, user_id: int) -> dict:
     params = {"id": user_id}
     return {
         "drops": count(db, "SELECT COUNT(*) FROM drops WHERE user_id = :id", params),
+        # saves: likes and picks given. picks: the up swipes only
         "saves": count(db, "SELECT COUNT(*) FROM saves WHERE user_id = :id", params),
+        "picks": count(db, "SELECT COUNT(*) FROM saves WHERE user_id = :id AND is_pick = 1", params),
         "skips": count(db, "SELECT COUNT(*) FROM skips WHERE user_id = :id", params),
         "saves_received": count(db, """
             SELECT COUNT(*) FROM saves AS sv
             JOIN drops AS d ON d.id = sv.drop_id
             WHERE d.user_id = :id
+        """, params),
+        "picks_received": count(db, """
+            SELECT COUNT(*) FROM saves AS sv
+            JOIN drops AS d ON d.id = sv.drop_id
+            WHERE d.user_id = :id AND sv.is_pick = 1
         """, params),
         "skips_received": count(db, """
             SELECT COUNT(*) FROM skips AS sk
@@ -81,6 +99,10 @@ def get_stats(db: Session, user_id: int) -> dict:
             WHERE d.user_id = :id
         """, params),
         "liked_songs": count(db, "SELECT COUNT(*) FROM liked_songs WHERE user_id = :id", params),
+        # Songs marked as picks in "Mes likes" (the "Mes picks" list)
+        "picked_songs": count(db, "SELECT COUNT(*) FROM liked_songs WHERE user_id = :id AND is_pick = 1", params),
+        "followers": count(db, "SELECT COUNT(*) FROM follows WHERE followed_id = :id", params),
+        "following": count(db, "SELECT COUNT(*) FROM follows WHERE follower_id = :id", params),
         # Songs rescued from "Mes skips" after their drop expired
         "rescues": count(db, """
             SELECT COUNT(*) FROM liked_songs WHERE user_id = :id AND liked_late = 1
@@ -89,23 +111,24 @@ def get_stats(db: Session, user_id: int) -> dict:
 
 
 def get_hourly(db: Session, user_id: int, now: datetime) -> dict:
-    """The user's drops, likes and skips per hour, in UTC."""
+    """The user's drops, likes, picks and skips per hour, in UTC."""
     since = now - timedelta(days=DAYS + 1)
     hourly = {}
-    for table in ("drops", "saves", "skips"):
+    for name, (table, condition) in HOURLY_SOURCES.items():
         rows = db.execute(
-            text(f"SELECT created_at FROM {table} WHERE user_id = :id AND created_at >= :since"),
+            text(f"SELECT created_at FROM {table} WHERE user_id = :id AND created_at >= :since {condition}"),
             {"id": user_id, "since": since},
         )
-        hourly[table] = dict(Counter(row.created_at.strftime("%Y-%m-%dT%H:00:00Z") for row in rows))
+        hourly[name] = dict(Counter(row.created_at.strftime("%Y-%m-%dT%H:00:00Z") for row in rows))
     return hourly
 
 
 def get_current_drop_swipes(db: Session, drop_id: int) -> list[dict]:
-    """Who liked or skipped the drop in progress, the most recent first."""
+    """Who liked, picked or skipped the drop in progress, the most recent first."""
     return fetch(db, """
         SELECT * FROM (
-            SELECT sv.created_at AS at, 'like' AS type, u.id AS user_id, u.username
+            SELECT sv.created_at AS at, CASE WHEN sv.is_pick = 1 THEN 'pick' ELSE 'like' END AS type,
+                   u.id AS user_id, u.username
             FROM saves AS sv JOIN users AS u ON u.id = sv.user_id
             WHERE sv.drop_id = :drop_id
             UNION ALL
@@ -140,8 +163,8 @@ def get_feed(db: Session, user_id: int, now: datetime) -> list[dict]:
 def get_swipes(db: Session, user_id: int, table: str) -> list[dict]:
     """Drops liked (saves) or skipped (skips) by the user, the most recent first."""
     if table == "saves":
-        # For a like: is the song still in "Mes likes"? (it can be removed, ADR-0013)
-        extra = """,
+        # For a like: was it a pick, and is the song still in "Mes likes"? (it can be removed, ADR-0013)
+        extra = """, x.is_pick,
                (SELECT COUNT(*) FROM liked_songs AS l
                  WHERE l.user_id = :id AND l.song_id = d.song_id) AS in_likes"""
     else:
@@ -162,11 +185,12 @@ def get_swipes(db: Session, user_id: int, table: str) -> list[dict]:
 
 
 def get_drops(db: Session, user_id: int) -> list[dict]:
-    """All the drops of the user, with their likes and skips."""
+    """All the drops of the user, with their likes, picks and skips."""
     return fetch(db, """
         SELECT d.id AS drop_id, s.id AS song_id, s.title, s.artist_name AS artist, s.cover_url, s.genre,
                d.created_at, d.expires_at,
                (SELECT COUNT(*) FROM saves AS sv WHERE sv.drop_id = d.id) AS saves,
+               (SELECT COUNT(*) FROM saves AS sv WHERE sv.drop_id = d.id AND sv.is_pick = 1) AS picks,
                (SELECT COUNT(*) FROM skips AS sk WHERE sk.drop_id = d.id) AS skips
         FROM drops AS d
         JOIN songs AS s ON s.id = d.song_id
@@ -202,6 +226,51 @@ def get_affinities(db: Session, user_id: int) -> dict:
     return {"fans": fans, "favorites": favorites}
 
 
+def get_follows(db: Session, user_id: int) -> dict:
+    """Who follows the user, and who the user follows, the most recent first."""
+    params = {"id": user_id, "size": HISTORY_SIZE}
+    followers = fetch(db, """
+        SELECT f.created_at AS at, u.id AS user_id, u.username, u.avatar_color, u.avatar_style,
+               -- The user follows them back
+               EXISTS (SELECT 1 FROM follows AS b
+                        WHERE b.follower_id = :id AND b.followed_id = u.id) AS mutual
+        FROM follows AS f
+        JOIN users AS u ON u.id = f.follower_id
+        WHERE f.followed_id = :id
+        ORDER BY f.created_at DESC, f.id DESC
+        LIMIT :size
+    """, params)
+    following = fetch(db, """
+        SELECT f.created_at AS at, u.id AS user_id, u.username, u.avatar_color, u.avatar_style,
+               -- They follow the user back
+               EXISTS (SELECT 1 FROM follows AS b
+                        WHERE b.follower_id = u.id AND b.followed_id = :id) AS mutual
+        FROM follows AS f
+        JOIN users AS u ON u.id = f.followed_id
+        WHERE f.follower_id = :id
+        ORDER BY f.created_at DESC, f.id DESC
+        LIMIT :size
+    """, params)
+    for row in followers + following:
+        row["mutual"] = bool(row["mutual"])
+    return {"followers": followers, "following": following}
+
+
+def get_reports(db: Session, user_id: int) -> dict:
+    """Reports about the user, and reports sent by the user, the newest first."""
+    received = (
+        db.query(Report)
+        .filter(Report.reported_id == user_id)
+        .order_by(Report.created_at.desc(), Report.id.desc())
+        .all()
+    )
+    sent = db.query(Report).filter(Report.reporter_id == user_id).count()
+    return {
+        "received": [build_report(db, report).model_dump(mode="json") for report in received],
+        "sent": sent,
+    }
+
+
 def get_user_detail(db: Session, user_id: int) -> dict:
     """Run every query for one user and return one dictionary, or raise."""
     user = db.get(User, user_id)
@@ -231,4 +300,6 @@ def get_user_detail(db: Session, user_id: int) -> dict:
         "skips": get_swipes(db, user_id, "skips"),
         "drops": get_drops(db, user_id),
         "affinities": get_affinities(db, user_id),
+        "follows": get_follows(db, user_id),
+        "reports": get_reports(db, user_id),
     }

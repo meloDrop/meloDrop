@@ -35,8 +35,8 @@ def save_drop(db: Session, user_id: int, drop_id: int, is_pick: bool = False) ->
     # Check the rules: the drop exists, is not mine, and is not seen yet
     drop = check_drop(db, user_id, drop_id)
 
-    # Remember that the user liked this drop
-    db.add(Save(user_id=user_id, drop_id=drop.id))
+    # Remember that the user liked this drop, and if it was a pick
+    db.add(Save(user_id=user_id, drop_id=drop.id, is_pick=is_pick))
 
     # Add the song to "Mes likes", unless it is already there
     liked = (

@@ -41,7 +41,13 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.likes.LikesGroupTitle
+import com.app.melodrop.ui.likes.LikesSort
+import com.app.melodrop.ui.likes.LikesToolbar
+import com.app.melodrop.ui.likes.groupLikes
+import com.app.melodrop.ui.likes.shownCountLabel
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
 
@@ -52,6 +58,8 @@ private const val COVERS_PER_ROW = 3
 @Composable
 fun MyPicksScreen(
     onBack: () -> Unit,
+    // Tap on "drop par @username": opens the profile of the author
+    onAuthorClick: (Int) -> Unit = {},
     viewModel: MyPicksViewModel = viewModel(),
 ) {
     // Leaving the screen: the music stops
@@ -69,6 +77,7 @@ fun MyPicksScreen(
         onBack = onBack,
         onPlayClick = viewModel::togglePreview,
         onRetry = viewModel::load,
+        onAuthorClick = onAuthorClick,
     )
 }
 
@@ -80,7 +89,14 @@ private fun MyPicksContent(
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (LikedSongOut) -> Unit,
     onRetry: () -> Unit,
+    onAuthorClick: (Int) -> Unit = {},
 ) {
+    // Search and sort of the grid, like in "Mes likes". rememberSaveable: kept
+    // after a rotation or a trip to the profile of a dropper
+    var query by rememberSaveable { mutableStateOf("") }
+    var sortName by rememberSaveable { mutableStateOf(LikesSort.RECENT.name) }
+    val sort = LikesSort.valueOf(sortName)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -148,33 +164,59 @@ private fun MyPicksContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            // Lazy grid: only the covers on screen are built, even with hundreds of picks.
-            // It scrolls by itself, so no verticalScroll around it
-            else -> LazyVerticalGrid(
-                columns = GridCells.Fixed(COVERS_PER_ROW),
-                // Takes the height left under the title
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // The count takes the whole line, above the covers
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Text(
-                        text = picksCountLabel(uiState.picks.size),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            else -> {
+                LikesToolbar(
+                    query = query,
+                    onQueryChange = { query = it },
+                    sort = sort,
+                    onSortChange = { sortName = it.name },
+                )
 
-                // The key lets the grid follow each pick when the list changes
-                items(uiState.picks, key = { it.songId }) { pick ->
-                    PickThumbnail(
-                        pick = pick,
-                        // Pause icon only on the cover whose preview plays
-                        isPlaying = uiState.isPlaying && pick.songId == uiState.playingPickId,
-                        onPlayClick = { onPlayClick(pick) },
-                    )
+                val groups = groupLikes(uiState.picks, query, sort)
+                val shown = groups.sumOf { it.songs.size }
+
+                // Lazy grid: only the covers on screen are built, even with hundreds of picks.
+                // It scrolls by itself, so no verticalScroll around it
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(COVERS_PER_ROW),
+                    // Takes the height left under the title
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // The count takes the whole line, above the covers
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            text = when {
+                                query.isBlank() -> picksCountLabel(uiState.picks.size)
+                                shown == 0 -> "Aucun pick ne correspond à « ${query.trim()} »."
+                                else -> shownCountLabel(shown, uiState.picks.size, "pick", "picks")
+                            },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    groups.forEach { group ->
+                        // Title of the group on its own line, when sorted by genre or by dropper
+                        group.title?.let { title ->
+                            item(key = "group:$title", span = { GridItemSpan(maxLineSpan) }) {
+                                LikesGroupTitle(title = title, count = group.songs.size)
+                            }
+                        }
+
+                        // The key lets the grid follow each pick when the list changes
+                        items(group.songs, key = { it.songId }) { pick ->
+                            PickThumbnail(
+                                pick = pick,
+                                // Pause icon only on the cover whose preview plays
+                                isPlaying = uiState.isPlaying && pick.songId == uiState.playingPickId,
+                                onPlayClick = { onPlayClick(pick) },
+                                onAuthorClick = onAuthorClick,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -189,6 +231,8 @@ internal fun PickThumbnail(
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
+    // Tap on "drop par @username": opens the profile of the author
+    onAuthorClick: (Int) -> Unit = {},
 ) {
     // Tap on the cover: the poster of the song opens
     var showPoster by remember { mutableStateOf(false) }
@@ -236,6 +280,8 @@ internal fun PickThumbnail(
                 // Author's account deleted: nothing to show (ADR-0013)
                 else -> null
             }
+            // Local copy: Kotlin can then treat the id as not null inside the click
+            val authorId = pick.authorId
             if (origin != null) {
                 Text(
                     text = origin,
@@ -244,6 +290,12 @@ internal fun PickThumbnail(
                     else MaterialTheme.colorScheme.secondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    // Tap on the author: opens their profile, like in "Mes likes"
+                    modifier = if (!pick.likedLate && authorId != null) {
+                        Modifier.clickable(onClickLabel = "Voir le profil de @${pick.authorUsername}") { onAuthorClick(authorId) }
+                    } else {
+                        Modifier
+                    },
                 )
             }
         }
@@ -251,7 +303,7 @@ internal fun PickThumbnail(
 
     if (showPoster) {
         SongPosterDialog(
-            song = PosterSong(pick.songId, pick.title, pick.artist, pick.coverUrl),
+            song = PosterSong(pick.songId, pick.title, pick.artist, pick.coverUrl, pick.genre),
             isPlaying = isPlaying,
             onPlayClick = onPlayClick,
             onDismiss = { showPoster = false },
@@ -274,6 +326,7 @@ private val previewPick = LikedSongOut(
     authorId = 2,
     authorUsername = "elliot",
     isPick = true,
+    genre = "Électro",
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)

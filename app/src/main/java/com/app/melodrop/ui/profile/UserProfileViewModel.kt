@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 import com.app.melodrop.data.FollowsRepository
+import com.app.melodrop.data.ReportsRepository
 
 // Everything the profile of another user needs to display
 data class UserProfileUiState(
@@ -40,7 +41,15 @@ data class UserProfileUiState(
     // True while the backend has not answered the "Suivre" button: a second tap waits
     val isFollowBusy: Boolean = false,
     // Shown under the button when the follow could not be saved
-    val followError: String? = null
+    val followError: String? = null,
+    // True while the report is being sent: the "Envoyer" button waits
+    val isReportSending: Boolean = false,
+    // Shown in the report window when the report could not be sent
+    val reportError: String? = null,
+    // True once the report is saved: the window says thank you
+    val isReportSent: Boolean = false,
+    // True when this profile was already reported by the user, and not handled yet
+    val wasAlreadyReported: Boolean = false
 )
 
 class UserProfileViewModel(application: Application) : AndroidViewModel(application) {
@@ -48,6 +57,8 @@ class UserProfileViewModel(application: Application) : AndroidViewModel(applicat
     private val repository = ProfileRepository()
 
     private val followsRepository = FollowsRepository()
+
+    private val reportsRepository = ReportsRepository()
 
     var uiState by mutableStateOf(UserProfileUiState())
         private set
@@ -128,6 +139,38 @@ class UserProfileViewModel(application: Application) : AndroidViewModel(applicat
                 uiState.copy(isFollowBusy = false, profile = profile, followError = "Impossible de joindre le serveur.")
             }
         }
+    }
+
+    // "Envoyer" in the report window: the report goes to the dashboard of the meloDrop team
+    fun sendReport(reason: String, message: String) {
+        val profile = uiState.profile ?: return
+        if (uiState.isReportSending) return
+
+        uiState = uiState.copy(isReportSending = true, reportError = null)
+
+        viewModelScope.launch {
+            uiState = try {
+                // An empty message is sent as no message
+                reportsRepository.reportUser(profile.id, reason, message.trim().ifEmpty { null })
+                uiState.copy(isReportSending = false, isReportSent = true)
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    // Already reported and not handled yet: the team has it, the user is told
+                    409 -> uiState.copy(isReportSending = false, isReportSent = true, wasAlreadyReported = true)
+                    404 -> uiState.copy(isReportSending = false, reportError = "Ce profil n'existe plus.")
+                    // Message missing for "Autre raison", or too long
+                    422 -> uiState.copy(isReportSending = false, reportError = "Explique en quelques mots ce qui ne va pas.")
+                    else -> uiState.copy(isReportSending = false, reportError = "Erreur du serveur (${e.code()}).")
+                }
+            } catch (e: IOException) {
+                uiState.copy(isReportSending = false, reportError = "Impossible de joindre le serveur.")
+            }
+        }
+    }
+
+    // The report window is closed: the next one starts empty
+    fun closeReport() {
+        uiState = uiState.copy(reportError = null, isReportSent = false, wasAlreadyReported = false)
     }
 
     // Tap on a drop cover: plays its preview, or pauses it if it is the one loaded

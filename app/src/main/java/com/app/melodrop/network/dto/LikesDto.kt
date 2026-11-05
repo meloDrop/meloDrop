@@ -18,6 +18,8 @@ data class LikedSongOut(
     // "Récupéré dans les skips" is shown instead of the author
     @SerializedName("liked_late") val likedLate: Boolean = false,
     // True when the song is a pick: the star is full
-    @SerializedName("is_pick") val isPick: Boolean = false
+    @SerializedName("is_pick") val isPick: Boolean = false,
+    // Genre of the song's Deezer album, null when Deezer has none: the lists sort by it
+    val genre: String? = null
 )
 

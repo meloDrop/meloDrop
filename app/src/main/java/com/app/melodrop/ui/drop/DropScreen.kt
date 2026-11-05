@@ -58,6 +58,7 @@ import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
+import com.app.melodrop.ui.components.TrackRow
 import com.app.melodrop.ui.theme.MeloDropTheme
 import kotlinx.coroutines.delay
 import java.time.Duration
@@ -492,64 +493,7 @@ private fun timeLeftLabel(minutes: Long): String = when {
     else -> "${minutes / 60} h ${(minutes % 60).toString().padStart(2, '0')}"
 }
 
-// One track: cover, title, artist, and a play button if there is a preview.
-// onClick null: the row cannot be tapped
-@Composable
-private fun TrackRow(
-    track: TrackResult,
-    isPlaying: Boolean,
-    onPlayClick: () -> Unit,
-    onClick: (() -> Unit)? = null,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        Row(
-            modifier = Modifier
-                // Inside the Surface: the touch effect keeps the rounded corners
-                .clickable(enabled = onClick != null) { onClick?.invoke() }
-                .padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            CoverImage(
-                url = track.coverUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(10.dp)),
-            )
 
-            // weight(1f): the texts take the room left, the button keeps its size
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = track.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = track.artist,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            if (track.previewUrl != null) {
-                PlayPauseButton(
-                    isPlaying = isPlaying,
-                    onClick = onPlayClick,
-                    buttonSize = 40.dp,
-                )
-            }
-        }
-    }
-}
 
 // Short centered text under the field: hint, no result or error
 @Composable

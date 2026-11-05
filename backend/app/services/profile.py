@@ -13,6 +13,7 @@ from app.schemas.profile import ProfileDropOut, ProfileOut, ProfileUpdate
 from app.services.drops import get_active_drop
 from app.services.stats import get_stats
 from app.utils.time import utc_now
+from app.services.podium import get_podium
 
 # Number of past drops shown on a profile
 RECENT_DROPS_SIZE = 5
@@ -73,6 +74,7 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
         stats=get_stats(db, user.id),
         current_drop=current_drop,
         recent_drops=recent_drops,
+        podium=get_podium(db, user.id),
     )
 
 

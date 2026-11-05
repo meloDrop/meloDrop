@@ -8,3 +8,4 @@ from app.models.user import User
 from app.models.liked_song import LikedSong
 from app.models.email_code import EmailCode
 from app.models.podium_song import PodiumSong
+from app.models.labeled_song import LabeledSong

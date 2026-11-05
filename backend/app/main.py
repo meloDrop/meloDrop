@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, podium, profile, admin, users
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, podium, labeled_songs, profile, admin, users
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("melodrop")
 
@@ -73,6 +73,9 @@ app.include_router(picks.router)
 
 # Podium of the Mixtape: the 3 favorite songs of all time
 app.include_router(podium.router)
+
+# Labeled songs of the Mixtape, like "Le son qui me fait chialer"
+app.include_router(labeled_songs.router)
 
 # Profiles: the user's own and the others'
 app.include_router(profile.router)

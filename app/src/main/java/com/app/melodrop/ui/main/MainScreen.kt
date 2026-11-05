@@ -25,6 +25,7 @@ import com.app.melodrop.ui.mypicks.MyPicksScreen
 import com.app.melodrop.ui.drop.DropScreen
 import com.app.melodrop.ui.navigation.BottomBar
 import com.app.melodrop.ui.navigation.Routes
+import com.app.melodrop.ui.labels.LabelsEditScreen
 import com.app.melodrop.ui.podium.PodiumEditScreen
 import com.app.melodrop.ui.profile.EditProfileScreen
 import com.app.melodrop.ui.profile.ProfileScreen
@@ -48,7 +49,8 @@ fun MainScreen(onLogout: () -> Unit) {
             currentRoute == Routes.SEARCH_USERS ||
             currentRoute == Routes.MY_DROPS ||
             currentRoute == Routes.MY_PICKS ||
-            currentRoute == Routes.EDIT_PODIUM
+            currentRoute == Routes.EDIT_PODIUM ||
+            currentRoute == Routes.EDIT_LABELS
 
     // Halos to show: the search is opened from Discover, so it keeps the Discover halos.
     // The other sub-screens take the halos of the Profile tab
@@ -113,6 +115,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         onPicksClick = { navController.navigate(Routes.MY_PICKS) { launchSingleTop = true } },
                         onAccountClick = { navController.navigate(Routes.ACCOUNT) },
                         onEditPodium = { navController.navigate(Routes.EDIT_PODIUM) { launchSingleTop = true } },
+                        onEditLabels = { navController.navigate(Routes.EDIT_LABELS) { launchSingleTop = true } },
                     )
                 }
                 composable(Routes.EDIT_PROFILE) {
@@ -135,6 +138,12 @@ fun MainScreen(onLogout: () -> Unit) {
                 }
                 composable(Routes.MY_PICKS) {
                     MyPicksScreen(
+                        // Back to the Profile tab, even after a double tap
+                        onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                    )
+                }
+                composable(Routes.EDIT_LABELS) {
+                    LabelsEditScreen(
                         // Back to the Profile tab, even after a double tap
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
                     )

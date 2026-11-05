@@ -34,6 +34,8 @@ import com.app.melodrop.network.dto.PasswordUpdate
 import com.app.melodrop.network.dto.RescueOut
 import com.app.melodrop.network.dto.SkippedSongOut
 import com.app.melodrop.network.dto.UserSearchOut
+import com.app.melodrop.network.dto.LabeledSongOut
+import com.app.melodrop.network.dto.LabeledSongUpdate
 import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.PodiumUpdate
 import retrofit2.http.PUT
@@ -115,6 +117,14 @@ interface ApiService {
     // Replaces the whole podium of the Mixtape, sends back the new podium
     @PUT("me/podium")
     suspend fun updatePodium(@Body body: PodiumUpdate): List<PodiumSongOut>
+
+    // Puts a song under a label of the Mixtape (or replaces it), sends back all the labeled songs
+    @PUT("me/labels/{label}")
+    suspend fun setLabeledSong(@Path("label") label: String, @Body body: LabeledSongUpdate): List<LabeledSongOut>
+
+    // Removes the song of a label from the Mixtape. 204 with no body
+    @DELETE("me/labels/{label}")
+    suspend fun removeLabeledSong(@Path("label") label: String)
 
     // The user's "Mes likes" list, the most recent first (or an empty list)
     @GET("me/likes")

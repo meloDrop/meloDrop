@@ -42,6 +42,18 @@ data class PodiumSongOut(
     @SerializedName("cover_url") val coverUrl: String?
 )
 
+// A song of the Mixtape under a label, like "Le son qui me fait chialer"
+data class LabeledSongOut(
+    // Code of the label, like "cry": its text and its color are in SongLabels.kt
+    val label: String,
+    // Id of the song in meloDrop: used for the preview
+    @SerializedName("song_id") val songId: Int,
+    @SerializedName("deezer_track_id") val deezerTrackId: Long,
+    val title: String,
+    val artist: String,
+    @SerializedName("cover_url") val coverUrl: String?
+)
+
 // A user's profile: the same for the user's own profile and for the others (ADR-0018)
 data class ProfileOut(
     val id: Int,
@@ -62,7 +74,9 @@ data class ProfileOut(
     @SerializedName("recent_drops") val recentDrops: List<ProfileDropOut>,
     // The podium of the Mixtape, from the 1st place to the last: empty if not made yet.
     // Default value: the previews that build a ProfileOut by hand do not need to change
-    val podium: List<PodiumSongOut> = emptyList()
+    val podium: List<PodiumSongOut> = emptyList(),
+    // The labeled songs of the Mixtape, in the order of the labels: empty if none yet
+    @SerializedName("labeled_songs") val labeledSongs: List<LabeledSongOut> = emptyList()
 )
 
 
@@ -81,4 +95,9 @@ data class ProfileUpdate(
 data class PodiumUpdate(
     // Deezer ids from the search results, 3 at most; an empty list empties the podium
     @SerializedName("deezer_track_ids") val deezerTrackIds: List<Long>
+)
+
+// Data sent to put a song under a label: its Deezer id, from the search results
+data class LabeledSongUpdate(
+    @SerializedName("deezer_track_id") val deezerTrackId: Long
 )

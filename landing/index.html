@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>meloDrop · Une chanson par jour</title>
-  <meta name="description" content="Une chanson par jour, choisie par quelqu'un, pas par un algorithme. meloDrop arrive bientôt sur Android.">
+  <meta name="description" content="Une chanson par jour, choisie par quelqu'un, pas par un algorithme. meloDrop est en bêta test ouverte sur Android.">
   <meta name="theme-color" content="#0c0c10">
   <meta property="og:type" content="website">
   <meta property="og:title" content="meloDrop">
@@ -173,6 +173,30 @@
       box-shadow: 0 4px 14px rgba(185, 166, 255, 0.35);
     }
 
+    /* Comment rejoindre la bêta */
+    .beta {
+      margin-top: 26px;
+      max-width: 34rem;
+      padding: 18px 22px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .beta strong { color: var(--text); }
+    .beta a {
+      color: var(--lavande);
+      font-weight: 600;
+      text-decoration: underline;
+      text-decoration-color: rgba(185, 166, 255, 0.45);
+      text-underline-offset: 3px;
+      overflow-wrap: anywhere;
+    }
+    .beta ol { margin: 10px 0 0 1.2em; }
+    .beta li + li { margin-top: 4px; }
+
     /* Lien vers le groupe WhatsApp des testeurs */
     .testers {
       margin-top: 22px;
@@ -201,6 +225,44 @@
       font-size: 1.15rem;
       font-weight: 600;
     }
+
+    /* Onglets au-dessus des diaporamas */
+    .tabs {
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px;
+      margin-bottom: 22px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+    .tab {
+      position: relative;
+      padding: 9px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab[aria-selected="true"] { background: var(--lavande); color: #1a1530; }
+    .tab:focus-visible { outline: 2px solid var(--lavande); outline-offset: 3px; }
+    /* Petit point pour attirer l'oeil sur les nouveautés */
+    .tab .new {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-left: 7px;
+      border-radius: 50%;
+      background: var(--menthe);
+      vertical-align: 2px;
+    }
+    .panel[hidden] { display: none; }
 
     /* The track scrolls sideways, one slide at a time (scroll-snap) */
     .tour-track {
@@ -281,6 +343,7 @@
       .tour { margin-top: 64px; }
       .tour-track, .slide img { border-radius: 12px; }
       .tour-hint { display: block; }
+      .tab { padding: 8px 13px; font-size: 0.86rem; }
     }
 
     /* Petits écrans : on resserre un peu pour que tout tienne sur un écran */
@@ -352,7 +415,7 @@
         <a class="store-btn" href="https://play.google.com/store/apps/details?id=TON_PACKAGE">
         (même contenu, sans le badge). Le style du lien est déjà prêt.
       -->
-      <span class="store-btn" aria-disabled="true" aria-label="Google Play, bientôt disponible">
+      <span class="store-btn" aria-disabled="true" aria-label="Google Play, bêta test ouverte">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="6" y="2.5" width="12" height="19" rx="2.5"/>
           <path d="M10.5 18.5h3"/>
@@ -361,19 +424,32 @@
           <small>Télécharger sur</small>
           <strong>Google Play</strong>
         </span>
-        <span class="badge">Bientôt</span>
+        <span class="badge">Bêta test ouverte</span>
       </span>
     </div>
 
+    <div class="beta">
+      <strong>La bêta est ouverte à tous.</strong> Pour la rejoindre :
+      <ol>
+        <li>Envoie l'adresse e-mail de ton compte Google Play à
+          <a href="mailto:melodrop.app@gmail.com?subject=B%C3%AAta%20meloDrop">melodrop.app@gmail.com</a>.</li>
+        <li>Tu reçois en retour le lien pour installer meloDrop depuis le Play Store.</li>
+      </ol>
+    </div>
+
     <p class="testers">
-      Envie de tester l'appli avant sa sortie ?
-      <a href="https://chat.whatsapp.com/Dj7H72SprBACMKc4X1BQMz" target="_blank" rel="noopener">Rejoins les testeurs sur WhatsApp ›</a>
+      Pour suivre les nouveautés et donner ton avis :
+      <a href="https://chat.whatsapp.com/Dj7H72SprBACMKc4X1BQMz" target="_blank" rel="noopener">rejoins les testeurs sur WhatsApp ›</a>
     </p>
 
-    <!-- Diaporama : les images sont dans le dossier "slides" à côté de index.html -->
+    <!-- Diaporamas : les images sont dans le dossier "slides" à côté de index.html -->
     <section class="tour" aria-label="Présentation de l'appli">
-      <h2 class="tour-title">Comment ça marche</h2>
+      <div class="tabs" role="tablist" aria-label="Présentation">
+        <button class="tab" type="button" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="true">Comment ça marche</button>
+        <button class="tab" type="button" role="tab" id="tab-new" aria-controls="panel-new" aria-selected="false" tabindex="-1">Nouveautés 0.7<span class="new" aria-hidden="true"></span></button>
+      </div>
 
+      <div class="panel" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide">
       <div class="tour-track" tabindex="0">
         <figure class="slide">
           <a href="slides/pourquoi.webp" target="_blank">
@@ -417,19 +493,56 @@
                  alt="Un profil à ton image : tes compteurs, tes derniers drops et ton avatar, avec une couleur pastel et un style de goutte.">
           </a>
         </figure>
+      </div>
+
+      <div class="tour-nav">
+        <button class="tour-btn" type="button" data-step="-1" aria-label="Slide précédente">‹</button>
+        <span class="tour-count" aria-live="polite">1 / 7</span>
+        <button class="tour-btn" type="button" data-step="1" aria-label="Slide suivante">›</button>
+      </div>
+      </div>
+
+      <div class="panel" id="panel-new" role="tabpanel" aria-labelledby="tab-new" hidden>
+      <div class="tour-track" tabindex="0">
         <figure class="slide">
-          <a href="slides/ensuite.webp" target="_blank">
-            <img src="slides/ensuite.webp" width="1600" height="900" loading="lazy"
-                 alt="Et ensuite ? Social : chercher et suivre des profils. Profil : avatar plus perso, chansons de profil, le mot du drop. Stats : drop et genre du jour, badges à gagner.">
+          <a href="slides/nouveau-like-pick.webp" target="_blank">
+            <img src="slides/nouveau-like-pick.webp" width="1600" height="900" loading="lazy"
+                 alt="Like ou Pick ? Like, en glissant à droite : tu connais déjà le titre et tu l'aimes, il va dans Mes likes. Pick, en glissant vers le haut ou avec l'étoile : tu découvres le titre et il te plaît dès la première écoute, il va dans Mes likes et Mes picks. Dans les deux cas, l'auteur du drop reçoit un like.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/nouveau-profil.webp" target="_blank">
+            <img src="slides/nouveau-profil.webp" width="1600" height="900" loading="lazy"
+                 alt="Ton profil sur 2 pages : glisse entre Activité et Mixtape. La Mixtape montre ton podium de 3 titres préférés de tous les temps et un son pour chaque label, comme le son qui te met bien.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/nouveau-badges.webp" target="_blank">
+            <img src="slides/nouveau-badges.webp" width="1600" height="900" loading="lazy"
+                 alt="Les badges : l'équipe meloDrop en donne pour récompenser certains membres. Ils s'affichent en bas de la Mixtape, et un appui montre pourquoi et quand le badge a été reçu.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/nouveau-fiche.webp" target="_blank">
+            <img src="slides/nouveau-fiche.webp" width="1600" height="900" loading="lazy"
+                 alt="Touche une pochette : la fiche du titre montre l'album, la date de sortie, la durée, le genre, et le nombre de drops, likes et picks du titre sur meloDrop.">
+          </a>
+        </figure>
+        <figure class="slide">
+          <a href="slides/nouveau-abonnements.webp" target="_blank">
+            <img src="slides/nouveau-abonnements.webp" width="1600" height="900" loading="lazy"
+                 alt="Suis tes potes : un bouton Suivre sur chaque profil, les listes d'abonnés et d'abonnements, et dans Discover la pastille Abonnements d'abord pour voir leurs drops en premier.">
           </a>
         </figure>
       </div>
 
       <div class="tour-nav">
         <button class="tour-btn" type="button" data-step="-1" aria-label="Slide précédente">‹</button>
-        <span class="tour-count" aria-live="polite">1 / 8</span>
+        <span class="tour-count" aria-live="polite">1 / 5</span>
         <button class="tour-btn" type="button" data-step="1" aria-label="Slide suivante">›</button>
       </div>
+      </div>
+
       <p class="tour-hint">Touche une slide pour l'agrandir.</p>
     </section>
 
@@ -441,41 +554,74 @@
   </footer>
 
   <script>
-    // Slideshow: arrows and "n / total" counter. Swipe and scroll work without this script.
-    const track = document.querySelector(".tour-track");
-    const slides = track.querySelectorAll(".slide");
-    const buttons = document.querySelectorAll(".tour-btn");
-    const count = document.querySelector(".tour-count");
+    // Slideshows: arrows and "n / total" counter, one per tab. Swipe and scroll work without this script.
+    const updates = [];
 
-    // Index of the slide closest to the current scroll position
-    function currentIndex() {
-      let best = 0;
-      slides.forEach((slide, i) => {
-        if (Math.abs(slide.offsetLeft - track.scrollLeft) < Math.abs(slides[best].offsetLeft - track.scrollLeft)) {
-          best = i;
-        }
+    document.querySelectorAll(".panel").forEach((panel) => {
+      const track = panel.querySelector(".tour-track");
+      const slides = track.querySelectorAll(".slide");
+      const buttons = panel.querySelectorAll(".tour-btn");
+      const count = panel.querySelector(".tour-count");
+
+      // Index of the slide closest to the current scroll position
+      function currentIndex() {
+        let best = 0;
+        slides.forEach((slide, i) => {
+          if (Math.abs(slide.offsetLeft - track.scrollLeft) < Math.abs(slides[best].offsetLeft - track.scrollLeft)) {
+            best = i;
+          }
+        });
+        return best;
+      }
+
+      function update() {
+        const i = currentIndex();
+        count.textContent = `${i + 1} / ${slides.length}`;
+        buttons[0].disabled = i === 0;
+        buttons[1].disabled = i === slides.length - 1;
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const next = currentIndex() + Number(button.dataset.step);
+          if (next >= 0 && next < slides.length) {
+            track.scrollTo({ left: slides[next].offsetLeft });
+          }
+        });
       });
-      return best;
+
+      track.addEventListener("scroll", () => requestAnimationFrame(update));
+      update();
+      updates.push(update);
+    });
+
+    // Tabs: one panel shown at a time. Left and right arrows move between the tabs
+    const tabs = [...document.querySelectorAll(".tab")];
+
+    function select(tab) {
+      tabs.forEach((other) => {
+        const selected = other === tab;
+        other.setAttribute("aria-selected", String(selected));
+        other.tabIndex = selected ? 0 : -1;
+        document.getElementById(other.getAttribute("aria-controls")).hidden = !selected;
+      });
+      // A hidden slideshow has no size: its counter is set again once shown
+      updates.forEach((update) => update());
     }
 
-    function update() {
-      const i = currentIndex();
-      count.textContent = `${i + 1} / ${slides.length}`;
-      buttons[0].disabled = i === 0;
-      buttons[1].disabled = i === slides.length - 1;
-    }
-
-    buttons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const next = currentIndex() + Number(button.dataset.step);
-        if (next >= 0 && next < slides.length) {
-          track.scrollTo({ left: slides[next].offsetLeft });
-        }
+    tabs.forEach((tab, i) => {
+      tab.addEventListener("click", () => select(tab));
+      tab.addEventListener("keydown", (event) => {
+        const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+        if (!step) return;
+        const next = tabs[(i + step + tabs.length) % tabs.length];
+        select(next);
+        next.focus();
       });
     });
 
-    track.addEventListener("scroll", () => requestAnimationFrame(update));
-    update();
+    // Link with #nouveautes (to share in the testers' group): opens the second tab
+    if (location.hash === "#nouveautes") select(tabs[1]);
   </script>
 
 </body>

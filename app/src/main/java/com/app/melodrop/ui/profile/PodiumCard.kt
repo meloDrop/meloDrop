@@ -246,9 +246,9 @@ private fun PodiumPlace(
 }
 
 private val previewPodium = listOf(
-    PodiumSongOut(place = 1, songId = 1, title = "Bohemian Rhapsody", artist = "Queen", coverUrl = ""),
-    PodiumSongOut(place = 2, songId = 2, title = "Teardrop", artist = "Massive Attack", coverUrl = ""),
-    PodiumSongOut(place = 3, songId = 3, title = "Midnight City", artist = "M83", coverUrl = ""),
+    PodiumSongOut(place = 1, songId = 1, deezerTrackId = 1L, title = "Bohemian Rhapsody", artist = "Queen", coverUrl = ""),
+    PodiumSongOut(place = 2, songId = 2, deezerTrackId = 2L, title = "Teardrop", artist = "Massive Attack", coverUrl = ""),
+    PodiumSongOut(place = 3, songId = 3, deezerTrackId = 3L, title = "Midnight City", artist = "M83", coverUrl = ""),
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)

@@ -23,6 +23,7 @@ from app.schemas.badges import (
     BadgeUpdate,
     UserBadgeOut,
 )
+from app.services.auto_badges import award_by_rule
 
 
 def find_badge(db: Session, badge_id: int) -> Badge:
@@ -77,6 +78,8 @@ def build_badge(db: Session, badge: Badge) -> BadgeOut:
         description=badge.description,
         icon=badge.icon,
         color=badge.color,
+        rule=badge.rule,
+        threshold=badge.threshold,
         created_at=badge.created_at.replace(tzinfo=timezone.utc),
         holders=holders,
     )
@@ -93,11 +96,21 @@ def list_badges(db: Session) -> list[BadgeOut]:
 
 
 def create_badge(db: Session, data: BadgeCreate) -> BadgeOut:
-    """Create a badge. Nobody has it yet."""
+    """Create a badge. An automatic badge goes at once to the users who already reach its rule."""
     check_name_free(db, data.name)
 
-    badge = Badge(name=data.name, description=data.description, icon=data.icon, color=data.color)
+    badge = Badge(
+        name=data.name,
+        description=data.description,
+        icon=data.icon,
+        color=data.color,
+        rule=data.rule,
+        threshold=data.threshold,
+    )
     db.add(badge)
+    # flush: the badge gets its id, needed to give it, before the commit
+    db.flush()
+    award_by_rule(db, badge)
     db.commit()
     db.refresh(badge)
     return build_badge(db, badge)
@@ -121,6 +134,13 @@ def update_badge(db: Session, badge_id: int, changes: BadgeUpdate) -> BadgeOut:
 
     if changes.color is not None:
         badge.color = changes.color
+
+    # The rule is changed only when it was sent (null: given by hand only from now on).
+    # The users who already have the badge keep it, even with a higher threshold
+    if "rule" in changes.model_fields_set:
+        badge.rule = changes.rule
+        badge.threshold = changes.threshold if changes.rule is not None else None
+        award_by_rule(db, badge)
 
     db.commit()
     return build_badge(db, badge)

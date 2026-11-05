@@ -28,8 +28,12 @@ class ProfileDropOut(BaseModel):
     genre: str | None = None
     # When the drop was posted, in UTC
     dropped_at: datetime
-    # Likes received on this drop
+    # Likes received on this drop, picks included
     saves_count: int
+    # Picks received on this drop (part of saves_count)
+    picks_count: int
+    # Users who swiped this drop: likes, picks and skips
+    views_count: int
 
 
 class ProfileOut(BaseModel):

@@ -12,3 +12,4 @@ from app.models.labeled_song import LabeledSong
 from app.models.badge import Badge
 from app.models.user_badge import UserBadge
 from app.models.follow import Follow
+from app.models.report import Report

@@ -6,11 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import UserNotFoundError
 from app.models.drop import Drop
-from app.models.save import Save
 from app.models.song import Song
 from app.models.user import User
 from app.schemas.profile import ProfileDropOut, ProfileOut, ProfileUpdate
-from app.services.drops import get_active_drop
+from app.services.drops import count_swipes, get_active_drop
 from app.services.stats import get_stats
 from app.utils.time import utc_now
 from app.services.badges import get_user_badges
@@ -23,12 +22,9 @@ RECENT_DROPS_SIZE = 5
 
 
 def build_drop(db: Session, drop: Drop) -> ProfileDropOut:
-    """Build a drop of the profile, with its song and its likes."""
+    """Build a drop of the profile, with its song, its likes, picks and views."""
     # Get the song of the drop
     song = db.get(Song, drop.song_id)
-
-    # Count the likes of the drop
-    saves_count = db.query(Save).filter(Save.drop_id == drop.id).count()
 
     return ProfileDropOut(
         id=drop.id,
@@ -38,7 +34,7 @@ def build_drop(db: Session, drop: Drop) -> ProfileDropOut:
         cover_url=song.cover_url,
         genre=song.genre,
         dropped_at=drop.created_at.replace(tzinfo=timezone.utc),
-        saves_count=saves_count,
+        **count_swipes(db, drop.id),
     )
 
 

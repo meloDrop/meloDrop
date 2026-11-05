@@ -60,6 +60,12 @@ class LabeledSongNotFoundError(Exception):
 class CannotFollowSelfError(Exception):
     """Raised when a user tries to follow their own account."""
 
+class CannotReportSelfError(Exception):
+    """Raised when a user tries to report their own profile."""
+
+class AlreadyReportedError(Exception):
+    """Raised when the user already reported this profile and the report is still open."""
+
 # Admin actions
 
 class OwnAccountError(Exception):
@@ -87,4 +93,9 @@ class BadgeAlreadyAwardedError(Exception):
 
 class UserBadgeNotFoundError(Exception):
     """Raised when the user does not have this badge."""
+
+# Reports, sent from the app and handled from the dashboard
+
+class ReportNotFoundError(Exception):
+    """Raised when no report has this id."""
 

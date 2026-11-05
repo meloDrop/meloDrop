@@ -16,11 +16,15 @@ def get_drops(db: Session) -> dict:
         SELECT d.id AS drop_id, s.id AS song_id, s.title, s.artist_name AS artist,
                s.cover_url, s.genre, u.id AS author_id, u.username AS author_username,
                d.created_at, d.expires_at,
+               -- saves: likes and picks. Views (saves + skips) are counted by the page
                (SELECT COUNT(*) FROM saves AS sv WHERE sv.drop_id = d.id) AS saves,
+               (SELECT COUNT(*) FROM saves AS sv WHERE sv.drop_id = d.id AND sv.is_pick = 1) AS picks,
                (SELECT COUNT(*) FROM skips AS sk WHERE sk.drop_id = d.id) AS skips,
-               -- Likes received in the last 24 hours, the drop online or not
+               -- Likes and picks received in the last 24 hours, the drop online or not
                (SELECT COUNT(*) FROM saves AS sv
-                 WHERE sv.drop_id = d.id AND sv.created_at >= :since) AS saves_24h
+                 WHERE sv.drop_id = d.id AND sv.created_at >= :since) AS saves_24h,
+               (SELECT COUNT(*) FROM saves AS sv
+                 WHERE sv.drop_id = d.id AND sv.is_pick = 1 AND sv.created_at >= :since) AS picks_24h
         FROM drops AS d
         JOIN songs AS s ON s.id = d.song_id
         JOIN users AS u ON u.id = d.user_id
@@ -34,10 +38,11 @@ def get_drops(db: Session) -> dict:
 
 
 def get_drop_swipes(db: Session, drop_id: int) -> dict:
-    """Who liked or skipped one drop, the most recent first."""
+    """Who liked, picked or skipped one drop, the most recent first."""
     rows = db.execute(text("""
         SELECT * FROM (
-            SELECT sv.created_at AS at, 'like' AS type, u.id AS user_id, u.username, 0 AS rescued
+            SELECT sv.created_at AS at, CASE WHEN sv.is_pick = 1 THEN 'pick' ELSE 'like' END AS type,
+                   u.id AS user_id, u.username, 0 AS rescued
             FROM saves AS sv JOIN users AS u ON u.id = sv.user_id
             WHERE sv.drop_id = :drop_id
             UNION ALL

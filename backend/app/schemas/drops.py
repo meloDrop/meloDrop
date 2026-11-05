@@ -26,4 +26,9 @@ class MyDropOut(DropOut):
     """The logged-in user's current drop, with its stats."""
 
     id: int
+    # Likes received, picks included
     saves_count: int
+    # Picks received (part of saves_count)
+    picks_count: int
+    # Users who swiped the drop: likes, picks and skips
+    views_count: int

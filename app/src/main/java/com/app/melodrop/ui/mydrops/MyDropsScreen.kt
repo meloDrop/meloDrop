@@ -152,6 +152,8 @@ private fun MyDropsContent(
                     isPlaying = uiState.isPlaying,
                     onPlayClick = onPlayClick,
                     onlineDropId = uiState.onlineDropId,
+                    // Views and like rate under each cover
+                    showStats = true,
                 )
             }
         }
@@ -173,6 +175,8 @@ private val previewDrop = ProfileDropOut(
     genre = "Alternative",
     droppedAt = "2026-10-22T09:00:00Z",
     savesCount = 4,
+    picksCount = 1,
+    viewsCount = 7,
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFF0C0C10)

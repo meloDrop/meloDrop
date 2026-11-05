@@ -3,6 +3,25 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.8.0] - 2026-11-05
+
+### Added
+- "Signaler le profil" in the "⋮" menu of the profile of the others: a reason (name, drop or Mixtape, spam, harassment, other) and a message, required for "other". The meloDrop team handles it from the admin dashboard.
+- Search and sort in "Mes likes" and "Mes picks": search by title, artist, genre or @dropper, sort by date, genre or dropper, with a small title for each group.
+- Views of a drop: a view is a swipe (like, pick or skip). The Drop screen shows the likes, the picks, the views and the like rate of the drop of the day, and the drops of the user (profile and "Mes drops") show their views and their like rate.
+- Admin dashboard: Signalements tab with a red counter (remove the name and the avatar, delete the drop, delete the account, close with a note), "Donner à plusieurs" for the badges, likes and picks apart everywhere, views and like rate of the drops, Abonnements card, profile of a user like in the app (Mixtape and Activité), "Les picks" and "Le podium surprise" in the Récap.
+- Backend: `POST /users/{user_id}/report`, `GET /admin/reports`, `PATCH /admin/reports/{report_id}` and `POST /admin/badges/{badge_id}/award` routes; new `reports` table and `is_pick` column in `saves` (Alembic migrations, the old saves are filled from the picks of "Mes likes"); `picks_count` and `views_count` in `GET /drops/me` and in the drops of `GET /users/{id}/profile`; `genre` in `GET /me/likes` and `GET /me/picks`.
+
+### Changed
+- "drop par @…" under a pick opens the profile of the dropper, on the profile and on the "Mes picks" screen.
+- The texts of the "Nouveautés" sheet present version 0.8.0.
+
+### Fixed
+- Small screens: the "ALL TIME" badge of the podium was written letter by letter, in a column. It keeps its width, and the title goes on two lines when needed.
+- Small screens: the cover of Discover became tiny, the play button covered it and the genre was cut. The "Abonnements d'abord" chip takes less room, the hint fits on one line, and on a small cover the play button gets smaller and the genre and "Abonné" chips are hidden.
+- Profile of the others: the "Suivre en retour" button squeezed the follow counters on narrow screens. It moves to its own line, full width, under the counters.
+
+
 ## [0.7.0] - 2026-11-05
 
 ### Added

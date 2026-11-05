@@ -31,6 +31,10 @@ data class MyDropOut(
     val genre: String? = null,
     // Date and time in UTC, like "2026-10-20T20:35:00+00:00"
     @SerializedName("expires_at") val expiresAt: String,
-    // Number of users who liked this drop
-    @SerializedName("saves_count") val savesCount: Int
+    // Number of users who liked this drop, picks included
+    @SerializedName("saves_count") val savesCount: Int,
+    // Number of users who picked it (part of savesCount)
+    @SerializedName("picks_count") val picksCount: Int = 0,
+    // Number of users who swiped it: likes, picks and skips
+    @SerializedName("views_count") val viewsCount: Int = 0
 )

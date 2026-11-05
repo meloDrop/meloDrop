@@ -26,6 +26,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,6 +101,12 @@ private fun LikesContent(
     // Song waiting for the confirmation, null when no dialog is open
     var songToRemove by remember { mutableStateOf<LikedSongOut?>(null) }
 
+    // Search and sort of the list. rememberSaveable: kept after a rotation
+    // or a trip to the profile of a dropper
+    var query by rememberSaveable { mutableStateOf("") }
+    var sortName by rememberSaveable { mutableStateOf(LikesSort.RECENT.name) }
+    val sort = LikesSort.valueOf(sortName)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -166,11 +173,32 @@ private fun LikesContent(
             )
 
             else -> {
+                LikesToolbar(
+                    query = query,
+                    onQueryChange = { query = it },
+                    sort = sort,
+                    onSortChange = { sortName = it.name },
+                )
+
+                val groups = groupLikes(uiState.likes, query, sort)
+                val shown = groups.sumOf { it.songs.size }
+
                 Text(
-                    text = if (uiState.likes.size == 1) "1 titre gardé grâce à meloDrop."
-                    else "${uiState.likes.size} titres gardés grâce à meloDrop.",
+                    text = if (query.isBlank()) {
+                        if (uiState.likes.size == 1) "1 titre gardé grâce à meloDrop."
+                        else "${uiState.likes.size} titres gardés grâce à meloDrop."
+                    } else {
+                        shownCountLabel(shown, uiState.likes.size, "titre", "titres")
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                if (groups.isEmpty()) {
+                    Text(
+                        text = "Aucun titre ne correspond à « ${query.trim()} ».",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
 
                 // Only the visible rows are built: the list can grow long
                 LazyColumn(
@@ -180,18 +208,31 @@ private fun LikesContent(
                         .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    // The key lets Compose follow each row when one is removed
-                    items(uiState.likes, key = { it.songId }) { song ->
-                        LikedSongRow(
-                            song = song,
-                            isPlaying = uiState.isPlaying && uiState.playingSongId == song.songId,
-                            onPlayClick = { onPlayClick(song) },
-                            onRemoveClick = { songToRemove = song },
-                            onPickClick = { onPickClick(song) },
-                            onAuthorClick = onAuthorClick,
-                            // Slides the rows below up when one is removed
-                            modifier = Modifier.animateItem(),
-                        )
+                    groups.forEach { group ->
+                        // Title of the group when sorted by genre or by dropper
+                        group.title?.let { title ->
+                            item(key = "group:$title") {
+                                LikesGroupTitle(
+                                    title = title,
+                                    count = group.songs.size,
+                                    modifier = Modifier.animateItem(),
+                                )
+                            }
+                        }
+
+                        // The key lets Compose follow each row when one is removed
+                        items(group.songs, key = { it.songId }) { song ->
+                            LikedSongRow(
+                                song = song,
+                                isPlaying = uiState.isPlaying && uiState.playingSongId == song.songId,
+                                onPlayClick = { onPlayClick(song) },
+                                onRemoveClick = { songToRemove = song },
+                                onPickClick = { onPickClick(song) },
+                                onAuthorClick = onAuthorClick,
+                                // Slides the rows below up when one is removed
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
                     }
                 }
             }
@@ -335,7 +376,7 @@ private fun LikedSongRow(
 
     if (showPoster) {
         SongPosterDialog(
-            song = PosterSong(song.songId, song.title, song.artist, song.coverUrl),
+            song = PosterSong(song.songId, song.title, song.artist, song.coverUrl, song.genre),
             isPlaying = isPlaying,
             onPlayClick = onPlayClick,
             onDismiss = { showPoster = false },
@@ -344,10 +385,10 @@ private fun LikedSongRow(
 }
 
 private val previewSongs = listOf(
-    LikedSongOut(12, "Enter Sandman (Remastered 2021)", "Metallica", "", "2026-10-20T14:00:00Z"),
+    LikedSongOut(12, "Enter Sandman (Remastered 2021)", "Metallica", "", "2026-10-20T14:00:00Z", genre = "Rock"),
     // A pick: full yellow star
-    LikedSongOut(9, "Bohemian Rhapsody", "Queen", "", "2026-10-19T11:00:00Z", isPick = true),
-    LikedSongOut(7, "So What", "Miles Davis", "", "2026-10-19T10:00:00Z"),
+    LikedSongOut(9, "Bohemian Rhapsody", "Queen", "", "2026-10-19T11:00:00Z", isPick = true, genre = "Rock"),
+    LikedSongOut(7, "So What", "Miles Davis", "", "2026-10-19T10:00:00Z", genre = "Jazz"),
     // Rescued from "Mes skips" after the drop expired
     LikedSongOut(17, "Dreams (2004 Remaster)", "Fleetwood Mac", "", "2026-10-18T09:00:00Z", likedLate = true),
 )

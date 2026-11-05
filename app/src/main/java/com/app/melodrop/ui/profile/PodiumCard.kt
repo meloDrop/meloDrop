@@ -85,7 +85,9 @@ internal fun PodiumCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    SectionTitle(title)
+                    // weight on the title: the badge is measured first and keeps its width,
+                    // the title goes on two lines on a narrow screen
+                    SectionTitle(title, modifier = Modifier.weight(1f, fill = false))
                     AllTimeBadge()
                 }
                 if (onEditClick != null) {
@@ -143,6 +145,9 @@ private fun AllTimeBadge() {
         Text(
             text = "ALL TIME",
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+            // Always on one line, even when the room is short
+            maxLines = 1,
+            softWrap = false,
             fontFamily = Unbounded,
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp,

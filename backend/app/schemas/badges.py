@@ -50,6 +50,12 @@ class BadgeUpdate(BaseModel):
     color: BadgeColor | None = None
 
 
+class BadgeAwardMany(BaseModel):
+    """The users to give a badge to, chosen in the Badges tab."""
+
+    user_ids: list[int] = Field(min_length=1, max_length=500)
+
+
 class BadgeHolderOut(BaseModel):
     """A user who has the badge."""
 
@@ -71,6 +77,17 @@ class BadgeOut(BaseModel):
     created_at: datetime
     # The users who have it, the most recent first
     holders: list[BadgeHolderOut]
+
+
+class BadgeAwardOut(BaseModel):
+    """Result of a badge given to several users at once."""
+
+    # Ids of the users who got the badge now
+    awarded: list[int]
+    # Ids of the users who already had it: nothing changed for them
+    already_had: list[int]
+    # The badge, with all the users who have it now
+    badge: BadgeOut
 
 
 class UserBadgeOut(BaseModel):

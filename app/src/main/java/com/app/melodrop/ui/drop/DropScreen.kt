@@ -59,6 +59,8 @@ import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.TrackRow
+import com.app.melodrop.ui.components.likeRateLabel
+import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import kotlinx.coroutines.delay
 import java.time.Duration
@@ -413,15 +415,44 @@ private fun MyDropView(
             )
         }
 
-        // Two tiles side by side, with the same width
+        // savesCount counts the picks too: the simple likes are the rest
+        val likes = drop.savesCount - drop.picksCount
+
+        // Three tiles side by side, with the same width: what the swipes gave
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             StatTile(
-                value = drop.savesCount.toString(),
-                label = if (drop.savesCount == 1) "like reçu" else "likes reçus",
+                value = likes.toString(),
+                label = if (likes == 1) "like" else "likes",
                 color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.weight(1f),
+            )
+            StatTile(
+                value = drop.picksCount.toString(),
+                label = if (drop.picksCount == 1) "pick" else "picks",
+                // Butter yellow, like the Pick button in Discover
+                color = Butter,
+                modifier = Modifier.weight(1f),
+            )
+            StatTile(
+                value = drop.viewsCount.toString(),
+                label = if (drop.viewsCount == 1) "vue" else "vues",
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        // The like rate (likes and picks over the views), and the time left
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            StatTile(
+                value = likeRateLabel(drop.savesCount, drop.viewsCount),
+                label = "des vues likées",
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
             StatTile(
@@ -431,6 +462,14 @@ private fun MyDropView(
                 modifier = Modifier.weight(1f),
             )
         }
+
+        // What a view is: the user may wonder why the numbers do not add up to the likes
+        Text(
+            text = "Une vue, c'est un swipe sur ton drop : like, pick ou skip.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
 
         if (minutesLeft <= 0) {
             // Expired: the backend now accepts a new drop
@@ -546,6 +585,8 @@ private fun MyDropPreview() {
                     // Expires in 14 hours, whatever the day the preview is opened
                     expiresAt = Instant.now().plusSeconds(14L * 3600).toString(),
                     savesCount = 3,
+                    picksCount = 1,
+                    viewsCount = 5,
                 ),
             ),
             onQueryChange = {},

@@ -2,8 +2,11 @@
 
 Only public data: @usernames and avatars, never an email.
 The SQL only reads rows; the counting is done in Python, easier to follow.
+Everywhere, "likes" counts the likes and the picks (a pick is a like with a star),
+and "picks" counts the picks only.
 """
 
+import random
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from math import sqrt
@@ -11,6 +14,7 @@ from math import sqrt
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.services.podium import get_podium
 from app.utils.time import iso, utc_now
 
 # Lines of each ranking
@@ -19,6 +23,8 @@ TOP_SIZE = 3
 MIN_SWIPES_FOR_RATE = 5
 # Likes needed, without any skip, for "L'unanimité"
 MIN_LIKES_UNANIMOUS = 3
+# Songs a podium needs to be drawn first in "Le podium surprise"
+FULL_PODIUM = 3
 
 
 def prudent_rate(likes: int, swipes: int) -> float:
@@ -62,8 +68,38 @@ def public_drop(drop: dict, users: dict) -> dict:
     }
 
 
-def get_recap(db: Session, days: int | None) -> dict:
-    """Count everything for the period (None: since the start), and return one dictionary."""
+def get_random_podium(db: Session, users: dict, day: str, seed: int) -> dict | None:
+    """Draw the podium of a random tester, to discover a profile. None if nobody made one.
+
+    The draw only changes with the day: the card stays the same when the page
+    refreshes. The "Autre podium" button adds 1 to the seed: the next tester of the list.
+    """
+    counts = rows(db, """
+        SELECT user_id, COUNT(*) AS songs FROM podium_songs GROUP BY user_id
+    """, {})
+    # Only validated accounts; full podiums first, the others if there is none
+    made = [c for c in counts if users[c["user_id"]]["email_verified"]]
+    full = [c["user_id"] for c in made if c["songs"] >= FULL_PODIUM]
+    candidates = sorted(full or [c["user_id"] for c in made])
+    if not candidates:
+        return None
+
+    # The first tester of the day is drawn, then each seed takes the next one
+    first = random.Random(day).randrange(len(candidates))
+    chosen = candidates[(first + seed) % len(candidates)]
+    user = users[chosen]
+    return {
+        "user": {**public_user(user), "display_name": user["display_name"]},
+        "podium": [song.model_dump() for song in get_podium(db, chosen)],
+        "candidates": len(candidates),
+    }
+
+
+def get_recap(db: Session, days: int | None, seed: int = 0) -> dict:
+    """Count everything for the period (None: since the start), and return one dictionary.
+
+    seed: changes the tester drawn for "Le podium surprise".
+    """
     # Dates are stored in UTC without timezone (ADR-0001)
     now = utc_now()
     # "Since the start": a date before the first account
@@ -71,7 +107,7 @@ def get_recap(db: Session, days: int | None) -> dict:
     params = {"since": since}
 
     users = {u["id"]: u for u in rows(db, """
-        SELECT id, username, avatar_color, avatar_style, email_verified, created_at FROM users
+        SELECT id, username, display_name, avatar_color, avatar_style, email_verified, created_at FROM users
     """, {})}
     drops = {d["id"]: d for d in rows(db, """
         SELECT d.id, d.user_id AS author_id, d.created_at, s.id AS song_id, s.title,
@@ -79,13 +115,14 @@ def get_recap(db: Session, days: int | None) -> dict:
         FROM drops AS d
         JOIN songs AS s ON s.id = d.song_id
     """, {})}
-    # Every like and skip of the period
+    # Every like, pick and skip of the period. is_like: a like or a pick (a pick is a like with a star)
     swipes = rows(db, """
-        SELECT drop_id, user_id, created_at, 1 AS is_like FROM saves WHERE created_at >= :since
+        SELECT drop_id, user_id, created_at, 1 AS is_like, is_pick FROM saves WHERE created_at >= :since
         UNION ALL
-        SELECT drop_id, user_id, created_at, 0 FROM skips WHERE created_at >= :since
+        SELECT drop_id, user_id, created_at, 0, 0 FROM skips WHERE created_at >= :since
     """, params)
     likes = [s for s in swipes if s["is_like"]]
+    picks = [s for s in swipes if s["is_pick"]]
     new_drops = [d for d in drops.values() if d["created_at"] >= since]
     liked_songs = rows(db, """
         SELECT liked_late FROM liked_songs WHERE created_at >= :since
@@ -96,6 +133,7 @@ def get_recap(db: Session, days: int | None) -> dict:
     totals = {
         "drops": len(new_drops),
         "likes": len(likes),
+        "picks": len(picks),
         "skips": len(swipes) - len(likes),
         "active_users": len(active),
         "testers": sum(1 for u in users.values() if u["email_verified"]),
@@ -107,8 +145,8 @@ def get_recap(db: Session, days: int | None) -> dict:
     }
 
     # ---------- Per drop, per author, per swiper ----------
-    per_drop = defaultdict(lambda: {"likes": 0, "skips": 0})
-    per_author = defaultdict(lambda: {"likes": 0, "skips": 0})
+    per_drop = defaultdict(lambda: {"likes": 0, "picks": 0, "skips": 0})
+    per_author = defaultdict(lambda: {"likes": 0, "picks": 0, "skips": 0})
     likes_given = Counter()
     # likes_between[(liker, author)]: likes of a user on the drops of another
     likes_between = Counter()
@@ -117,16 +155,28 @@ def get_recap(db: Session, days: int | None) -> dict:
         kind = "likes" if swipe["is_like"] else "skips"
         per_drop[drop["id"]][kind] += 1
         per_author[drop["author_id"]][kind] += 1
+        if swipe["is_pick"]:
+            per_drop[drop["id"]]["picks"] += 1
+            per_author[drop["author_id"]]["picks"] += 1
         if swipe["is_like"]:
             likes_given[swipe["user_id"]] += 1
             likes_between[(swipe["user_id"], drop["author_id"])] += 1
 
-    # Podium: most likes in the period, then fewer skips, then the newest
+    # Podium: most likes in the period (picks included), then more picks, then fewer skips, then the newest
     ranked = sorted(
         (d for d in per_drop if per_drop[d]["likes"] > 0),
-        key=lambda d: (-per_drop[d]["likes"], per_drop[d]["skips"], -drops[d]["created_at"].timestamp()),
+        key=lambda d: (-per_drop[d]["likes"], -per_drop[d]["picks"], per_drop[d]["skips"],
+                       -drops[d]["created_at"].timestamp()),
     )
     podium = [{**public_drop(drops[d], users), **per_drop[d]} for d in ranked[:TOP_SIZE]]
+
+    # Most picked: the drop with the most picks, then the most likes, then fewer skips
+    picked = sorted(
+        (d for d in per_drop if per_drop[d]["picks"] > 0),
+        key=lambda d: (-per_drop[d]["picks"], -per_drop[d]["likes"], per_drop[d]["skips"],
+                       -drops[d]["created_at"].timestamp()),
+    )
+    most_picked = {**public_drop(drops[picked[0]], users), **per_drop[picked[0]]} if picked else None
 
     # Unanimity: the most liked drop without any skip, not already on the podium
     unanimous = [
@@ -140,15 +190,29 @@ def get_recap(db: Session, days: int | None) -> dict:
                      key=lambda a: (-per_author[a]["likes"], users[a]["username"].lower()))
     drops_by_author = Counter(d["author_id"] for d in new_drops)
     top_finders = [
-        {**public_user(users[a]), "likes": per_author[a]["likes"], "drops": drops_by_author[a]}
+        {**public_user(users[a]), "likes": per_author[a]["likes"], "picks": per_author[a]["picks"],
+         "drops": drops_by_author[a]}
         for a in finders[:TOP_SIZE]
     ]
 
+    # Pick finders: most picks received on their drops
+    pick_finders = sorted((a for a in per_author if per_author[a]["picks"] > 0),
+                          key=lambda a: (-per_author[a]["picks"], -per_author[a]["likes"], users[a]["username"].lower()))
+    top_pick_finders = [
+        {**public_user(users[a]), "picks": per_author[a]["picks"], "likes": per_author[a]["likes"],
+         "drops": drops_by_author[a]}
+        for a in pick_finders[:TOP_SIZE]
+    ]
+
     # Best ear: best prudent like rate on their drops, with enough swipes to mean something
-    rated = [a for a in per_author if sum(per_author[a].values()) >= MIN_SWIPES_FOR_RATE]
+    def swipes_of(author: int) -> int:
+        """Likes and skips on the drops of an author (the picks are already in the likes)."""
+        return per_author[author]["likes"] + per_author[author]["skips"]
+
+    rated = [a for a in per_author if swipes_of(a) >= MIN_SWIPES_FOR_RATE]
     best_ear = None
     if rated:
-        best = max(rated, key=lambda a: prudent_rate(per_author[a]["likes"], sum(per_author[a].values())))
+        best = max(rated, key=lambda a: prudent_rate(per_author[a]["likes"], swipes_of(a)))
         best_ear = {**public_user(users[best]), **per_author[best]}
 
     # Generous: most likes given
@@ -192,7 +256,9 @@ def get_recap(db: Session, days: int | None) -> dict:
         "totals": totals,
         "podium": podium,
         "unanimity": unanimity,
+        "most_picked": most_picked,
         "finders": top_finders,
+        "pick_finders": top_pick_finders,
         "best_ear": best_ear,
         "generous": generous,
         "duo": duo,
@@ -201,4 +267,6 @@ def get_recap(db: Session, days: int | None) -> dict:
         "genres": [{"genre": g, "likes": n} for g, n in genre_likes.most_common()],
         "genre_likes_total": sum(genre_likes.values()),
         "hourly": dict(hourly),
+        # The day of the draw: the same tester all day long for the same seed
+        "random_podium": get_random_podium(db, users, now.date().isoformat(), seed),
     }

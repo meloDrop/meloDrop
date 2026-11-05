@@ -125,6 +125,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         onEditPodium = { navController.navigate(Routes.EDIT_PODIUM) { launchSingleTop = true } },
                         onEditLabels = { navController.navigate(Routes.EDIT_LABELS) { launchSingleTop = true } },
                         onFollowsClick = ::openFollows,
+                        onAuthorClick = ::openUserProfile,
                     )
                 }
                 composable(Routes.EDIT_PROFILE) {
@@ -149,6 +150,7 @@ fun MainScreen(onLogout: () -> Unit) {
                     MyPicksScreen(
                         // Back to the Profile tab, even after a double tap
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                        onAuthorClick = ::openUserProfile,
                     )
                 }
                 composable(Routes.EDIT_LABELS) {

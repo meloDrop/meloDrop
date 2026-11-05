@@ -30,6 +30,10 @@ import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.BoxWithConstraints
+
+// Below this side, the cover is small (short screens): smaller play button, no chips over it
+private val SMALL_COVER = 180.dp
 
 // A drop in the feed: cover, song, genre, author and likes
 @Composable
@@ -54,11 +58,14 @@ fun DropCard(
             // The cover, with the genre in its top left corner
             // and the play button in its bottom right corner.
             // Shrinks on short screens, so the lines below are never cut
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .align(Alignment.CenterHorizontally),
             ) {
+                // The cover is a square as big as the room left: its side is the smaller one
+                val isSmall = minOf(maxWidth, maxHeight) < SMALL_COVER
+
                 // Downloads the image from its URL, grey square while it loads
                 CoverImage(
                     url = drop.coverUrl,
@@ -69,8 +76,8 @@ fun DropCard(
                         .clip(RoundedCornerShape(20.dp)),
                 )
 
-                // Genre of the album, hidden when Deezer has none
-                if (drop.genre != null) {
+                // Genre of the album, hidden when Deezer has none or when the cover is small
+                if (drop.genre != null && !isSmall) {
                     GenreChip(
                         genre = drop.genre,
                         modifier = Modifier
@@ -79,8 +86,8 @@ fun DropCard(
                     )
                 }
 
-                // The user follows the author: marked in the other corner
-                if (drop.isFollowed) {
+                // The user follows the author: marked in the other corner, if there is room
+                if (drop.isFollowed && !isSmall) {
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -104,7 +111,9 @@ fun DropCard(
                         onClick = onPlayPause,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(12.dp),
+                            .padding(if (isSmall) 8.dp else 12.dp),
+                        // Smaller on a small cover, so it does not hide it
+                        buttonSize = if (isSmall) 40.dp else 52.dp,
                     )
                 }
             }

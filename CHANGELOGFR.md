@@ -2,6 +2,25 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.8.0] - 05-11-2026
+
+### Ajouté
+- « Signaler le profil » dans le menu « ⋮ » du profil des autres : une raison (nom, drop ou Mixtape, spam, harcèlement, autre) et un message, obligatoire pour « autre ». L'équipe meloDrop le traite depuis le dashboard admin.
+- Recherche et tri dans « Mes likes » et « Mes picks » : recherche par titre, artiste, genre ou @droppeur, tri par date, genre ou droppeur, avec un petit titre pour chaque groupe.
+- Vues d'un drop : une vue, c'est un swipe (like, pick ou skip). L'écran Drop affiche les likes, les picks, les vues et le pourcentage de likes du drop du jour, et les drops de l'utilisateur (profil et « Mes drops ») affichent leurs vues et leur pourcentage de likes.
+- Dashboard admin : onglet Signalements avec un compteur rouge (retirer le nom et l'avatar, supprimer le drop, supprimer le compte, classer avec une note), « Donner à plusieurs » pour les badges, likes et picks séparés partout, vues et taux de like des drops, carte Abonnements, profil d'un utilisateur comme dans l'appli (Mixtape et Activité), « Les picks » et « Le podium surprise » dans le Récap.
+- Backend : routes `POST /users/{user_id}/report`, `GET /admin/reports`, `PATCH /admin/reports/{report_id}` et `POST /admin/badges/{badge_id}/award` ; nouvelle table `reports` et colonne `is_pick` dans `saves` (migrations Alembic, les anciens swipes sont remplis à partir des picks de « Mes likes ») ; `picks_count` et `views_count` dans `GET /drops/me` et dans les drops de `GET /users/{id}/profile` ; `genre` dans `GET /me/likes` et `GET /me/picks`.
+
+### Modifié
+- « drop par @… » sous un pick ouvre le profil du droppeur, sur le profil et sur l'écran « Mes picks ».
+- Les textes de la feuille « Nouveautés » présentent la version 0.8.0.
+
+### Corrigé
+- Petits écrans : le badge « ALL TIME » du podium s'écrivait lettre par lettre, en colonne. Il garde sa largeur, et c'est le titre qui passe sur deux lignes si besoin.
+- Petits écrans : la pochette de Discover devenait minuscule, le bouton lecture la recouvrait et le genre était coupé. La pastille « Abonnements d'abord » prend moins de place, le texte d'aide tient sur une ligne, et sur une petite pochette le bouton lecture rétrécit et les pastilles du genre et « Abonné » sont masquées.
+- Profil des autres : le bouton « Suivre en retour » écrasait les compteurs d'abonnés sur les écrans étroits. Il passe sur sa propre ligne, sur toute la largeur, sous les compteurs.
+
+
 ## [0.7.0] - 05-11-2026
 
 ### Ajouté

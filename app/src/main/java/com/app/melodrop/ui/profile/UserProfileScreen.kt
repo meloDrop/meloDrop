@@ -44,6 +44,13 @@ import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.avatarColor
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Connects the screen to its ViewModel
 @Composable
@@ -301,6 +308,9 @@ private fun CurrentDropCard(
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -317,7 +327,9 @@ private fun CurrentDropCard(
                 contentDescription = "Pochette de ${drop.title}",
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(14.dp)),
+                    .clip(RoundedCornerShape(14.dp))
+                    // The play button plays, the rest of the cover opens the poster
+                    .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
             )
 
             Column(
@@ -358,6 +370,15 @@ private fun CurrentDropCard(
                 buttonSize = 44.dp,
             )
         }
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(drop.songId, drop.title, drop.artist, drop.coverUrl, drop.genre),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
+        )
     }
 }
 

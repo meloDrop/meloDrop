@@ -28,6 +28,13 @@ import com.app.melodrop.network.dto.LabeledSongOut
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // The labeled songs of the Mixtape, under the podium: one card per song, its label above the title.
 // Shared by the user's own profile and the profile of the others
@@ -117,6 +124,9 @@ private fun LabeledSongRow(
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -133,7 +143,9 @@ private fun LabeledSongRow(
                 contentDescription = "Pochette de ${song.title}",
                 modifier = Modifier
                     .size(56.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                    .clip(RoundedCornerShape(10.dp))
+                    // The play button plays, the rest of the cover opens the poster
+                    .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
             )
 
             // weight(1f): the texts take the room left, the button keeps its size
@@ -170,6 +182,15 @@ private fun LabeledSongRow(
                 buttonSize = 40.dp,
             )
         }
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(song.songId, song.title, song.artist, song.coverUrl),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
+        )
     }
 }
 

@@ -38,6 +38,12 @@ import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Number of covers on each line, same as on the profile
 private const val COVERS_PER_ROW = 3
@@ -184,6 +190,9 @@ internal fun PickThumbnail(
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -197,8 +206,8 @@ internal fun PickThumbnail(
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(16.dp))
-                    // The whole cover can be tapped, not only the small button
-                    .clickable(onClick = onPlayClick),
+                    // The play button plays, the rest of the cover opens the poster
+                    .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
             )
 
             // Small play button in the bottom right corner of the cover
@@ -238,6 +247,15 @@ internal fun PickThumbnail(
                 )
             }
         }
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(pick.songId, pick.title, pick.artist, pick.coverUrl),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
+        )
     }
 }
 

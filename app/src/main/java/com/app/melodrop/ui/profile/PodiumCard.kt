@@ -39,6 +39,13 @@ import com.app.melodrop.ui.theme.Lavender
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Night
 import com.app.melodrop.ui.theme.Peach
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Order of the columns: the 2nd place on the left, the 1st in the middle, the 3rd on the right
 private val PODIUM_ORDER = listOf(2, 1, 3)
@@ -170,6 +177,9 @@ private fun PodiumPlace(
         else -> Peach
     }
 
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -183,7 +193,9 @@ private fun PodiumPlace(
                     contentDescription = "Pochette de ${song.title}",
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(14.dp)),
+                        .clip(RoundedCornerShape(14.dp))
+                        // The play button plays, the rest of the cover opens the poster
+                        .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
                 )
                 PlayPauseButton(
                     isPlaying = isPlaying,
@@ -211,6 +223,15 @@ private fun PodiumPlace(
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (showPoster) {
+                SongPosterDialog(
+                    song = PosterSong(song.songId, song.title, song.artist, song.coverUrl),
+                    isPlaying = isPlaying,
+                    onPlayClick = onPlayClick,
+                    onDismiss = { showPoster = false },
                 )
             }
         } else {

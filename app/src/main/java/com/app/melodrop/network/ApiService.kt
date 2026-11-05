@@ -12,6 +12,7 @@ import com.app.melodrop.network.dto.DropCreate
 import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.PreviewOut
+import com.app.melodrop.network.dto.SongDetailOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.ProfileDropOut
@@ -89,6 +90,10 @@ interface ApiService {
     // song_id is the meloDrop id of the song, not the Deezer id
     @GET("songs/{song_id}/preview")
     suspend fun getPreview(@Path("song_id") songId: Int): PreviewOut
+
+    // Everything about a song, for its poster: Deezer details and meloDrop counters
+    @GET("songs/{song_id}")
+    suspend fun getSong(@Path("song_id") songId: Int): SongDetailOut
 
     // Tracks found on Deezer, for example catalog/search?q=daft+punk
     @GET("catalog/search")

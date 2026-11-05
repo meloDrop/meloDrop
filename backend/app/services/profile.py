@@ -14,6 +14,7 @@ from app.services.drops import get_active_drop
 from app.services.stats import get_stats
 from app.utils.time import utc_now
 from app.services.badges import get_user_badges
+from app.services.follows import count_followers, count_following, is_following
 from app.services.labeled_songs import get_labeled_songs
 from app.services.podium import get_podium
 
@@ -41,8 +42,12 @@ def build_drop(db: Session, drop: Drop) -> ProfileDropOut:
     )
 
 
-def get_profile(db: Session, user_id: int) -> ProfileOut:
-    """Return a user's profile: account, counters, drop of the day and last drops."""
+def get_profile(db: Session, user_id: int, viewer_id: int | None = None) -> ProfileOut:
+    """Return a user's profile: account, counters, drop of the day and last drops.
+
+    viewer_id: the logged-in user who looks at the profile, for the follow fields.
+    None (the dashboard): nobody follows, nobody is followed.
+    """
     # The user must exist
     user = db.get(User, user_id)
     if user is None:
@@ -79,6 +84,11 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
         podium=get_podium(db, user.id),
         labeled_songs=get_labeled_songs(db, user.id),
         badges=get_user_badges(db, user.id),
+        followers_count=count_followers(db, user.id),
+        following_count=count_following(db, user.id),
+        is_followed=viewer_id is not None and is_following(db, viewer_id, user.id),
+        follows_you=viewer_id is not None and is_following(db, user.id, viewer_id),
+        is_me=viewer_id == user.id,
     )
 
 
@@ -122,4 +132,4 @@ def update_profile(db: Session, user: User, changes: ProfileUpdate) -> ProfileOu
         user.avatar_style = changes.avatar_style
 
     db.commit()
-    return get_profile(db, user.id)
+    return get_profile(db, user.id, user.id)

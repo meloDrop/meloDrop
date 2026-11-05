@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, podium, labeled_songs, profile, admin, admin_badges, users
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, podium, labeled_songs, profile, follows, admin, admin_badges, users
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("melodrop")
 
@@ -83,6 +83,9 @@ app.include_router(profile.me_router)
 
 # Search of other users by @username
 app.include_router(users.router)
+
+# Follows: follow a user, and the lists of followers and followed users
+app.include_router(follows.router)
 
 # Admin: actions on the accounts, admin role needed
 app.include_router(admin.router)

@@ -57,6 +57,9 @@ class DuplicateSongError(Exception):
 class LabeledSongNotFoundError(Exception):
     """Raised when there is no song under this label on the user's Mixtape."""
 
+class CannotFollowSelfError(Exception):
+    """Raised when a user tries to follow their own account."""
+
 # Admin actions
 
 class OwnAccountError(Exception):

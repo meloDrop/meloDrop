@@ -24,11 +24,13 @@ router = APIRouter(prefix="/users", tags=["profile"], dependencies=[Depends(curr
 )
 def get_profile(
     user_id: int = Path(description="meloDrop user id (id in GET /me, author_id in GET /feed)"),
+    user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
     """Get a user's profile: counters, drop of the day and 5 last drops."""
     try:
-        return services.get_profile(db, user_id)
+        # The logged-in user: tells whether they follow this profile
+        return services.get_profile(db, user_id, user.id)
     except UserNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

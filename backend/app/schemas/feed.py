@@ -15,3 +15,5 @@ class FeedItem(BaseModel):
     author_id: int
     author_username: str
     saves_count: int
+    # True when the logged-in user follows the author: "Abonné" on the card
+    is_followed: bool = False

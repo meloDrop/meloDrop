@@ -41,6 +41,8 @@ import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.PodiumUpdate
 import retrofit2.http.PUT
 import com.app.melodrop.network.dto.FollowUserOut
+import com.app.melodrop.network.dto.ReportCreate
+import com.app.melodrop.network.dto.ReportSentOut
 
 interface ApiService {
 
@@ -196,4 +198,8 @@ interface ApiService {
     // The users a user follows, the most recent first
     @GET("users/{user_id}/following")
     suspend fun getFollowing(@Path("user_id") userId: Int): List<FollowUserOut>
+
+    // Reports a profile to the meloDrop team: 201, 409 if already reported and not handled yet
+    @POST("users/{user_id}/report")
+    suspend fun reportUser(@Path("user_id") userId: Int, @Body body: ReportCreate): ReportSentOut
 }

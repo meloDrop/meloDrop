@@ -64,6 +64,7 @@ import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.Avatar
 import com.app.melodrop.ui.components.avatarColor
+import com.app.melodrop.ui.components.dropStatsLabel
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.Unbounded
@@ -106,6 +107,8 @@ fun ProfileScreen(
     onEditLabels: () -> Unit,
     // Tap on "abonnés" or "abonnements": opens the lists, with the user's id and the tab
     onFollowsClick: (Int, String) -> Unit = { _, _ -> },
+    // Tap on "drop par @username" under a pick: opens the profile of the author
+    onAuthorClick: (Int) -> Unit = {},
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -140,6 +143,7 @@ fun ProfileScreen(
         onPodiumPlayClick = viewModel::togglePodiumPreview,
         onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
         onFollowsClick = onFollowsClick,
+        onAuthorClick = onAuthorClick,
     )
 }
 
@@ -167,6 +171,8 @@ private fun ProfileContent(
     onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
     // Tap on "abonnés" or "abonnements": the user's id and the tab
     onFollowsClick: (Int, String) -> Unit = { _, _ -> },
+    // Tap on "drop par @username" under a pick
+    onAuthorClick: (Int) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -204,6 +210,7 @@ private fun ProfileContent(
                 playingLabel = uiState.playingLabel,
                 onLabeledSongPlayClick = onLabeledSongPlayClick,
                 onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
+                onAuthorClick = onAuthorClick,
             )
 
             // First answer not there yet
@@ -246,6 +253,8 @@ private fun ProfileBody(
     onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
     // Tap on "abonnés" or "abonnements": FollowTab.FOLLOWERS or FollowTab.FOLLOWING
     onFollowsClick: (String) -> Unit = {},
+    // Tap on "drop par @username" under a pick
+    onAuthorClick: (Int) -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -318,6 +327,7 @@ private fun ProfileBody(
                     picksError = picksError,
                     playingPickId = playingPickId,
                     onPickPlayClick = onPickPlayClick,
+                    onAuthorClick = onAuthorClick,
                 )
             },
             // Takes all the height left under the header
@@ -344,6 +354,7 @@ private fun ActivityPage(
     picksError: String?,
     playingPickId: Int?,
     onPickPlayClick: (LikedSongOut) -> Unit,
+    onAuthorClick: (Int) -> Unit = {},
 ) {
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
@@ -401,6 +412,8 @@ private fun ActivityPage(
                     isPlaying = isPlaying,
                     onPlayClick = onPlayClick,
                     onlineDropId = profile.currentDrop?.id,
+                    // The user's own drops: views and like rate under each cover
+                    showStats = true,
                 )
 
                 // "Mes picks" tab: the picks could not be loaded
@@ -420,6 +433,7 @@ private fun ActivityPage(
                     isPlaying = isPlaying,
                     onPlayClick = onPickPlayClick,
                     onSeeAllClick = onPicksClick,
+                    onAuthorClick = onAuthorClick,
                 )
             }
         }
@@ -741,6 +755,8 @@ internal fun DropsGrid(
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
     onlineDropId: Int? = null,
+    // True on the user's own drops: views and like rate under each title
+    showStats: Boolean = false,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         drops.chunked(COVERS_PER_ROW).forEach { line ->
@@ -755,6 +771,7 @@ internal fun DropsGrid(
                         // Pause icon only on the cover whose preview plays
                         isPlaying = isPlaying && drop.id == playingDropId,
                         onPlayClick = { onPlayClick(drop) },
+                        showStats = showStats,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -774,6 +791,7 @@ private fun DropThumbnail(
     isOnline: Boolean,
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
+    showStats: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // Tap on the cover: the poster of the song opens
@@ -825,13 +843,25 @@ private fun DropThumbnail(
             }
         }
 
-        Text(
-            text = drop.title,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        // No gap inside: the stats stay close to the title
+        Column {
+            Text(
+                text = drop.title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (showStats) {
+                Text(
+                    text = dropStatsLabel(drop.viewsCount, drop.savesCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 
     if (showPoster) {
@@ -857,6 +887,8 @@ private fun PicksGrid(
     onPlayClick: (LikedSongOut) -> Unit,
     // Tap on the "Tout voir" tile
     onSeeAllClick: () -> Unit,
+    // Tap on "drop par @username" under a pick
+    onAuthorClick: (Int) -> Unit = {},
 ) {
     val hasMore = picks.size > PICKS_ON_PROFILE
     val lines = picks.take(PICKS_ON_PROFILE).chunked(COVERS_PER_ROW)
@@ -878,6 +910,7 @@ private fun PicksGrid(
                         isPlaying = isPlaying && pick.songId == playingPickId,
                         onPlayClick = { onPlayClick(pick) },
                         modifier = Modifier.weight(1f),
+                        onAuthorClick = onAuthorClick,
                     )
                 }
                 if (withTile) {

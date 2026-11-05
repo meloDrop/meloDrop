@@ -48,6 +48,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
@@ -86,6 +87,8 @@ fun UserProfileScreen(
         onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
         onFollowClick = viewModel::toggleFollow,
         onFollowsClick = onFollowsClick,
+        onSendReport = viewModel::sendReport,
+        onCloseReport = viewModel::closeReport,
     )
 }
 
@@ -105,7 +108,14 @@ private fun UserProfileContent(
     onFollowClick: () -> Unit = {},
     // Tap on "abonnés" or "abonnements": the user's id and the tab
     onFollowsClick: (Int, String) -> Unit = { _, _ -> },
+    // "Envoyer" in the report window: the reason code and the message
+    onSendReport: (String, String) -> Unit = { _, _ -> },
+    // The report window is closed
+    onCloseReport: () -> Unit = {},
 ) {
+    // True while the report window is open. rememberSaveable: still open after a rotation
+    var showReport by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -142,6 +152,7 @@ private fun UserProfileContent(
                 followError = uiState.followError,
                 onFollowClick = onFollowClick,
                 onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
+                onReportClick = { showReport = true },
             )
 
             uiState.isLoading -> Box(
@@ -170,6 +181,22 @@ private fun UserProfileContent(
             }
         }
     }
+
+    val profile = uiState.profile
+    if (showReport && profile != null) {
+        ReportDialog(
+            username = profile.username,
+            isSending = uiState.isReportSending,
+            error = uiState.reportError,
+            isSent = uiState.isReportSent,
+            wasAlreadyReported = uiState.wasAlreadyReported,
+            onSend = onSendReport,
+            onDismiss = {
+                showReport = false
+                onCloseReport()
+            },
+        )
+    }
 }
 
 // The profile of another user: the header stays at the top, the Mixtape and the activity slide under it
@@ -195,13 +222,19 @@ private fun UserProfileBody(
     onFollowClick: () -> Unit = {},
     // Tap on "abonnés" or "abonnements": FollowTab.FOLLOWERS or FollowTab.FOLLOWING
     onFollowsClick: (String) -> Unit = {},
+    // "Signaler le profil" in the "⋮" menu
+    onReportClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // No menu: only the user's own profile has one
-        ProfileHeader(profile = profile)
+        // The "⋮" menu with "Signaler le profil"; nothing on the user's own account
+        ProfileHeader(profile = profile) {
+            if (!profile.isMe) {
+                UserProfileMenu(onReportClick = onReportClick)
+            }
+        }
 
         // The counters, and the "Suivre" button (hidden on the user's own account)
         FollowBar(

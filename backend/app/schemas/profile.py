@@ -55,6 +55,15 @@ class ProfileOut(BaseModel):
     labeled_songs: list[LabeledSongOut]
     # The badges given from the dashboard, the most recently given first: empty if none yet
     badges: list[UserBadgeOut]
+    # Number of users who follow this user, and number of users this user follows
+    followers_count: int
+    following_count: int
+    # True when the logged-in user follows this user
+    is_followed: bool
+    # True when this user follows the logged-in user ("Suivre en retour" in the app)
+    follows_you: bool
+    # True on the logged-in user's own profile: no "Suivre" button
+    is_me: bool
 
 
 class ProfileUpdate(BaseModel):

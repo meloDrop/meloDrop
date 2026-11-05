@@ -61,6 +61,7 @@ import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.Avatar
+import com.app.melodrop.ui.components.avatarColor
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.Unbounded
@@ -188,7 +189,7 @@ private fun ProfileContent(
     }
 }
 
-// The profile itself: header, counters, then the "Mes drops" and "Mes picks" tabs
+// The profile itself: the header stays at the top, the Mixtape and the activity slide under it
 @Composable
 private fun ProfileBody(
     profile: ProfileOut,
@@ -208,19 +209,9 @@ private fun ProfileBody(
     playingPickId: Int?,
     onPickPlayClick: (LikedSongOut) -> Unit,
 ) {
-    // The drop of the day first, then the past ones
-    val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
-
-    // Tab shown under the counters: false = "Mes drops", true = "Mes picks".
-    // rememberSaveable: the choice survives a rotation and a trip to another tab
-    var showPicks by rememberSaveable { mutableStateOf(false) }
-
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            // Scrolls on small screens
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // The menu is given to the header: only the user's own profile has one
         ProfileHeader(profile = profile) {
@@ -231,6 +222,65 @@ private fun ProfileBody(
             )
         }
 
+        ProfilePages(
+            // The line under the labels takes the color of the avatar
+            accent = avatarColor(profile.avatarColor),
+            mixtape = {
+                // Filled in the next steps: podium, songs and badges
+                Text(
+                    text = "Ta mixtape arrive bientôt : ton podium, tes chansons et tes badges.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            activity = {
+                ActivityPage(
+                    profile = profile,
+                    onLikesClick = onLikesClick,
+                    onDropsClick = onDropsClick,
+                    onSkipsClick = onSkipsClick,
+                    onPicksClick = onPicksClick,
+                    playingDropId = playingDropId,
+                    isPlaying = isPlaying,
+                    previewError = previewError,
+                    onPlayClick = onPlayClick,
+                    picks = picks,
+                    picksError = picksError,
+                    playingPickId = playingPickId,
+                    onPickPlayClick = onPickPlayClick,
+                )
+            },
+            // Takes all the height left under the header
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+// The activity page: counters, then the "Mes drops" and "Mes picks" tabs (the profile before the Mixtape)
+@Composable
+private fun ActivityPage(
+    profile: ProfileOut,
+    onLikesClick: () -> Unit,
+    onDropsClick: () -> Unit,
+    onSkipsClick: () -> Unit,
+    onPicksClick: () -> Unit,
+    playingDropId: Int?,
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: (ProfileDropOut) -> Unit,
+    picks: List<LikedSongOut>,
+    picksError: String?,
+    playingPickId: Int?,
+    onPickPlayClick: (LikedSongOut) -> Unit,
+) {
+    // The drop of the day first, then the past ones
+    val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
+
+    // Tab shown under the counters: false = "Mes drops", true = "Mes picks".
+    // rememberSaveable: the choice survives a rotation and a trip to another tab
+    var showPicks by rememberSaveable { mutableStateOf(false) }
+
+    // No scroll here: the page already scrolls inside ProfilePages
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         // No gap inside: the link stays close to the counters
         Column {
             StatsRow(

@@ -39,6 +39,7 @@ import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.GenreChip
+import com.app.melodrop.ui.components.avatarColor
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
 
@@ -140,8 +141,7 @@ private fun UserProfileContent(
     }
 }
 
-// The profile: the same header and counters as the user's own profile,
-// then the drop of the day and the last drops
+// The profile of another user: the header stays at the top, the Mixtape and the activity slide under it
 @Composable
 private fun UserProfileBody(
     profile: ProfileOut,
@@ -153,15 +153,48 @@ private fun UserProfileBody(
     onPlayClick: (ProfileDropOut) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            // Scrolls on small screens
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // No menu: only the user's own profile has one
         ProfileHeader(profile = profile)
 
+        ProfilePages(
+            // The line under the labels takes the color of the avatar
+            accent = avatarColor(profile.avatarColor),
+            mixtape = {
+                // Filled in the next steps: podium, songs and badges
+                Text(
+                    text = "La mixtape de @${profile.username} arrive bientôt.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            activity = {
+                UserActivityPage(
+                    profile = profile,
+                    playingDropId = playingDropId,
+                    isPlaying = isPlaying,
+                    previewError = previewError,
+                    onPlayClick = onPlayClick,
+                )
+            },
+            // Takes all the height left under the header
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+// The activity page of another user: the counters, the drop of the day and the last drops
+@Composable
+private fun UserActivityPage(
+    profile: ProfileOut,
+    playingDropId: Int?,
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: (ProfileDropOut) -> Unit,
+) {
+    // No scroll here: the page already scrolls inside ProfilePages
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         // No click on the likes: the "Mes likes" list of the others is private
         StatsRow(stats = profile.stats)
 

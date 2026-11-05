@@ -41,7 +41,7 @@ internal fun FollowsFirstChip(
             .border(BorderStroke(1.dp, if (selected) accent else MaterialTheme.colorScheme.outline), shape)
             // TalkBack reads it as a switch, on or off
             .toggleable(value = selected, role = Role.Switch, onValueChange = { onClick() })
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 6.dp),
     )
 }
 

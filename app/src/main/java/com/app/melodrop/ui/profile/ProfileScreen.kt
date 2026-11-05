@@ -720,9 +720,10 @@ private fun CounterTile(
 
 // Small grey title in capitals, above a section. Shared with UserProfileScreen
 @Composable
-internal fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
+        modifier = modifier,
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 1.5.sp,

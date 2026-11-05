@@ -59,6 +59,7 @@ import com.app.melodrop.ui.whatsnew.WhatsNewSheet
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.BoxWithConstraints
 
 // Distance to reach, as a fraction of the card width, for a swipe to count
 private const val SWIPE_THRESHOLD = 0.3f
@@ -74,6 +75,13 @@ private val CHOICE_BUTTON_SIZE = 64.dp
 
 // How much higher the Pick button sits than the two others
 private val PICK_RAISE = 16.dp
+
+// Below this height for the card, the buttons and the hint, the screen is short:
+// the hint takes one line, so the cover keeps some room
+private val COMPACT_DECK_HEIGHT = 600.dp
+
+// Hint on one line, for short screens
+private const val SHORT_HINT = "← Passer    Liker →    ↑ Pick"
 
 // The three choices on a card. Each one sends the card a different way:
 // skip to the left, like to the right, pick to the top
@@ -140,36 +148,39 @@ private fun DiscoverContent(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Title on the left, "i" and search buttons on the right
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            MeloDropTitle()
-            // The two buttons side by side, against the right edge
-            Row {
-                IconButton(onClick = onInfoClick) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_info_drop),
-                        contentDescription = "Nouveautés de la version",
-                        // Unspecified: the drop keeps its own pastel stripes
-                        tint = Color.Unspecified,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-                IconButton(onClick = onSearchClick) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_search),
-                        contentDescription = "Rechercher un utilisateur",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
+        // The title and the chip under it, close together: the cover keeps more room
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Title on the left, "i" and search buttons on the right
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                MeloDropTitle()
+                // The two buttons side by side, against the right edge
+                Row {
+                    IconButton(onClick = onInfoClick) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_info_drop),
+                            contentDescription = "Nouveautés de la version",
+                            // Unspecified: the drop keeps its own pastel stripes
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                    IconButton(onClick = onSearchClick) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_search),
+                            contentDescription = "Rechercher un utilisateur",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
                 }
             }
-        }
 
-        // The user chooses whether the drops of the followed users come first
-        FollowsFirstChip(selected = followsFirst, onClick = onFollowsFirstClick)
+            // The user chooses whether the drops of the followed users come first
+            FollowsFirstChip(selected = followsFirst, onClick = onFollowsFirstClick)
+        }
 
         // Takes all the space left under the title, content centered
         Box(
@@ -267,88 +278,94 @@ private fun DropDeck(
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Box(
-            modifier = Modifier.weight(1f, fill = false),
-            contentAlignment = Alignment.Center,
+    // Height given to the deck: a short screen gets a one-line hint and less space
+    BoxWithConstraints {
+        val isCompact = maxHeight < COMPACT_DECK_HEIGHT
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp),
         ) {
-            // Next card: a bit smaller, seen when the top one moves away
-            drops.getOrNull(1)?.let { next ->
-                DropCard(
-                    drop = next,
-                    modifier = Modifier.graphicsLayer {
-                        scaleX = 0.95f
-                        scaleY = 0.95f
-                    },
+            Box(
+                modifier = Modifier.weight(1f, fill = false),
+                contentAlignment = Alignment.Center,
+            ) {
+                // Next card: a bit smaller, seen when the top one moves away
+                drops.getOrNull(1)?.let { next ->
+                    DropCard(
+                        drop = next,
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = 0.95f
+                            scaleY = 0.95f
+                        },
+                    )
+                }
+
+                // New drop = new key: the gestures start again for the new card
+                key(top.id) {
+                    SwipeableDropCard(
+                        drop = top,
+                        isPlaying = uiState.isPlaying,
+                        offsetX = offsetX,
+                        offsetY = offsetY,
+                        width = cardWidth,
+                        isLeaving = isLeaving,
+                        onWidthChange = { cardWidth = it },
+                        onFlyOut = flyOut,
+                        onPlayPause = onPlayPause,
+                        onAuthorClick = { onAuthorClick(top.authorId) },
+                    )
+                }
+            }
+
+            // Same choices as the swipes, for those who prefer to tap.
+            // Aligned at the bottom: the raised Pick button stands out in the middle
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                ChoiceButton(
+                    iconRes = R.drawable.ic_close,
+                    description = "Passer",
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    buttonSize = CHOICE_BUTTON_SIZE,
+                    enabled = !isLeaving,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    onClick = { flyOut(Choice.SKIP) },
+                )
+                ChoiceButton(
+                    iconRes = R.drawable.ic_star,
+                    description = "Pick : je découvre ce titre et il me plaît",
+                    containerColor = Butter,
+                    iconColor = Night,
+                    buttonSize = CHOICE_BUTTON_SIZE,
+                    enabled = !isLeaving,
+                    onClick = { flyOut(Choice.PICK) },
+                    // Raised above the two others
+                    modifier = Modifier.padding(bottom = PICK_RAISE),
+                )
+                ChoiceButton(
+                    iconRes = R.drawable.ic_favorite,
+                    description = "J'aime",
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    iconColor = MaterialTheme.colorScheme.onTertiary,
+                    buttonSize = CHOICE_BUTTON_SIZE,
+                    enabled = !isLeaving,
+                    onClick = { flyOut(Choice.LIKE) },
                 )
             }
 
-            // New drop = new key: the gestures start again for the new card
-            key(top.id) {
-                SwipeableDropCard(
-                    drop = top,
-                    isPlaying = uiState.isPlaying,
-                    offsetX = offsetX,
-                    offsetY = offsetY,
-                    width = cardWidth,
-                    isLeaving = isLeaving,
-                    onWidthChange = { cardWidth = it },
-                    onFlyOut = flyOut,
-                    onPlayPause = onPlayPause,
-                    onAuthorClick = { onAuthorClick(top.authorId) },
-                )
-            }
-        }
-
-        // Same choices as the swipes, for those who prefer to tap.
-        // Aligned at the bottom: the raised Pick button stands out in the middle
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            ChoiceButton(
-                iconRes = R.drawable.ic_close,
-                description = "Passer",
-                containerColor = MaterialTheme.colorScheme.surface,
-                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                buttonSize = CHOICE_BUTTON_SIZE,
-                enabled = !isLeaving,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                onClick = { flyOut(Choice.SKIP) },
-            )
-            ChoiceButton(
-                iconRes = R.drawable.ic_star,
-                description = "Pick : je découvre ce titre et il me plaît",
-                containerColor = Butter,
-                iconColor = Night,
-                buttonSize = CHOICE_BUTTON_SIZE,
-                enabled = !isLeaving,
-                onClick = { flyOut(Choice.PICK) },
-                // Raised above the two others
-                modifier = Modifier.padding(bottom = PICK_RAISE),
-            )
-            ChoiceButton(
-                iconRes = R.drawable.ic_favorite,
-                description = "J'aime",
-                containerColor = MaterialTheme.colorScheme.tertiary,
-                iconColor = MaterialTheme.colorScheme.onTertiary,
-                buttonSize = CHOICE_BUTTON_SIZE,
-                enabled = !isLeaving,
-                onClick = { flyOut(Choice.LIKE) },
+            Text(
+                // Short screen: the usual hint is replaced by its one-line version
+                text = if (isCompact && message == null && !uiState.justPicked) SHORT_HINT else hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = hintColor,
+                textAlign = TextAlign.Center,
+                // Always as high: the card does not move when the text changes
+                minLines = if (isCompact) 1 else 2,
             )
         }
-
-        Text(
-            text = hint,
-            style = MaterialTheme.typography.bodySmall,
-            color = hintColor,
-            textAlign = TextAlign.Center,
-            // Always two lines high: the card does not move when the text changes
-            minLines = 2,
-        )
     }
 }
 

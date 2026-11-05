@@ -2,6 +2,24 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.7.0] - 05-11-2026
+
+### Ajouté
+- Profil sur deux pages entre lesquelles on glisse : Activité (compteurs, drops, picks) et Mixtape. Ton profil s'ouvre sur Activité, celui des autres sur la Mixtape.
+- Podium de la Mixtape : tes 3 titres préférés de tous les temps, avec leur extrait, à choisir depuis l'écran « Mon podium ».
+- Sons à label sur la Mixtape : un titre pour chacun des 8 labels, comme « Le son qui me fait chialer » ou « Mon générique préféré », à choisir depuis l'écran « Mes chansons ».
+- Badges : créés et donnés depuis le dashboard admin, affichés sur la Mixtape, 4 par ligne. Un appui ouvre leur description et la date où ils ont été reçus.
+- Fiche d'un titre : un appui sur une pochette ouvre l'album, la date de sortie, la durée, le genre, et les drops, likes et picks du titre sur meloDrop. Elle s'ouvre depuis la Mixtape, l'Activité, « Mes likes », « Mes skips », « Mes drops » et « Mes picks ».
+- Abonnements : bouton « Suivre » (ou « Suivre en retour ») sur le profil des autres, compteurs d'abonnés et d'abonnements sur chaque profil, et listes qui s'ouvrent depuis ces compteurs.
+- Pastille « Abonnements d'abord » dans Discover, activée par défaut : les drops des gens suivis passent en premier, avec la mention « Abonné » sur leur carte.
+- Dashboard admin : onglet Badges (créer, modifier, supprimer, avec un aperçu) et carte Badges sur la page d'un utilisateur (donner, retirer).
+- Backend : routes `PUT /me/podium`, `PUT /me/labels/{label}`, `DELETE /me/labels/{label}`, `GET /songs/{song_id}`, `POST /users/{user_id}/follow`, `DELETE /users/{user_id}/follow`, `GET /users/{user_id}/followers`, `GET /users/{user_id}/following` et routes admin des badges ; nouvelles tables `podium_songs`, `labeled_songs`, `badges`, `user_badges` et `follows` (migrations Alembic) ; `GET /users/{id}/profile` renvoie le podium, les sons à label, les badges et les compteurs d'abonnements ; `GET /feed` prend le paramètre `follows_first`.
+
+### Modifié
+- Dans les grilles de drops et de picks, un appui sur la pochette ouvre la fiche du titre : seul le petit bouton lance l'extrait.
+- Les textes de la feuille « Nouveautés » présentent la version 0.7.0.
+
+
 ## [0.6.0] - 05-11-2026
 
 ### Ajouté

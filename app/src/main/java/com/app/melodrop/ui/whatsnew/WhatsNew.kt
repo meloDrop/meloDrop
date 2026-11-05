@@ -3,9 +3,9 @@ package com.app.melodrop.ui.whatsnew
 // Lines shown in the "Nouveautés" sheet, for the version installed.
 // To update at each new version, with the user lines of CHANGELOGFR.md
 val WhatsNewItems = listOf(
-    "Les Picks : appuie sur l'étoile ou glisse une carte vers le haut pour garder un titre que tu découvres et qui te plaît. Un pick compte aussi comme un like pour l'auteur du drop.",
-    "Dans « Mes likes », l'étoile transforme un like en pick. Rappuyer dessus le retire des picks.",
-    "Sur ton profil, l'onglet « Mes picks » montre tes dernières découvertes, et « Tout voir » ouvre la liste complète.",
-    "Les trois boutons de Discover ont la même taille, et le lien « Mes skips » passe en lavande.",
-    "Ce bouton « i » : il affiche les nouveautés de chaque version.",
+    "Ton profil passe sur deux pages : glisse entre Activité et Mixtape. Sur le profil des autres, c'est la Mixtape qui s'ouvre en premier.",
+    "La Mixtape : ton podium de titres préférés de tous les temps, et un son pour chaque label, du « son qui me met bien » au « son que j'assume pas de ouf ».",
+    "Les badges : l'équipe meloDrop en donne pour récompenser certains membres. Touche un badge pour voir pourquoi tu l'as reçu.",
+    "Touche une pochette pour ouvrir la fiche du titre : album, date de sortie, durée, et ses drops, likes et picks sur meloDrop.",
+    "Suis les autres depuis leur profil. Dans Discover, la pastille « Abonnements d'abord » fait passer leurs drops en premier.",
 )

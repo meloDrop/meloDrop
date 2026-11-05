@@ -3,6 +3,24 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.7.0] - 2026-11-05
+
+### Added
+- Profile on two pages you swipe between: Activité (counters, drops, picks) and Mixtape. Your own profile opens on Activité, the profile of the others on the Mixtape.
+- Podium of the Mixtape: your 3 favorite songs of all time, with their preview, chosen from the "Mon podium" screen.
+- Labeled songs on the Mixtape: one song for each of the 8 labels, like "Le son qui me fait chialer" or "Mon générique préféré", chosen from the "Mes chansons" screen.
+- Badges: created and given from the admin dashboard, shown on the Mixtape, 4 per line. A tap opens their description and the day they were received.
+- Song poster: a tap on a cover opens the album, the release date, the length, the genre, and the drops, likes and picks of the song on meloDrop. It opens from the Mixtape, the Activité page, "Mes likes", "Mes skips", "Mes drops" and "Mes picks".
+- Follows: "Suivre" (or "Suivre en retour") button on the profile of the others, followers and following counters on every profile, and lists that open from these counters.
+- "Abonnements d'abord" chip in Discover, on by default: the drops of the followed users come first, with "Abonné" on their card.
+- Admin dashboard: Badges tab (create, edit, delete, with a preview) and Badges card on the page of a user (give, take back).
+- Backend: `PUT /me/podium`, `PUT /me/labels/{label}`, `DELETE /me/labels/{label}`, `GET /songs/{song_id}`, `POST /users/{user_id}/follow`, `DELETE /users/{user_id}/follow`, `GET /users/{user_id}/followers`, `GET /users/{user_id}/following` and admin badge routes; new `podium_songs`, `labeled_songs`, `badges`, `user_badges` and `follows` tables (Alembic migrations); `GET /users/{id}/profile` returns the podium, the labeled songs, the badges and the follow counters; `GET /feed` takes a `follows_first` parameter.
+
+### Changed
+- In the drops and picks grids, a tap on the cover opens the song poster: only the small button plays the preview.
+- The texts of the "Nouveautés" sheet present version 0.7.0.
+
+
 ## [0.6.0] - 2026-11-05
 
 ### Added

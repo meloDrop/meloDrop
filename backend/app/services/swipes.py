@@ -7,6 +7,7 @@ from app.models.drop import Drop
 from app.models.liked_song import LikedSong
 from app.models.save import Save
 from app.models.skip import Skip
+from app.services.auto_badges import SWIPE_RULES, check_auto_badges
 from app.utils.time import utc_now
 
 
@@ -56,6 +57,9 @@ def save_drop(db: Session, user_id: int, drop_id: int, is_pick: bool = False) ->
     # Save both rows together
     db.commit()
 
+    # The author of the drop can reach an automatic badge: likes, picks, like rate
+    check_auto_badges(db, drop.user_id, SWIPE_RULES)
+
 def pick_drop(db: Session, user_id: int, drop_id: int) -> None:
     """Pick a drop (up swipe): a like that also marks the song as a pick."""
     save_drop(db, user_id, drop_id, is_pick=True)
@@ -63,8 +67,11 @@ def pick_drop(db: Session, user_id: int, drop_id: int) -> None:
 def skip_drop(db: Session, user_id: int, drop_id: int) -> None:
     """Skip a drop: one row in skips."""
     # Check the rules: the drop exists, is not mine, and is not seen yet
-    check_drop(db, user_id, drop_id)
+    drop = check_drop(db, user_id, drop_id)
 
     # Remember that the user skipped this drop
     db.add(Skip(user_id=user_id, drop_id=drop_id))
     db.commit()
+
+    # A skip is a view too: the author can reach the 30 views of a like rate badge
+    check_auto_badges(db, drop.user_id, ("like_rate",))

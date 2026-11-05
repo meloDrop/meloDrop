@@ -13,6 +13,7 @@ from app.models.skip import Skip
 from app.models.song import Song
 from app.models.user import User
 from app.schemas.skips import RescueOut, SkippedSongOut
+from app.services.auto_badges import SWIPE_RULES, check_auto_badges
 from app.utils.time import utc_now
 
 from datetime import timedelta, timezone
@@ -98,5 +99,9 @@ def rescue_skip(db: Session, user_id: int, drop_id: int) -> RescueOut:
 
     # Save everything together
     db.commit()
+
+    # A rescue on a drop online is a like: the author can reach an automatic badge
+    if is_active:
+        check_auto_badges(db, drop.user_id, SWIPE_RULES)
 
     return RescueOut(song_id=drop.song_id, liked_late=liked.liked_late)

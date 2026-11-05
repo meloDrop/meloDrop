@@ -12,6 +12,7 @@ from app.models.skip import Skip
 from app.models.song import Song
 from app.providers.deezer import DeezerProvider
 from app.schemas.drops import DropOut, MyDropOut
+from app.services.auto_badges import DROP_RULES, check_auto_badges
 from app.utils.time import utc_now
 
 # Talks to the public Deezer API
@@ -104,6 +105,9 @@ def create_drop(db: Session, user_id: int, deezer_track_id: int) -> DropOut:
 
     # Save the song and the drop together
     db.commit()
+
+    # A new drop can reach an automatic badge: number of drops, days in a row
+    check_auto_badges(db, user_id, DROP_RULES)
 
     # Send the drop back, with the date in UTC
     return DropOut(

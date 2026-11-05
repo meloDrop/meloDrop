@@ -336,6 +336,12 @@
   /* On the page of a user: smaller, one line per badge */
   .badge-list.compact li { align-items: center; gap: 10px; padding: 8px 0; }
   .give-badge { margin-top: 12px; }
+  /* Automatic badge: the rule and its threshold side by side */
+  .rule-row { display: flex; gap: 8px; }
+  .rule-row select { flex: 1; min-width: 0; }
+  .rule-row input { width: 84px; flex: none; }
+  .rule-help { color: var(--muted); font-size: 12px; }
+  .badge.auto { color: var(--lavender); border-color: rgb(180 167 245 / .45); }
   .give-badge select { flex: 1; min-width: 0; }
 
   /* Récap tab: a card made for a screenshot */
@@ -1087,7 +1093,7 @@
     <form id="badge-form" class="card badge-form" novalidate>
       <div>
         <h2 id="badge-form-title">Nouveau badge</h2>
-        <p class="subtitle">Il apparaît sur la Mixtape de ceux à qui tu le donnes, depuis leur page dans Utilisateurs.</p>
+        <p class="subtitle">Il apparaît sur la Mixtape de ceux qui l'ont : donné à la main, ou automatiquement avec une règle.</p>
       </div>
       <label class="field"><span>Nom · 40 caractères maximum</span>
         <input type="text" id="badge-name" maxlength="40" autocomplete="off" placeholder="Testeur de la 1re heure"></label>
@@ -1097,6 +1103,21 @@
         <div class="icon-picker" id="badge-icons" role="group" aria-labelledby="badge-icon-label"></div></div>
       <div class="field"><span id="badge-color-label">Couleur</span>
         <div class="color-picker" id="badge-colors" role="group" aria-labelledby="badge-color-label"></div></div>
+      <div class="field"><span>Attribution</span>
+        <div class="rule-row">
+          <select id="badge-rule" aria-label="Attribution du badge">
+            <option value="">À la main</option>
+            <optgroup label="Automatique, dès que…">
+              <option value="drops">Drops déposés</option>
+              <option value="streak">Jours d'affilée avec un drop</option>
+              <option value="likes_received">Likes reçus (picks compris)</option>
+              <option value="picks_received">Picks reçus</option>
+              <option value="like_rate">Taux de like reçu (%)</option>
+            </optgroup>
+          </select>
+          <input type="number" id="badge-threshold" min="1" max="100000" step="1" inputmode="numeric" placeholder="Seuil" aria-label="Seuil de la règle" hidden>
+        </div>
+        <span class="rule-help" id="badge-rule-help"></span></div>
       <div class="field"><span>Aperçu dans l'appli</span>
         <div class="badge-preview" id="badge-preview"></div></div>
       <div class="row">
@@ -3878,6 +3899,23 @@ const BADGE_ICONS = {
   mic: { label: "Micro", path: "M9 6 a3 3 0 0 1 6 0 v5 a3 3 0 0 1 -6 0 z M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21 M8.5 21 h7" },
   note: { label: "Note", path: "M9 18 V5 l11 -2 v13 M3 18 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 z M14 16 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 z" },
 };
+// Rules of the automatic badges: same codes as BadgeRule in schemas/badges.py.
+// text(n): what the badge rewards, for a threshold n
+const MIN_VIEWS_FOR_RATE = 30;
+const BADGE_RULES = {
+  drops: { text: (n) => plural(n, "drop déposé", "drops déposés") },
+  streak: { text: (n) => `${plural(n, "jour", "jours")} d'affilée avec un drop` },
+  likes_received: { text: (n) => `${plural(n, "like reçu", "likes reçus")} (picks compris)` },
+  picks_received: { text: (n) => plural(n, "pick reçu", "picks reçus") },
+  like_rate: { text: (n) => `${n} % de likes reçus, dès ${MIN_VIEWS_FOR_RATE} vues`, max: 100 },
+};
+
+// "Automatique : 10 drops déposés", or "Donné à la main"
+function ruleLabel(badge) {
+  const rule = BADGE_RULES[badge.rule];
+  return rule && badge.threshold ? `Automatique : ${rule.text(badge.threshold)}` : "Donné à la main";
+}
+
 // Colors of the badges: the 5 pastels of the avatars, or "spectrum" for all of them
 const BADGE_COLOR_LABELS = { ...AVATAR_COLOR_LABELS, spectrum: "Spectre" };
 
@@ -3916,6 +3954,19 @@ function renderBadgePreview() {
   );
 }
 
+function renderRuleHelp() {
+  const rule = document.getElementById("badge-rule").value;
+  const input = document.getElementById("badge-threshold");
+  input.hidden = !rule;
+  input.max = BADGE_RULES[rule]?.max || 100000;
+  const n = Number(input.value);
+  document.getElementById("badge-rule-help").textContent = !rule
+    ? "Tu le donnes toi-même, depuis la page d'un utilisateur ou avec « Donner à plusieurs »."
+    : n >= 1
+      ? `Donné dès ${BADGE_RULES[rule].text(n)}, et tout de suite à ceux qui y sont déjà. Il n'est jamais retiré tout seul.`
+      : "Choisis le seuil à atteindre.";
+}
+
 function setupBadgeForm() {
   document.getElementById("badge-icons").replaceChildren(...Object.entries(BADGE_ICONS).map(([code, icon]) => {
     const svg = svgEl("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" });
@@ -3937,6 +3988,8 @@ function setupBadgeForm() {
   }));
   document.getElementById("badge-name").addEventListener("input", renderBadgePreview);
   document.getElementById("badge-description").addEventListener("input", renderBadgePreview);
+  document.getElementById("badge-rule").addEventListener("change", renderRuleHelp);
+  document.getElementById("badge-threshold").addEventListener("input", renderRuleHelp);
   document.getElementById("badge-form").addEventListener("submit", saveBadge);
   document.getElementById("badge-cancel").addEventListener("click", resetBadgeForm);
   resetBadgeForm();
@@ -3949,6 +4002,9 @@ function resetBadgeForm() {
   badgeColor = "lavender";
   document.getElementById("badge-name").value = "";
   document.getElementById("badge-description").value = "";
+  document.getElementById("badge-rule").value = "";
+  document.getElementById("badge-threshold").value = "";
+  renderRuleHelp();
   document.getElementById("badge-form-title").textContent = "Nouveau badge";
   document.getElementById("badge-submit").textContent = "Créer le badge";
   document.getElementById("badge-cancel").hidden = true;
@@ -3965,6 +4021,10 @@ function editBadge(badge) {
   badgeColor = BADGE_COLOR_LABELS[badge.color] ? badge.color : "lavender";
   document.getElementById("badge-name").value = badge.name;
   document.getElementById("badge-description").value = badge.description;
+  // A rule removed from the list: the form shows "À la main"
+  document.getElementById("badge-rule").value = BADGE_RULES[badge.rule] ? badge.rule : "";
+  document.getElementById("badge-threshold").value = badge.threshold ?? "";
+  renderRuleHelp();
   document.getElementById("badge-form-title").textContent = `Modifier « ${badge.name} »`;
   document.getElementById("badge-submit").textContent = "Enregistrer";
   document.getElementById("badge-cancel").hidden = false;
@@ -3978,14 +4038,24 @@ function editBadge(badge) {
 
 async function saveBadge(event) {
   event.preventDefault();
+  const rule = document.getElementById("badge-rule").value || null;
+  const threshold = Number(document.getElementById("badge-threshold").value);
   const body = {
     name: document.getElementById("badge-name").value.trim(),
     description: document.getElementById("badge-description").value.trim(),
     icon: badgeIcon,
     color: badgeColor,
+    // Always sent together: null and null make it a badge given by hand
+    rule,
+    threshold: rule ? threshold : null,
   };
   if (!body.name || !body.description) {
     showToast("Donne un nom et une description au badge.", false);
+    return;
+  }
+  const max = BADGE_RULES[rule]?.max || 100000;
+  if (rule && !(Number.isInteger(threshold) && threshold >= 1 && threshold <= max)) {
+    showToast(`Donne un seuil entier entre 1 et ${numberFormat.format(max)} à la règle.`, false);
     return;
   }
   const creating = editingBadgeId === null;
@@ -3995,9 +4065,12 @@ async function saveBadge(event) {
     const badge = creating
       ? await api("/admin/badges", { method: "POST", body })
       : await api(`/admin/badges/${editingBadgeId}`, { method: "PATCH", body });
-    showToast(creating
+    const owners = plural(badge.holders.length, "utilisateur l'a", "utilisateurs l'ont");
+    let message = creating
       ? `Badge « ${badge.name} » créé. Donne-le depuis la page d'un utilisateur.`
-      : `Badge « ${badge.name} » modifié, sur toutes les Mixtapes qui l'ont.`, true);
+      : `Badge « ${badge.name} » modifié, sur toutes les Mixtapes qui l'ont.`;
+    if (badge.rule) message = `Badge « ${badge.name} » ${creating ? "créé" : "modifié"} : ${owners} déjà.`;
+    showToast(message, true);
     resetBadgeForm();
     loadBadges();
   } catch (error) {
@@ -4010,6 +4083,7 @@ async function saveBadge(event) {
 async function deleteBadge(badge, button) {
   const holders = badge.holders.length ? ` Il sera retiré à ${plural(badge.holders.length, "utilisateur")}.` : "";
   if (!confirm(`Supprimer le badge « ${badge.name} » ?${holders}`)) return;
+  // The rule goes with it: nobody gets it automatically any more
   button.disabled = true;
   try {
     await api(`/admin/badges/${badge.id}`, { method: "DELETE" });
@@ -4053,6 +4127,7 @@ function renderBadges() {
       el("div", { className: "what" }, [
         el("b", { text: badge.name }),
         el("p", { text: badge.description }),
+        el("small", {}, [el("span", { className: badge.rule ? "badge auto" : "badge", text: ruleLabel(badge) })]),
         el("small", {}, [created, ...holders]),
       ]),
       el("div", { className: "actions" }, [
@@ -4073,14 +4148,19 @@ function badgesCard(data) {
 
   if (owned.length) {
     parts.push(el("ul", { className: "badge-list compact" }, owned.map((badge) => {
+      // The rule is in the list of every badge: the profile only has the badge itself
+      const full = (badgesData || []).find((b) => b.id === badge.id);
+      const isAuto = Boolean(full?.rule);
       const remove = actionButton("Retirer", "ghost small", () => {
-        if (confirm(`Retirer le badge « ${badge.name} » à @${username} ?`)) {
+        const back = isAuto ? " Il est automatique : il peut revenir à son prochain drop, ou au prochain swipe sur ses drops, s'il remplit encore la règle." : "";
+        if (confirm(`Retirer le badge « ${badge.name} » à @${username} ?${back}`)) {
           badgeAction(remove, "DELETE", `/admin/users/${userId}/badges/${badge.id}`, `Badge « ${badge.name} » retiré à @${username}.`);
         }
       });
       return el("li", {}, [
         medal(badge.icon, badge.color, 40),
-        el("div", { className: "what" }, [el("b", { text: badge.name }), el("small", { text: `reçu ${relativeTime(badge.awarded_at)}` })]),
+        el("div", { className: "what" }, [el("b", { text: badge.name }),
+          el("small", { text: `reçu ${relativeTime(badge.awarded_at)}${isAuto ? " · automatique" : ""}` })]),
         remove,
       ]);
     })));

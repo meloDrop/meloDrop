@@ -29,6 +29,17 @@ data class ProfileDropOut(
     @SerializedName("saves_count") val savesCount: Int
 )
 
+// A song on the podium of the Mixtape, with its place
+data class PodiumSongOut(
+    // 1, 2 or 3
+    val place: Int,
+    // Id of the song in meloDrop: used for the preview
+    @SerializedName("song_id") val songId: Int,
+    val title: String,
+    val artist: String,
+    @SerializedName("cover_url") val coverUrl: String?
+)
+
 // A user's profile: the same for the user's own profile and for the others (ADR-0018)
 data class ProfileOut(
     val id: Int,
@@ -46,7 +57,10 @@ data class ProfileOut(
     // The drop online today, null if there is none
     @SerializedName("current_drop") val currentDrop: ProfileDropOut? = null,
     // The 5 last expired drops, the most recent first
-    @SerializedName("recent_drops") val recentDrops: List<ProfileDropOut>
+    @SerializedName("recent_drops") val recentDrops: List<ProfileDropOut>,
+    // The podium of the Mixtape, from the 1st place to the last: empty if not made yet.
+    // Default value: the previews that build a ProfileOut by hand do not need to change
+    val podium: List<PodiumSongOut> = emptyList()
 )
 
 
@@ -59,4 +73,10 @@ data class ProfileUpdate(
     @SerializedName("avatar_color") val avatarColor: String,
     // Name of one of the 7 drop styles, like "rock" (AVATAR_STYLES)
     @SerializedName("avatar_style") val avatarStyle: String
+)
+
+// Data sent to replace the whole podium: the first id goes to the 1st place
+data class PodiumUpdate(
+    // Deezer ids from the search results, 3 at most; an empty list empties the podium
+    @SerializedName("deezer_track_ids") val deezerTrackIds: List<Long>
 )

@@ -32,9 +32,12 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Rose
 import kotlinx.coroutines.launch
 
-// The two pages of a profile, in this order: the Mixtape opens first
-private const val PAGE_MIXTAPE = 0
-private const val PAGE_ACTIVITY = 1
+// The two pages of a profile, with the text of their label
+private enum class ProfilePage(val label: String) {
+    MIXTAPE("MIXTAPE"),
+    ACTIVITY("ACTIVITÉ"),
+}
+
 private const val PAGE_COUNT = 2
 
 // Width of one label: the line under the labels moves by this much from one page to the other
@@ -53,8 +56,18 @@ internal fun ProfilePages(
     mixtape: @Composable () -> Unit,
     activity: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    // The page that opens first, on the left: the Mixtape on the profile of the others,
+    // the activity on the user's own profile
+    mixtapeFirst: Boolean = true,
 ) {
-    // Page shown, kept after a rotation. Opens on the Mixtape (page 0)
+    // The pages from left to right
+    val pages = if (mixtapeFirst) {
+        listOf(ProfilePage.MIXTAPE, ProfilePage.ACTIVITY)
+    } else {
+        listOf(ProfilePage.ACTIVITY, ProfilePage.MIXTAPE)
+    }
+
+    // Page shown, kept after a rotation. Opens on the page on the left (page 0)
     val pagerState = rememberPagerState(pageCount = { PAGE_COUNT })
 
     // A tap on a label slides to its page: the animation needs a coroutine
@@ -65,7 +78,8 @@ internal fun ProfilePages(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         PageLabels(
-            // 0.0 on the Mixtape, 1.0 on the activity, in between while the finger slides
+            pages = pages,
+            // 0.0 on the page on the left, 1.0 on the other one, in between while the finger slides
             position = pagerState.currentPage + pagerState.currentPageOffsetFraction,
             currentPage = pagerState.currentPage,
             accent = accent,
@@ -89,18 +103,19 @@ internal fun ProfilePages(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
             ) {
-                when (page) {
-                    PAGE_MIXTAPE -> mixtape()
-                    else -> activity()
+                when (pages[page]) {
+                    ProfilePage.MIXTAPE -> mixtape()
+                    ProfilePage.ACTIVITY -> activity()
                 }
             }
         }
     }
 }
 
-// The two labels side by side, with a short line that follows the finger
+// The two labels side by side, in the order of the pages, with a short line that follows the finger
 @Composable
 private fun PageLabels(
+    pages: List<ProfilePage>,
     position: Float,
     currentPage: Int,
     accent: Color,
@@ -109,16 +124,13 @@ private fun PageLabels(
 ) {
     Box(modifier = modifier.width(LABEL_WIDTH * PAGE_COUNT)) {
         Row {
-            PageLabel(
-                text = "MIXTAPE",
-                isSelected = currentPage == PAGE_MIXTAPE,
-                onClick = { onSelect(PAGE_MIXTAPE) },
-            )
-            PageLabel(
-                text = "ACTIVITÉ",
-                isSelected = currentPage == PAGE_ACTIVITY,
-                onClick = { onSelect(PAGE_ACTIVITY) },
-            )
+            pages.forEachIndexed { index, page ->
+                PageLabel(
+                    text = page.label,
+                    isSelected = currentPage == index,
+                    onClick = { onSelect(index) },
+                )
+            }
         }
 
         // Centered under its label: half the label, minus half the line, plus one label per page
@@ -166,6 +178,21 @@ private fun ProfilePagesPreview() {
             mixtape = { Text("Page Mixtape", color = MaterialTheme.colorScheme.onBackground) },
             activity = { Text("Page Activité", color = MaterialTheme.colorScheme.onBackground) },
             modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+// The user's own profile: the activity on the left
+@Preview(showBackground = true, backgroundColor = 0xFF0C0C10, heightDp = 300)
+@Composable
+private fun ProfilePagesActivityFirstPreview() {
+    MeloDropTheme {
+        ProfilePages(
+            accent = Rose,
+            mixtape = { Text("Page Mixtape", color = MaterialTheme.colorScheme.onBackground) },
+            activity = { Text("Page Activité", color = MaterialTheme.colorScheme.onBackground) },
+            modifier = Modifier.fillMaxSize(),
+            mixtapeFirst = false,
         )
     }
 }

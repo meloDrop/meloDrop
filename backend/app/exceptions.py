@@ -54,6 +54,9 @@ class UserNotFoundError(Exception):
 class DuplicateSongError(Exception):
     """Raised when the same song is given twice for the podium."""
 
+class LabeledSongNotFoundError(Exception):
+    """Raised when there is no song under this label on the user's Mixtape."""
+
 # Admin actions
 
 class OwnAccountError(Exception):

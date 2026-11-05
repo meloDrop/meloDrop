@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.schemas.stats import StatsOut
+from app.schemas.labeled_songs import LabeledSongOut
 from app.schemas.podium import PodiumSongOut
 
 # Background colors an avatar can have (same names in Avatar.kt)
@@ -49,6 +50,8 @@ class ProfileOut(BaseModel):
     recent_drops: list[ProfileDropOut]
     # The podium of the Mixtape, from the 1st place to the last: empty if not made yet
     podium: list[PodiumSongOut]
+    # The labeled songs of the Mixtape, in the order of the labels: empty if none yet
+    labeled_songs: list[LabeledSongOut]
 
 
 class ProfileUpdate(BaseModel):

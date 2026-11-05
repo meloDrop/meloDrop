@@ -78,6 +78,8 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.text.TextStyle
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.CREATOR_USERNAME
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Number of covers on each line of "Mes drops" and "Mes picks"
 private const val COVERS_PER_ROW = 3
@@ -763,6 +765,9 @@ private fun DropThumbnail(
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -776,8 +781,8 @@ private fun DropThumbnail(
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(16.dp))
-                    // The whole cover can be tapped, not only the small button
-                    .clickable(onClick = onPlayClick),
+                    // The play button plays, the rest of the cover opens the poster
+                    .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
             )
 
             // Small play button in the bottom right corner of the cover
@@ -815,6 +820,15 @@ private fun DropThumbnail(
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(drop.songId, drop.title, drop.artist, drop.coverUrl, drop.genre),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
         )
     }
 }

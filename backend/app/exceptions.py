@@ -51,6 +51,9 @@ class SkipNotFoundError(Exception):
 class UserNotFoundError(Exception):
     """Raised when no user has this id."""
 
+class DuplicateSongError(Exception):
+    """Raised when the same song is given twice for the podium."""
+
 # Admin actions
 
 class OwnAccountError(Exception):
@@ -64,3 +67,4 @@ class CoverNotAllowedError(Exception):
 
 class CoverNotFoundError(Exception):
     """Raised when a Deezer cover can't be downloaded, or is not a small image."""
+

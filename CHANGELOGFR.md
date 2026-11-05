@@ -2,6 +2,13 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.7.1] - 06-11-2026
+
+### Corrigé
+- Petits écrans : le badge « ALL TIME » du podium s'écrivait lettre par lettre, en colonne. Il garde sa largeur, et c'est le titre qui passe sur deux lignes si besoin.
+- Petits écrans : la pochette de Discover devenait minuscule, le bouton lecture la recouvrait et le genre était coupé. La pastille « Abonnements d'abord » prend moins de place, le texte d'aide tient sur une ligne, et sur une petite pochette le bouton lecture rétrécit et les pastilles du genre et « Abonné » sont masquées.
+
+
 ## [0.7.0] - 05-11-2026
 
 ### Ajouté

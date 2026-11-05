@@ -3,6 +3,13 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.7.1] - 2026-11-06
+
+### Fixed
+- Small screens: the "ALL TIME" badge of the podium was written letter by letter, in a column. It keeps its width, and the title goes on two lines when needed.
+- Small screens: the cover of Discover became tiny, the play button covered it and the genre was cut. The "Abonnements d'abord" chip takes less room, the hint fits on one line, and on a small cover the play button gets smaller and the genre and "Abonné" chips are hidden.
+
+
 ## [0.7.0] - 2026-11-05
 
 ### Added

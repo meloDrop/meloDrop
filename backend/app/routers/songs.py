@@ -38,3 +38,22 @@ def get_preview(
         raise HTTPException(status_code=404, detail=str(e))
     except DeezerError as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get(
+    "/{song_id}",
+    response_model=schemas.SongDetailOut,
+    responses={
+        200: {"description": "The song, its Deezer details (null when Deezer does not answer) and its meloDrop counters"},
+        404: {"description": "Song not found in meloDrop"},
+    },
+)
+def get_song(
+    song_id: int = Path(description="meloDrop song id (song_id in the lists), not the Deezer id"),
+    db: Session = Depends(get_db),
+):
+    """Everything about a song, for its poster in the app."""
+    try:
+        return services.get_song(db, song_id)
+    except SongNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))

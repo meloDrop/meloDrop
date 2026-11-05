@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.ui.components.CoverImage
+import com.app.melodrop.network.dto.LabeledSongOut
 import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.ui.mypicks.PickThumbnail
@@ -99,6 +100,8 @@ fun ProfileScreen(
     onAccountClick: () -> Unit,
     // Tap on "Modifier" on the podium: opens the podium screen
     onEditPodium: () -> Unit,
+    // Tap on "Modifier" or "Ajouter une chanson" in "Mes chansons": opens the labels screen
+    onEditLabels: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -127,9 +130,11 @@ fun ProfileScreen(
         onPicksClick = onPicksClick,
         onAccountClick = onAccountClick,
         onEditPodium = onEditPodium,
+        onEditLabels = onEditLabels,
         onPlayClick = viewModel::togglePreview,
         onPickPlayClick = viewModel::togglePickPreview,
         onPodiumPlayClick = viewModel::togglePodiumPreview,
+        onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
     )
 }
 
@@ -146,12 +151,15 @@ private fun ProfileContent(
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
     onEditPodium: () -> Unit,
+    onEditLabels: () -> Unit,
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
     // Same, for the cover of a pick
     onPickPlayClick: (LikedSongOut) -> Unit,
     // Same, for a cover of the podium
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    // Same, for a cover of "Mes chansons"
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -175,6 +183,7 @@ private fun ProfileContent(
                 onPicksClick = onPicksClick,
                 onAccountClick = onAccountClick,
                 onEditPodium = onEditPodium,
+                onEditLabels = onEditLabels,
                 playingDropId = uiState.playingDropId,
                 isPlaying = uiState.isPlaying,
                 previewError = uiState.previewError,
@@ -185,6 +194,8 @@ private fun ProfileContent(
                 onPickPlayClick = onPickPlayClick,
                 playingPodiumSongId = uiState.playingPodiumSongId,
                 onPodiumPlayClick = onPodiumPlayClick,
+                playingLabel = uiState.playingLabel,
+                onLabeledSongPlayClick = onLabeledSongPlayClick,
             )
 
             // First answer not there yet
@@ -212,6 +223,7 @@ private fun ProfileBody(
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
     onEditPodium: () -> Unit,
+    onEditLabels: () -> Unit,
     playingDropId: Int?,
     isPlaying: Boolean,
     previewError: String?,
@@ -222,6 +234,8 @@ private fun ProfileBody(
     onPickPlayClick: (LikedSongOut) -> Unit,
     playingPodiumSongId: Int?,
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    playingLabel: String?,
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -240,7 +254,7 @@ private fun ProfileBody(
             // The line under the labels takes the color of the avatar
             accent = avatarColor(profile.avatarColor),
             mixtape = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     // A preview could not be played
                     if (previewError != null) {
                         Text(
@@ -258,6 +272,15 @@ private fun ProfileBody(
                         isPlaying = isPlaying,
                         onPlayClick = onPodiumPlayClick,
                         onEditClick = onEditPodium,
+                    )
+
+                    LabeledSongsSection(
+                        title = "MES CHANSONS",
+                        labeledSongs = profile.labeledSongs,
+                        playingLabel = playingLabel,
+                        isPlaying = isPlaying,
+                        onPlayClick = onLabeledSongPlayClick,
+                        onEditClick = onEditLabels,
                     )
                 }
             },
@@ -948,9 +971,11 @@ private fun ProfileScreenPreview() {
             onPicksClick = {},
             onAccountClick = {},
             onEditPodium = {},
+            onEditLabels = {},
             onPlayClick = {},
             onPickPlayClick = {},
             onPodiumPlayClick = {},
+            onLabeledSongPlayClick = {},
         )
     }
 }
@@ -970,9 +995,11 @@ private fun ProfileErrorPreview() {
             onPicksClick = {},
             onAccountClick = {},
             onEditPodium = {},
+            onEditLabels = {},
             onPlayClick = {},
             onPickPlayClick = {},
             onPodiumPlayClick = {},
+            onLabeledSongPlayClick = {},
         )
     }
 }

@@ -35,6 +35,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.ui.components.CoverImage
+import com.app.melodrop.network.dto.LabeledSongOut
 import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
@@ -73,6 +74,7 @@ fun UserProfileScreen(
         onRetry = { viewModel.load(userId) },
         onPlayClick = viewModel::togglePreview,
         onPodiumPlayClick = viewModel::togglePodiumPreview,
+        onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
     )
 }
 
@@ -86,6 +88,8 @@ private fun UserProfileContent(
     onPlayClick: (ProfileDropOut) -> Unit,
     // Same, for a cover of the podium
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    // Same, for a cover of "Ses chansons"
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -117,6 +121,8 @@ private fun UserProfileContent(
                 onPlayClick = onPlayClick,
                 playingPodiumSongId = uiState.playingPodiumSongId,
                 onPodiumPlayClick = onPodiumPlayClick,
+                playingLabel = uiState.playingLabel,
+                onLabeledSongPlayClick = onLabeledSongPlayClick,
             )
 
             uiState.isLoading -> Box(
@@ -160,6 +166,9 @@ private fun UserProfileBody(
     // Song of the podium whose preview is loaded, null if none
     playingPodiumSongId: Int?,
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    // Label whose song is loaded in the player, null if none
+    playingLabel: String?,
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -172,7 +181,7 @@ private fun UserProfileBody(
             // The line under the labels takes the color of the avatar
             accent = avatarColor(profile.avatarColor),
             mixtape = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     // A preview could not be played
                     if (previewError != null) {
                         Text(
@@ -191,6 +200,17 @@ private fun UserProfileBody(
                         isPlaying = isPlaying,
                         onPlayClick = onPodiumPlayClick,
                     )
+
+                    // Hidden while the user has no labeled song: nothing to show to the others
+                    if (profile.labeledSongs.isNotEmpty()) {
+                        LabeledSongsSection(
+                            title = "SES CHANSONS",
+                            labeledSongs = profile.labeledSongs,
+                            playingLabel = playingLabel,
+                            isPlaying = isPlaying,
+                            onPlayClick = onLabeledSongPlayClick,
+                        )
+                    }
                 }
             },
             activity = {
@@ -383,6 +403,7 @@ private fun UserProfilePreview() {
             onRetry = {},
             onPlayClick = {},
             onPodiumPlayClick = {},
+            onLabeledSongPlayClick = {},
         )
     }
 }

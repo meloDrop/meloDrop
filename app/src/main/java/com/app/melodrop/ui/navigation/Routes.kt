@@ -25,6 +25,8 @@ object Routes {
     const val MY_PICKS = "my_picks"
     // The podium of the Mixtape, opened from "Modifier" on the podium
     const val EDIT_PODIUM = "edit_podium"
+    // The labeled songs of the Mixtape, opened from "Mes chansons"
+    const val EDIT_LABELS = "edit_labels"
 
     // Opened from "Mes likes"
     const val SKIPS = "skips"

@@ -5,6 +5,8 @@ import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.ProfileUpdate
 import com.app.melodrop.network.dto.LikedSongOut
+import com.app.melodrop.network.dto.LabeledSongOut
+import com.app.melodrop.network.dto.LabeledSongUpdate
 import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.PodiumUpdate
 
@@ -38,6 +40,15 @@ class ProfileRepository {
     // Saves the whole podium of the Mixtape, the first id at the 1st place, and gives back the new podium
     suspend fun updatePodium(deezerTrackIds: List<Long>): List<PodiumSongOut> =
         api.updatePodium(PodiumUpdate(deezerTrackIds))
+
+    // Puts a song under a label of the Mixtape, and gives back all the labeled songs
+    suspend fun setLabeledSong(label: String, deezerTrackId: Long): List<LabeledSongOut> =
+        api.setLabeledSong(label, LabeledSongUpdate(deezerTrackId))
+
+    // Removes the song of a label from the Mixtape
+    suspend fun removeLabeledSong(label: String) {
+        api.removeLabeledSong(label)
+    }
 
     // Fresh preview link of a song: Deezer links expire after about 15 minutes
     suspend fun getPreviewUrl(songId: Int): String? = api.getPreview(songId).previewUrl

@@ -35,6 +35,8 @@ data class PodiumSongOut(
     val place: Int,
     // Id of the song in meloDrop: used for the preview
     @SerializedName("song_id") val songId: Int,
+    // Deezer id of the song: sent back with the others to save the podium again
+    @SerializedName("deezer_track_id") val deezerTrackId: Long,
     val title: String,
     val artist: String,
     @SerializedName("cover_url") val coverUrl: String?

@@ -33,6 +33,8 @@ import com.app.melodrop.ui.profile.UserProfileScreen
 import com.app.melodrop.ui.search.UserSearchScreen
 import com.app.melodrop.ui.skips.SkipsScreen
 import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.follows.FollowListScreen
+import com.app.melodrop.ui.follows.FollowTab
 
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
@@ -50,7 +52,8 @@ fun MainScreen(onLogout: () -> Unit) {
             currentRoute == Routes.MY_DROPS ||
             currentRoute == Routes.MY_PICKS ||
             currentRoute == Routes.EDIT_PODIUM ||
-            currentRoute == Routes.EDIT_LABELS
+            currentRoute == Routes.EDIT_LABELS ||
+            currentRoute == Routes.FOLLOWS
 
     // Halos to show: the search is opened from Discover, so it keeps the Discover halos.
     // The other sub-screens take the halos of the Profile tab
@@ -64,6 +67,11 @@ fun MainScreen(onLogout: () -> Unit) {
     // launchSingleTop: a double tap does not open the same profile twice
     fun openUserProfile(userId: Int) {
         navController.navigate(Routes.userProfile(userId)) { launchSingleTop = true }
+    }
+
+    // Opens the followers or the followed users of a user, from the counters of a profile
+    fun openFollows(userId: Int, tab: String) {
+        navController.navigate(Routes.follows(userId, tab)) { launchSingleTop = true }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -116,6 +124,7 @@ fun MainScreen(onLogout: () -> Unit) {
                         onAccountClick = { navController.navigate(Routes.ACCOUNT) },
                         onEditPodium = { navController.navigate(Routes.EDIT_PODIUM) { launchSingleTop = true } },
                         onEditLabels = { navController.navigate(Routes.EDIT_LABELS) { launchSingleTop = true } },
+                        onFollowsClick = ::openFollows,
                     )
                 }
                 composable(Routes.EDIT_PROFILE) {
@@ -184,6 +193,26 @@ fun MainScreen(onLogout: () -> Unit) {
                         userId = entry.arguments?.getInt("userId") ?: 0,
                         // Closes this screen only, even after a double tap
                         onBack = { navController.popBackStack(Routes.USER_PROFILE, inclusive = true) },
+                        onFollowsClick = ::openFollows,
+                    )
+                }
+                composable(
+                    route = Routes.FOLLOWS,
+                    // {userId} is a number, {tab} is "followers" (default) or "following"
+                    arguments = listOf(
+                        navArgument("userId") { type = NavType.IntType },
+                        navArgument("tab") {
+                            type = NavType.StringType
+                            defaultValue = FollowTab.FOLLOWERS
+                        },
+                    ),
+                ) { entry ->
+                    FollowListScreen(
+                        userId = entry.arguments?.getInt("userId") ?: 0,
+                        initialTab = entry.arguments?.getString("tab") ?: FollowTab.FOLLOWERS,
+                        // Closes this screen only, even after a double tap
+                        onBack = { navController.popBackStack(Routes.FOLLOWS, inclusive = true) },
+                        onUserClick = ::openUserProfile,
                     )
                 }
             }

@@ -18,6 +18,7 @@ import com.app.melodrop.network.dto.ProfileOut
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import com.app.melodrop.data.FollowsRepository
 
 // Everything the profile of another user needs to display
 data class UserProfileUiState(
@@ -35,12 +36,18 @@ data class UserProfileUiState(
     // True when the preview plays: pause icon on its cover
     val isPlaying: Boolean = false,
     // Short message above the drops when a preview cannot be played
-    val previewError: String? = null
+    val previewError: String? = null,
+    // True while the backend has not answered the "Suivre" button: a second tap waits
+    val isFollowBusy: Boolean = false,
+    // Shown under the button when the follow could not be saved
+    val followError: String? = null
 )
 
 class UserProfileViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = ProfileRepository()
+
+    private val followsRepository = FollowsRepository()
 
     var uiState by mutableStateOf(UserProfileUiState())
         private set
@@ -91,6 +98,34 @@ class UserProfileViewModel(application: Application) : AndroidViewModel(applicat
                 uiState.copy(isLoading = false, error = message)
             } catch (e: IOException) {
                 uiState.copy(isLoading = false, error = "Impossible de joindre le serveur.")
+            }
+        }
+    }
+
+    // "Suivre" or "Abonné" button: the button and the number of followers change at once,
+    // then the backend is told. If it fails, the profile goes back as it was
+    fun toggleFollow() {
+        val profile = uiState.profile ?: return
+        if (uiState.isFollowBusy) return
+
+        val follow = !profile.isFollowed
+        uiState = uiState.copy(
+            isFollowBusy = true,
+            followError = null,
+            profile = profile.copy(
+                isFollowed = follow,
+                followersCount = profile.followersCount + if (follow) 1 else -1,
+            ),
+        )
+
+        viewModelScope.launch {
+            uiState = try {
+                if (follow) followsRepository.follow(profile.id) else followsRepository.unfollow(profile.id)
+                uiState.copy(isFollowBusy = false)
+            } catch (e: HttpException) {
+                uiState.copy(isFollowBusy = false, profile = profile, followError = "Erreur du serveur (${e.code()}).")
+            } catch (e: IOException) {
+                uiState.copy(isFollowBusy = false, profile = profile, followError = "Impossible de joindre le serveur.")
             }
         }
     }

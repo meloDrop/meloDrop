@@ -107,6 +107,8 @@ fun DiscoverScreen(
         onAuthorClick = onAuthorClick,
         onSearchClick = onSearchClick,
         onInfoClick = viewModel::openWhatsNew,
+        followsFirst = viewModel.followsFirst,
+        onFollowsFirstClick = viewModel::toggleFollowsFirst,
     )
 
     // "Nouveautés" sheet, over the screen: by itself after an update, or with the "i" button
@@ -127,6 +129,10 @@ private fun DiscoverContent(
     onSearchClick: () -> Unit,
     // Tap on the "i": opens the "Nouveautés" sheet
     onInfoClick: () -> Unit,
+    // True: the drops of the followed users come first
+    followsFirst: Boolean = true,
+    // Tap on the "Abonnements d'abord" chip
+    onFollowsFirstClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -161,6 +167,9 @@ private fun DiscoverContent(
                 }
             }
         }
+
+        // The user chooses whether the drops of the followed users come first
+        FollowsFirstChip(selected = followsFirst, onClick = onFollowsFirstClick)
 
         // Takes all the space left under the title, content centered
         Box(

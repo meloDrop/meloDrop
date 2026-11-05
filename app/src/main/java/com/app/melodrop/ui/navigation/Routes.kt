@@ -37,9 +37,16 @@ object Routes {
     // Profile of another user, opened from a drop: "user/12"
     const val USER_PROFILE = "user/{userId}"
 
+    // Followers and followed users of a user, opened from the counters of a profile:
+    // "follows/12?tab=followers"
+    const val FOLLOWS = "follows/{userId}?tab={tab}"
+
     // Address of the verify screen, with the email already filled in
     fun verifyEmail(email: String): String = "verify_email?email=${Uri.encode(email)}"
 
     // Address of the profile of a user, with their id
     fun userProfile(userId: Int): String = "user/$userId"
+
+    // Address of the lists of a user, opened on the tab of the counter tapped
+    fun follows(userId: Int, tab: String): String = "follows/$userId?tab=$tab"
 }

@@ -104,6 +104,8 @@ fun ProfileScreen(
     onEditPodium: () -> Unit,
     // Tap on "Modifier" or "Ajouter une chanson" in "Mes chansons": opens the labels screen
     onEditLabels: () -> Unit,
+    // Tap on "abonnés" or "abonnements": opens the lists, with the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -137,6 +139,7 @@ fun ProfileScreen(
         onPickPlayClick = viewModel::togglePickPreview,
         onPodiumPlayClick = viewModel::togglePodiumPreview,
         onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
+        onFollowsClick = onFollowsClick,
     )
 }
 
@@ -162,6 +165,8 @@ private fun ProfileContent(
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
     // Same, for a cover of "Mes chansons"
     onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // Tap on "abonnés" or "abonnements": the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -198,6 +203,7 @@ private fun ProfileContent(
                 onPodiumPlayClick = onPodiumPlayClick,
                 playingLabel = uiState.playingLabel,
                 onLabeledSongPlayClick = onLabeledSongPlayClick,
+                onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
             )
 
             // First answer not there yet
@@ -238,6 +244,8 @@ private fun ProfileBody(
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
     playingLabel: String?,
     onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // Tap on "abonnés" or "abonnements": FollowTab.FOLLOWERS or FollowTab.FOLLOWING
+    onFollowsClick: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -251,6 +259,9 @@ private fun ProfileBody(
                 onAccountClick = onAccountClick,
             )
         }
+
+        // The counters only: nobody follows their own account
+        FollowBar(profile = profile, onCountClick = onFollowsClick)
 
         ProfilePages(
             // The line under the labels takes the color of the avatar

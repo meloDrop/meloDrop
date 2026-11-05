@@ -94,7 +94,16 @@ data class ProfileOut(
     // The labeled songs of the Mixtape, in the order of the labels: empty if none yet
     @SerializedName("labeled_songs") val labeledSongs: List<LabeledSongOut> = emptyList(),
     // The badges given by the meloDrop team, the most recently given first: empty if none yet
-    val badges: List<BadgeOut> = emptyList()
+    val badges: List<BadgeOut> = emptyList(),
+    // Number of users who follow this user, and number of users this user follows
+    @SerializedName("followers_count") val followersCount: Int = 0,
+    @SerializedName("following_count") val followingCount: Int = 0,
+    // True when the logged-in user follows this user: "Abonné" on the button
+    @SerializedName("is_followed") val isFollowed: Boolean = false,
+    // True when this user follows the logged-in user: "Suivre en retour" on the button
+    @SerializedName("follows_you") val followsYou: Boolean = false,
+    // True on the logged-in user's own profile: no "Suivre" button
+    @SerializedName("is_me") val isMe: Boolean = false
 )
 
 

@@ -58,6 +58,8 @@ fun UserProfileScreen(
     // Id of the user, taken from the route "user/{userId}"
     userId: Int,
     onBack: () -> Unit,
+    // Tap on "abonnés" or "abonnements": opens the lists, with the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
     viewModel: UserProfileViewModel = viewModel(),
 ) {
     // Loads the profile when the screen opens (and again if the id changes)
@@ -82,6 +84,8 @@ fun UserProfileScreen(
         onPlayClick = viewModel::togglePreview,
         onPodiumPlayClick = viewModel::togglePodiumPreview,
         onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
+        onFollowClick = viewModel::toggleFollow,
+        onFollowsClick = onFollowsClick,
     )
 }
 
@@ -97,6 +101,10 @@ private fun UserProfileContent(
     onPodiumPlayClick: (PodiumSongOut) -> Unit,
     // Same, for a cover of "Ses chansons"
     onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // "Suivre" or "Abonné" button
+    onFollowClick: () -> Unit = {},
+    // Tap on "abonnés" or "abonnements": the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -130,6 +138,10 @@ private fun UserProfileContent(
                 onPodiumPlayClick = onPodiumPlayClick,
                 playingLabel = uiState.playingLabel,
                 onLabeledSongPlayClick = onLabeledSongPlayClick,
+                isFollowBusy = uiState.isFollowBusy,
+                followError = uiState.followError,
+                onFollowClick = onFollowClick,
+                onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
             )
 
             uiState.isLoading -> Box(
@@ -176,6 +188,13 @@ private fun UserProfileBody(
     // Label whose song is loaded in the player, null if none
     playingLabel: String?,
     onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // True while the backend has not answered the "Suivre" button
+    isFollowBusy: Boolean = false,
+    // Shown under the button when the follow could not be saved
+    followError: String? = null,
+    onFollowClick: () -> Unit = {},
+    // Tap on "abonnés" or "abonnements": FollowTab.FOLLOWERS or FollowTab.FOLLOWING
+    onFollowsClick: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -183,6 +202,21 @@ private fun UserProfileBody(
     ) {
         // No menu: only the user's own profile has one
         ProfileHeader(profile = profile)
+
+        // The counters, and the "Suivre" button (hidden on the user's own account)
+        FollowBar(
+            profile = profile,
+            onCountClick = onFollowsClick,
+            onFollowClick = onFollowClick,
+            isFollowBusy = isFollowBusy,
+        )
+        if (followError != null) {
+            Text(
+                text = followError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
 
         ProfilePages(
             // The line under the labels takes the color of the avatar

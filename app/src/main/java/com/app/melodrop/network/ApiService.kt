@@ -40,6 +40,7 @@ import com.app.melodrop.network.dto.LabeledSongUpdate
 import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.PodiumUpdate
 import retrofit2.http.PUT
+import com.app.melodrop.network.dto.FollowUserOut
 
 interface ApiService {
 
@@ -74,7 +75,7 @@ interface ApiService {
 
     // Up to 10 drops not seen yet, or an empty list
     @GET("feed")
-    suspend fun getFeed(): List<FeedItem>
+    suspend fun getFeed(@Query("follows_first") followsFirst: Boolean): List<FeedItem>
 
     // 204 with no body: nothing to read back
     @POST("drops/{drop_id}/save")
@@ -179,4 +180,20 @@ interface ApiService {
     // Other users whose @username starts with the query, 20 max (or an empty list)
     @GET("users/search")
     suspend fun searchUsers(@Query("q") query: String): List<UserSearchOut>
+
+    // Follows a user: 204, nothing changes if already followed
+    @POST("users/{user_id}/follow")
+    suspend fun followUser(@Path("user_id") userId: Int)
+
+    // Stops following a user: 204, nothing changes if not followed
+    @DELETE("users/{user_id}/follow")
+    suspend fun unfollowUser(@Path("user_id") userId: Int)
+
+    // The users who follow a user, the most recent first
+    @GET("users/{user_id}/followers")
+    suspend fun getFollowers(@Path("user_id") userId: Int): List<FollowUserOut>
+
+    // The users a user follows, the most recent first
+    @GET("users/{user_id}/following")
+    suspend fun getFollowing(@Path("user_id") userId: Int): List<FollowUserOut>
 }

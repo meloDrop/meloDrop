@@ -16,6 +16,7 @@ import com.app.melodrop.network.dto.FeedItem
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import com.app.melodrop.data.DiscoverPrefsStore
 
 
 // Everything the Discover screen needs to display
@@ -47,6 +48,11 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     var showWhatsNew by mutableStateOf(false)
         private set
 
+    // True: the drops of the followed users come first. Kept apart from uiState,
+    // like showWhatsNew: loadFeed() builds a new uiState
+    var followsFirst by mutableStateOf(true)
+        private set
+
     // Plays the previews, one at a time. It lives as long as the ViewModel,
 // so it survives a screen rotation or a change of tab
     private val player = buildPreviewPlayer(application)
@@ -68,8 +74,13 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
             }
         })
 
-        // Loads a first batch as soon as the screen opens
-        loadFeed()
+        // Loads a first batch as soon as the screen opens, with the choice saved on the phone.
+        // isLoading at once: the "Plus de drop" message must not flash while the choice is read
+        uiState = uiState.copy(isLoading = true)
+        viewModelScope.launch {
+            followsFirst = DiscoverPrefsStore.followsFirst(application)
+            loadFeed()
+        }
 
         // First launch after an update: the "Nouveautés" sheet opens by itself
         viewModelScope.launch {
@@ -94,7 +105,7 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
 
         viewModelScope.launch {
             uiState = try {
-                DiscoverUiState(drops = repository.getFeed())
+                DiscoverUiState(drops = repository.getFeed(followsFirst))
             } catch (e: HttpException) {
                 DiscoverUiState(error = "Erreur du serveur (${e.code()}).")
             } catch (e: IOException) {
@@ -107,7 +118,16 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    // The card on screen was swiped: right = like, left = skip
+    // "Abonnements d'abord" chip: saved on the phone, then a new batch in the new order
+    fun toggleFollowsFirst() {
+        followsFirst = !followsFirst
+        val value = followsFirst
+        viewModelScope.launch {
+            DiscoverPrefsStore.setFollowsFirst(getApplication<Application>(), value)
+        }
+        loadFeed()
+    }
+
     // The card on screen was swiped: right = like, left = skip
     fun onSwiped(drop: FeedItem, liked: Boolean) {
         sendChoice(drop) {

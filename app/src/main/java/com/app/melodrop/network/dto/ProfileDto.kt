@@ -54,6 +54,22 @@ data class LabeledSongOut(
     @SerializedName("cover_url") val coverUrl: String?
 )
 
+// A badge given by the meloDrop team from the dashboard, shown on the Mixtape
+data class BadgeOut(
+    // Id of the badge
+    val id: Int,
+    // Shown under the badge, like "Testeur de la 1re heure"
+    val name: String,
+    // Why the user got it, shown when the badge is tapped
+    val description: String,
+    // Code of the icon, like "flame": its drawing is in BadgeIcons.kt
+    val icon: String,
+    // Code of the color, like "peach", or "spectrum" for all the pastels
+    val color: String,
+    // When the badge was given, in UTC, like "2026-11-03T18:00:00Z"
+    @SerializedName("awarded_at") val awardedAt: String
+)
+
 // A user's profile: the same for the user's own profile and for the others (ADR-0018)
 data class ProfileOut(
     val id: Int,
@@ -76,7 +92,9 @@ data class ProfileOut(
     // Default value: the previews that build a ProfileOut by hand do not need to change
     val podium: List<PodiumSongOut> = emptyList(),
     // The labeled songs of the Mixtape, in the order of the labels: empty if none yet
-    @SerializedName("labeled_songs") val labeledSongs: List<LabeledSongOut> = emptyList()
+    @SerializedName("labeled_songs") val labeledSongs: List<LabeledSongOut> = emptyList(),
+    // The badges given by the meloDrop team, the most recently given first: empty if none yet
+    val badges: List<BadgeOut> = emptyList()
 )
 
 

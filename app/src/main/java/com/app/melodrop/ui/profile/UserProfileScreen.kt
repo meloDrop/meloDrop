@@ -211,6 +211,11 @@ private fun UserProfileBody(
                             onPlayClick = onLabeledSongPlayClick,
                         )
                     }
+
+                    // Hidden while the user has no badge
+                    if (profile.badges.isNotEmpty()) {
+                        BadgesSection(badges = profile.badges, emptyText = null)
+                    }
                 }
             },
             activity = {

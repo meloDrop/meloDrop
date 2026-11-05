@@ -284,6 +284,59 @@
   .tabs a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
   .tabs a[aria-current="page"] { background: var(--lavender); color: var(--night); }
 
+  /* Badges: a ring of their color with their icon, like BadgeCircle.kt in the app */
+  .medal {
+    display: inline-grid; place-items: center; flex: none;
+    width: var(--size, 56px); height: var(--size, 56px); border-radius: 50%;
+    border: 2px solid var(--c); background: var(--bg);
+  }
+  .medal svg { width: 43%; height: 43%; fill: none; stroke: var(--c); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Spectre: the 5 pastels around a dark disc, the icon in rose */
+  .medal.spectrum {
+    --c: var(--rose); border-color: transparent;
+    background: linear-gradient(#211f2b, #211f2b) padding-box,
+      linear-gradient(135deg, var(--lavender), var(--rose), var(--peach), var(--butter), var(--mint)) border-box;
+  }
+
+  /* Badges tab: the form on the left, the badges on the right */
+  .badges-layout { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 12px; align-items: start; }
+  .badge-form { display: flex; flex-direction: column; gap: 14px; position: sticky; top: calc(var(--header-h, 70px) + 12px); }
+  .badge-form .subtitle { margin-bottom: 0; }
+  .badge-form textarea {
+    font: inherit; color: var(--text); background: var(--night); resize: vertical;
+    border: 1px solid var(--outline); border-radius: 12px; padding: 9px 12px; width: 100%;
+  }
+  .badge-form textarea:focus-visible { outline: 2px solid var(--lavender); outline-offset: 2px; }
+  .icon-picker { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .icon-picker button {
+    aspect-ratio: 1; padding: 0; display: grid; place-items: center;
+    background: var(--night); color: var(--muted); border: 1px solid var(--outline); border-radius: 12px;
+  }
+  .icon-picker svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-picker button[aria-pressed="true"] { color: var(--text); border-color: var(--lavender); background: rgb(180 167 245 / .16); }
+  .color-picker { display: flex; flex-wrap: wrap; gap: 10px; }
+  .color-picker button { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: var(--c); }
+  .color-picker button.spectrum { background: linear-gradient(135deg, var(--lavender), var(--rose), var(--peach), var(--butter), var(--mint)); }
+  .color-picker button[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 3px; }
+  .badge-preview {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+    padding: 16px; background: var(--night); border: 1px solid var(--outline); border-radius: 14px;
+  }
+  .badge-preview b { font-size: 12px; font-weight: 500; max-width: 120px; overflow-wrap: anywhere; }
+  .badge-preview small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .badge-list { list-style: none; margin: 0; padding: 0; }
+  .badge-list li { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-top: 1px solid var(--outline); }
+  .badge-list li:first-child { border-top: 0; }
+  .badge-list .what { flex: 1; min-width: 0; }
+  .badge-list .what b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+  .badge-list .what p { margin: 2px 0 6px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+  .badge-list .what small { display: block; color: var(--muted); font-size: 12px; }
+  .badge-list .actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  /* On the page of a user: smaller, one line per badge */
+  .badge-list.compact li { align-items: center; gap: 10px; padding: 8px 0; }
+  .give-badge { margin-top: 12px; }
+  .give-badge select { flex: 1; min-width: 0; }
+
   /* Récap tab: a card made for a screenshot */
   .recap-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 16px; }
   .recap-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
@@ -554,7 +607,8 @@
     .status button { padding: 5px 12px; font-size: 13px; }
     /* The tabs scroll sideways instead of breaking the words */
     .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-    .users-layout, .detail-row.wide, .catalog-layout { grid-template-columns: minmax(0, 1fr); }
+    .users-layout, .detail-row.wide, .catalog-layout, .badges-layout { grid-template-columns: minmax(0, 1fr); }
+    .badge-form { position: static; }
     .catalog-detail { position: static; max-height: none; }
     .user-picker { position: static; }
     .user-list { max-height: 260px; }
@@ -617,7 +671,9 @@
     button.play { width: 40px; height: 40px; }
     button.play svg { width: 14px; height: 14px; }
     /* 16 px: the phone does not zoom in when a field gets the focus */
-    input[type="password"], input[type="email"], input[type="text"], input[type="search"], select { font-size: 16px; padding: 12px; }
+    input[type="password"], input[type="email"], input[type="text"], input[type="search"], select, .badge-form textarea { font-size: 16px; padding: 12px; }
+    .badge-list li { flex-wrap: wrap; }
+    .badge-list .actions { width: 100%; justify-content: flex-start; }
     /* Tables: each row becomes a small card, with the name of the column above each value */
     table.stack thead { display: none; }
     table.stack tr {
@@ -698,6 +754,7 @@
       <a href="#songs" data-tab="songs"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span class="tab-long">Sons</span><span class="tab-short">Sons</span></a>
       <a href="#catalog" data-tab="catalog"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="tab-long">Catalogue</span><span class="tab-short">Deezer</span></a>
       <a href="#users" data-tab="users"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-long">Utilisateurs</span><span class="tab-short">Comptes</span></a>
+      <a href="#badges" data-tab="badges"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 21l5-2.5 5 2.5-1.5-7"/></svg><span class="tab-long">Badges</span><span class="tab-short">Badges</span></a>
       <a href="#recap" data-tab="recap"><svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg><span class="tab-long">Récap</span><span class="tab-short">Récap</span></a>
     </nav>
     <div class="status" id="status" hidden>
@@ -904,6 +961,35 @@
       </div>
     </section>
    </div>
+
+   <!-- Badges tab: create the badges here, then give them from the page of a user -->
+   <div id="tab-badges" class="badges-layout" hidden>
+    <form id="badge-form" class="card badge-form" novalidate>
+      <div>
+        <h2 id="badge-form-title">Nouveau badge</h2>
+        <p class="subtitle">Il apparaît sur la Mixtape de ceux à qui tu le donnes, depuis leur page dans Utilisateurs.</p>
+      </div>
+      <label class="field"><span>Nom · 40 caractères maximum</span>
+        <input type="text" id="badge-name" maxlength="40" autocomplete="off" placeholder="Testeur de la 1re heure"></label>
+      <label class="field"><span>Description · s'affiche quand on touche le badge</span>
+        <textarea id="badge-description" rows="3" maxlength="200" placeholder="Tu as testé meloDrop avant sa sortie."></textarea></label>
+      <div class="field"><span id="badge-icon-label">Icône</span>
+        <div class="icon-picker" id="badge-icons" role="group" aria-labelledby="badge-icon-label"></div></div>
+      <div class="field"><span id="badge-color-label">Couleur</span>
+        <div class="color-picker" id="badge-colors" role="group" aria-labelledby="badge-color-label"></div></div>
+      <div class="field"><span>Aperçu dans l'appli</span>
+        <div class="badge-preview" id="badge-preview"></div></div>
+      <div class="row">
+        <button type="submit" id="badge-submit">Créer le badge</button>
+        <button type="button" id="badge-cancel" class="ghost" hidden>Annuler</button>
+      </div>
+    </form>
+    <section class="card">
+      <h2 id="badges-title">Badges</h2>
+      <p class="subtitle">Le plus récent en premier. Pour donner ou retirer un badge : la page de l'utilisateur.</p>
+      <div id="badges-list"><p class="empty">Chargement…</p></div>
+    </section>
+   </div>
   </main>
 </div>
 
@@ -926,7 +1012,7 @@ const REFRESH_SECONDS = 20;
 // The token is kept in sessionStorage: it survives a refresh, and is gone when the tab closes
 const TOKEN_KEY = "melodrop_admin_token";
 // Tabs open in production: everything but Logs, which stays in the local dashboard
-const ENABLED_TABS = ["overview", "drops", "songs", "catalog", "users", "recap"];
+const ENABLED_TABS = ["overview", "drops", "songs", "catalog", "users", "badges", "recap"];
 
 // Error codes of the API (the "detail" field), as messages for the admin
 const ERROR_MESSAGES = {
@@ -948,6 +1034,10 @@ const ERROR_MESSAGES = {
   deezer_unavailable: "Deezer ne répond pas pour le moment.",
   cover_not_allowed: "Cette pochette ne vient pas de Deezer.",
   cover_not_found: "Pochette introuvable sur Deezer.",
+  badge_not_found: "Badge introuvable : il a peut-être été supprimé.",
+  badge_name_taken: "Un autre badge porte déjà ce nom.",
+  badge_already_awarded: "Il a déjà ce badge.",
+  user_badge_not_found: "Il n'a plus ce badge.",
 };
 
 // Series of the daily chart, in this order (checked for color blindness)
@@ -1722,6 +1812,7 @@ async function refresh() {
     if (currentTab === "drops") loadDrops();
     if (currentTab === "songs") loadSongs();
     if (currentTab === "recap") loadRecap();
+    if (currentTab === "badges") loadBadges();
     document.getElementById("error").hidden = true;
   } catch (error) {
     showError(error.message);
@@ -1948,8 +2039,10 @@ async function loadUser(userId) {
   const request = ++userRequest;
   box.classList.add("loading");
   try {
-    const data = await api(`/admin/users/${userId}`);
+    // Every badge too, for the list of the badges to give
+    const [data, badges] = await Promise.all([api(`/admin/users/${userId}`), api("/admin/badges")]);
     if (request !== userRequest) return;
+    badgesData = badges;
     renderUserDetail(data);
   } catch (error) {
     if (request !== userRequest) return;
@@ -2207,7 +2300,7 @@ function renderUserDetail(data) {
   keepScroll(box, () => {
     const activity = activityCard(data);
     box.replaceChildren(
-      el("div", { className: "detail-row" }, [profileCard(data), accountCard(data)]),
+      el("div", { className: "detail-row" }, [profileCard(data), accountCard(data), badgesCard(data)]),
       statTiles(data),
       el("div", { className: "detail-row wide" }, [activity, affinitiesCard(data)]),
       el("div", { className: "detail-row" }, [
@@ -3357,7 +3450,279 @@ document.getElementById("recap-copy").addEventListener("click", async () => {
   showToast("Message copié : colle-le dans le groupe des testeurs.", true);
 });
 
-// ---------- Tabs (the address ends with #overview, #drops, #songs, #users or #user/12) ----------
+// ---------- Badges (Badges tab, and the Badges card of a user) ----------
+
+// Icons of the badges: same codes as BadgeIcon in schemas/badges.py, same paths as BadgeIcons.kt.
+// Outlines on a 24 x 24 grid, drawn with a round stroke 2 wide
+const BADGE_ICONS = {
+  drop: { label: "Goutte", path: "M12 3 C14 7 18 10 18 14.5 A6 6 0 0 1 6 14.5 C6 10 10 7 12 3 Z" },
+  flame: { label: "Flamme", path: "M12 3 c1.15 4.03 5.75 6.33 5.75 12.08 a5.75 5.75 0 0 1 -11.5 0 c0 -2.99 1.61 -4.83 2.99 -6.1 0.23 2.3 1.5 3.57 2.76 3.57 0 -3.68 -1.15 -6.1 0 -9.55 z" },
+  star: { label: "Étoile", path: "M12 3.5 l2.6 5.6 6.1 0.6 -4.6 4.1 1.3 6 -5.4 -3.1 -5.4 3.1 1.3 -6 -4.6 -4.1 6.1 -0.6 z" },
+  heart: { label: "Cœur", path: "M12 20.3 l-1.3 -1.2 C6 14.9 3 12.2 3 8.8 3 6.1 5.1 4 7.8 4 c1.5 0 3 0.7 4.2 1.9 C13.2 4.7 14.7 4 16.2 4 18.9 4 21 6.1 21 8.8 c0 3.4 -3 6.1 -7.7 10.3 z" },
+  headphones: { label: "Casque", path: "M4 15 v-3 a8 8 0 0 1 16 0 v3 M5 14 h1.5 a1.5 1.5 0 0 1 1.5 1.5 v3.5 a1.5 1.5 0 0 1 -1.5 1.5 H5 a1.5 1.5 0 0 1 -1.5 -1.5 v-3.5 A1.5 1.5 0 0 1 5 14 z M17.5 14 H19 a1.5 1.5 0 0 1 1.5 1.5 v3.5 a1.5 1.5 0 0 1 -1.5 1.5 h-1.5 a1.5 1.5 0 0 1 -1.5 -1.5 v-3.5 a1.5 1.5 0 0 1 1.5 -1.5 z" },
+  calendar: { label: "Calendrier", path: "M7 5.5 h10 a3 3 0 0 1 3 3 v9 a3 3 0 0 1 -3 3 H7 a3 3 0 0 1 -3 -3 v-9 a3 3 0 0 1 3 -3 z M4 10 h16 M8.5 3.5 v4 M15.5 3.5 v4 M9 15 l2 2 4 -4" },
+  bolt: { label: "Éclair", path: "M13 3 L5 13.5 h6 L10 21 l8 -10.5 h-6 z" },
+  crown: { label: "Couronne", path: "M5 16.5 L3.5 7.5 l4.5 3.5 L12 5 l4 6 4.5 -3.5 L19 16.5 z M5 20 h14" },
+  trophy: { label: "Trophée", path: "M8 4 h8 v5 a4 4 0 0 1 -8 0 z M8 6 H5 a3 3 0 0 0 3 4 M16 6 h3 a3 3 0 0 1 -3 4 M12 13 v4 M8 20 h8" },
+  vinyl: { label: "Vinyle", path: "M3.5 12 a8.5 8.5 0 1 0 17 0 a8.5 8.5 0 1 0 -17 0 z M9.5 12 a2.5 2.5 0 1 0 5 0 a2.5 2.5 0 1 0 -5 0 z M12 6.5 a5.5 5.5 0 0 1 5.5 5.5" },
+  mic: { label: "Micro", path: "M9 6 a3 3 0 0 1 6 0 v5 a3 3 0 0 1 -6 0 z M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21 M8.5 21 h7" },
+  note: { label: "Note", path: "M9 18 V5 l11 -2 v13 M3 18 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 z M14 16 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 z" },
+};
+// Colors of the badges: the 5 pastels of the avatars, or "spectrum" for all of them
+const BADGE_COLOR_LABELS = { ...AVATAR_COLOR_LABELS, spectrum: "Spectre" };
+
+// Every badge (GET /admin/badges): the Badges tab, and the list of the badges to give
+let badgesData = null;
+let badgesRequest = 0;
+// Badge changed in the form, or null for a new one
+let editingBadgeId = null;
+let badgeIcon = "drop";
+let badgeColor = "lavender";
+// Badge chosen in the list of a user: kept when the page refreshes itself
+let badgeChoice = { userId: null, value: "" };
+
+// A badge: a ring of its color with its icon. Unknown codes are drawn like the app: star, lavender
+function medal(icon, color, size) {
+  const svg = svgEl("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" });
+  svg.append(svgEl("path", { d: (BADGE_ICONS[icon] || BADGE_ICONS.star).path }));
+  if (color === "spectrum") return el("span", { className: "medal spectrum", style: { "--size": `${size}px` } }, [svg]);
+  const c = AVATAR_COLORS[color] || AVATAR_COLORS.lavender;
+  // 24: about 14 % of opacity, like the app
+  return el("span", { className: "medal", style: { "--size": `${size}px`, "--c": c, "--bg": `${c}24` } }, [svg]);
+}
+
+// Marks the chosen button of a picker (icons or colors)
+function pressIn(groupId, code) {
+  document.querySelectorAll(`#${groupId} button`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.code === code)));
+}
+
+function renderBadgePreview() {
+  const name = document.getElementById("badge-name").value.trim();
+  const description = document.getElementById("badge-description").value.trim();
+  document.getElementById("badge-preview").replaceChildren(
+    medal(badgeIcon, badgeColor, 56),
+    el("b", { text: name || "Nom du badge" }),
+    el("small", { text: description || "Sa description, quand on le touche" }),
+  );
+}
+
+function setupBadgeForm() {
+  document.getElementById("badge-icons").replaceChildren(...Object.entries(BADGE_ICONS).map(([code, icon]) => {
+    const svg = svgEl("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" });
+    svg.append(svgEl("path", { d: icon.path }));
+    const button = actionButton("", "", () => { badgeIcon = code; pressIn("badge-icons", code); renderBadgePreview(); });
+    button.append(svg);
+    button.dataset.code = code;
+    button.title = icon.label;
+    button.setAttribute("aria-label", icon.label);
+    return button;
+  }));
+  document.getElementById("badge-colors").replaceChildren(...Object.entries(BADGE_COLOR_LABELS).map(([code, label]) => {
+    const button = actionButton("", code === "spectrum" ? "spectrum" : "", () => { badgeColor = code; pressIn("badge-colors", code); renderBadgePreview(); });
+    if (code !== "spectrum") button.style.setProperty("--c", AVATAR_COLORS[code]);
+    button.dataset.code = code;
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    return button;
+  }));
+  document.getElementById("badge-name").addEventListener("input", renderBadgePreview);
+  document.getElementById("badge-description").addEventListener("input", renderBadgePreview);
+  document.getElementById("badge-form").addEventListener("submit", saveBadge);
+  document.getElementById("badge-cancel").addEventListener("click", resetBadgeForm);
+  resetBadgeForm();
+}
+
+// Empties the form, for a new badge
+function resetBadgeForm() {
+  editingBadgeId = null;
+  badgeIcon = "drop";
+  badgeColor = "lavender";
+  document.getElementById("badge-name").value = "";
+  document.getElementById("badge-description").value = "";
+  document.getElementById("badge-form-title").textContent = "Nouveau badge";
+  document.getElementById("badge-submit").textContent = "Créer le badge";
+  document.getElementById("badge-cancel").hidden = true;
+  pressIn("badge-icons", badgeIcon);
+  pressIn("badge-colors", badgeColor);
+  renderBadgePreview();
+}
+
+// Fills the form with a badge, to change it
+function editBadge(badge) {
+  editingBadgeId = badge.id;
+  // An icon or a color removed from the lists: the form takes the first one
+  badgeIcon = BADGE_ICONS[badge.icon] ? badge.icon : "drop";
+  badgeColor = BADGE_COLOR_LABELS[badge.color] ? badge.color : "lavender";
+  document.getElementById("badge-name").value = badge.name;
+  document.getElementById("badge-description").value = badge.description;
+  document.getElementById("badge-form-title").textContent = `Modifier « ${badge.name} »`;
+  document.getElementById("badge-submit").textContent = "Enregistrer";
+  document.getElementById("badge-cancel").hidden = false;
+  pressIn("badge-icons", badgeIcon);
+  pressIn("badge-colors", badgeColor);
+  renderBadgePreview();
+  const form = document.getElementById("badge-form");
+  form.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  document.getElementById("badge-name").focus({ preventScroll: true });
+}
+
+async function saveBadge(event) {
+  event.preventDefault();
+  const body = {
+    name: document.getElementById("badge-name").value.trim(),
+    description: document.getElementById("badge-description").value.trim(),
+    icon: badgeIcon,
+    color: badgeColor,
+  };
+  if (!body.name || !body.description) {
+    showToast("Donne un nom et une description au badge.", false);
+    return;
+  }
+  const creating = editingBadgeId === null;
+  const button = document.getElementById("badge-submit");
+  button.disabled = true;
+  try {
+    const badge = creating
+      ? await api("/admin/badges", { method: "POST", body })
+      : await api(`/admin/badges/${editingBadgeId}`, { method: "PATCH", body });
+    showToast(creating
+      ? `Badge « ${badge.name} » créé. Donne-le depuis la page d'un utilisateur.`
+      : `Badge « ${badge.name} » modifié, sur toutes les Mixtapes qui l'ont.`, true);
+    resetBadgeForm();
+    loadBadges();
+  } catch (error) {
+    if (loggedIn) showToast(error.message, false);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function deleteBadge(badge, button) {
+  const holders = badge.holders.length ? ` Il sera retiré à ${plural(badge.holders.length, "utilisateur")}.` : "";
+  if (!confirm(`Supprimer le badge « ${badge.name} » ?${holders}`)) return;
+  button.disabled = true;
+  try {
+    await api(`/admin/badges/${badge.id}`, { method: "DELETE" });
+    showToast(`Badge « ${badge.name} » supprimé.`, true);
+    if (editingBadgeId === badge.id) resetBadgeForm();
+  } catch (error) {
+    if (loggedIn) showToast(error.message, false);
+  }
+  loadBadges();
+}
+
+async function loadBadges() {
+  // Only the last request counts
+  const request = ++badgesRequest;
+  try {
+    const badges = await api("/admin/badges");
+    if (request !== badgesRequest) return;
+    badgesData = badges;
+    renderBadges();
+  } catch (error) {
+    if (request === badgesRequest) showError(error.message);
+  }
+}
+
+function renderBadges() {
+  const box = document.getElementById("badges-list");
+  document.getElementById("badges-title").textContent = `Badges (${badgesData.length})`;
+  if (!badgesData.length) {
+    box.replaceChildren(el("p", { className: "empty", text: "Aucun badge pour l'instant : crée le premier avec le formulaire." }));
+    return;
+  }
+  box.replaceChildren(el("ul", { className: "badge-list" }, badgesData.map((badge) => {
+    const created = `Créé le ${dateFormat.format(new Date(badge.created_at))} · `;
+    const holders = badge.holders.length
+      ? [`${plural(badge.holders.length, "utilisateur")} : `,
+        ...badge.holders.flatMap((h, i) => [i ? ", " : "", userLink(h.user_id, h.username)])]
+      : ["personne ne l'a encore"];
+    const remove = actionButton("Supprimer", "ghost small", () => deleteBadge(badge, remove));
+    return el("li", {}, [
+      medal(badge.icon, badge.color, 48),
+      el("div", { className: "what" }, [
+        el("b", { text: badge.name }),
+        el("p", { text: badge.description }),
+        el("small", {}, [created, ...holders]),
+      ]),
+      el("div", { className: "actions" }, [
+        actionButton("Modifier", "ghost small", () => editBadge(badge)),
+        remove,
+      ]),
+    ]);
+  })));
+}
+
+// Badges card of a user: the ones he has, each with "Retirer", and a list to give another one
+function badgesCard(data) {
+  const userId = data.account.id;
+  const username = data.account.username;
+  const owned = data.profile.badges;
+  const parts = [];
+
+  if (owned.length) {
+    parts.push(el("ul", { className: "badge-list compact" }, owned.map((badge) => {
+      const remove = actionButton("Retirer", "ghost small", () => {
+        if (confirm(`Retirer le badge « ${badge.name} » à @${username} ?`)) {
+          badgeAction(remove, "DELETE", `/admin/users/${userId}/badges/${badge.id}`, `Badge « ${badge.name} » retiré à @${username}.`);
+        }
+      });
+      return el("li", {}, [
+        medal(badge.icon, badge.color, 40),
+        el("div", { className: "what" }, [el("b", { text: badge.name }), el("small", { text: `reçu ${relativeTime(badge.awarded_at)}` })]),
+        remove,
+      ]);
+    })));
+  } else {
+    parts.push(el("p", { className: "empty", text: "Aucun badge pour l'instant." }));
+  }
+
+  // The badges he does not have yet
+  const ownedIds = new Set(owned.map((b) => b.id));
+  const left = (badgesData || []).filter((b) => !ownedIds.has(b.id));
+  if (!badgesData || !badgesData.length) {
+    parts.push(el("p", { className: "muted" }, [
+      "Aucun badge créé : ", el("a", { className: "user-link", href: "#badges", text: "crée-en un dans l'onglet Badges" }), "."]));
+  } else if (!left.length) {
+    parts.push(el("p", { className: "muted", text: "Il a déjà tous les badges." }));
+  } else {
+    const select = el("select", {}, [
+      Object.assign(el("option", { text: "Choisir un badge à donner…" }), { value: "" }),
+      ...left.map((b) => Object.assign(el("option", { text: b.name }), { value: String(b.id) })),
+    ]);
+    select.setAttribute("aria-label", "Badge à donner");
+    // The page refreshes itself every 20 seconds: the choice must not change under the mouse
+    if (badgeChoice.userId === userId && left.some((b) => String(b.id) === badgeChoice.value)) select.value = badgeChoice.value;
+    const give = actionButton("Donner", "small", () => {
+      const badge = left.find((b) => String(b.id) === select.value);
+      if (badge) badgeAction(give, "POST", `/admin/users/${userId}/badges/${badge.id}`, `Badge « ${badge.name} » donné à @${username}.`);
+    });
+    give.disabled = !select.value;
+    select.addEventListener("change", () => {
+      badgeChoice = { userId, value: select.value };
+      give.disabled = !select.value;
+    });
+    parts.push(el("div", { className: "row give-badge" }, [select, give]));
+  }
+  return card(`Badges (${owned.length})`, "Sur sa Mixtape dans l'appli, le plus récent en premier", parts);
+}
+
+// Gives or takes back a badge, then draws the user again
+async function badgeAction(button, method, path, message) {
+  button.disabled = true;
+  try {
+    await api(path, { method });
+    badgeChoice = { userId: null, value: "" };
+    showToast(message, true);
+  } catch (error) {
+    if (loggedIn) showToast(error.message, false);
+  }
+  if (selectedUserId) loadUser(selectedUserId);
+}
+
+setupBadgeForm();
+
+// ---------- Tabs (the address ends with #overview, #drops, #songs, #users, #badges or #user/12) ----------
 
 // Halo layouts of HaloBackground.kt: x, y, radius, strength for lavender, butter, mint, rose
 const HALO_LAYOUTS = {
@@ -3367,6 +3732,7 @@ const HALO_LAYOUTS = {
   songs: [[1, .55, .75, .12], [.15, .08, .95, .2], [.9, 1, .7, .1], [0, .75, .7, .12]],          // Discover, mirrored
   catalog: [[0, .2, .8, .14], [1, .1, .7, .1], [.2, 1, .8, .16], [1, .8, .6, .1]],                // like the Drop screen search
   recap: [[.5, .15, .9, .2], [.05, .6, .7, .14], [.95, .85, .7, .12], [.9, .1, .6, .14]],          // festive
+  badges: [[.95, .2, .8, .16], [.1, .05, .7, .14], [0, .85, .75, .12], [.8, 1, .7, .12]],           // like the Mixtape
 };
 
 function setHalos(layout) {
@@ -3384,6 +3750,7 @@ function showTab(tab) {
   document.getElementById("tab-songs").hidden = tab !== "songs";
   document.getElementById("tab-catalog").hidden = tab !== "catalog";
   document.getElementById("tab-recap").hidden = tab !== "recap";
+  document.getElementById("tab-badges").hidden = tab !== "badges";
   document.querySelectorAll("#tabs a").forEach((a) => {
     if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
@@ -3423,6 +3790,10 @@ function route() {
   } else if (location.hash === "#recap") {
     showTab("recap");
     if (currentData) loadRecap();
+  } else if (location.hash === "#badges") {
+    showTab("badges");
+    if (badgesData) renderBadges();
+    if (currentData) loadBadges();
   } else if (location.hash.startsWith("#users")) {
     // #users/never opens the list with a filter (link of the overview tile)
     const filter = location.hash.split("/")[1];

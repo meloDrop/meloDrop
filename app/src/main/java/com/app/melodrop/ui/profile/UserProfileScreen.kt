@@ -35,12 +35,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.ui.components.CoverImage
+import com.app.melodrop.network.dto.LabeledSongOut
+import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.GenreChip
+import com.app.melodrop.ui.components.avatarColor
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Connects the screen to its ViewModel
 @Composable
@@ -48,6 +58,8 @@ fun UserProfileScreen(
     // Id of the user, taken from the route "user/{userId}"
     userId: Int,
     onBack: () -> Unit,
+    // Tap on "abonnés" or "abonnements": opens the lists, with the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
     viewModel: UserProfileViewModel = viewModel(),
 ) {
     // Loads the profile when the screen opens (and again if the id changes)
@@ -70,6 +82,10 @@ fun UserProfileScreen(
         onBack = onBack,
         onRetry = { viewModel.load(userId) },
         onPlayClick = viewModel::togglePreview,
+        onPodiumPlayClick = viewModel::togglePodiumPreview,
+        onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
+        onFollowClick = viewModel::toggleFollow,
+        onFollowsClick = onFollowsClick,
     )
 }
 
@@ -81,6 +97,14 @@ private fun UserProfileContent(
     onRetry: () -> Unit,
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
+    // Same, for a cover of the podium
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    // Same, for a cover of "Ses chansons"
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // "Suivre" or "Abonné" button
+    onFollowClick: () -> Unit = {},
+    // Tap on "abonnés" or "abonnements": the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -110,6 +134,14 @@ private fun UserProfileContent(
                 isPlaying = uiState.isPlaying,
                 previewError = uiState.previewError,
                 onPlayClick = onPlayClick,
+                playingPodiumSongId = uiState.playingPodiumSongId,
+                onPodiumPlayClick = onPodiumPlayClick,
+                playingLabel = uiState.playingLabel,
+                onLabeledSongPlayClick = onLabeledSongPlayClick,
+                isFollowBusy = uiState.isFollowBusy,
+                followError = uiState.followError,
+                onFollowClick = onFollowClick,
+                onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
             )
 
             uiState.isLoading -> Box(
@@ -140,8 +172,7 @@ private fun UserProfileContent(
     }
 }
 
-// The profile: the same header and counters as the user's own profile,
-// then the drop of the day and the last drops
+// The profile of another user: the header stays at the top, the Mixtape and the activity slide under it
 @Composable
 private fun UserProfileBody(
     profile: ProfileOut,
@@ -151,17 +182,109 @@ private fun UserProfileBody(
     isPlaying: Boolean,
     previewError: String?,
     onPlayClick: (ProfileDropOut) -> Unit,
+    // Song of the podium whose preview is loaded, null if none
+    playingPodiumSongId: Int?,
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    // Label whose song is loaded in the player, null if none
+    playingLabel: String?,
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // True while the backend has not answered the "Suivre" button
+    isFollowBusy: Boolean = false,
+    // Shown under the button when the follow could not be saved
+    followError: String? = null,
+    onFollowClick: () -> Unit = {},
+    // Tap on "abonnés" or "abonnements": FollowTab.FOLLOWERS or FollowTab.FOLLOWING
+    onFollowsClick: (String) -> Unit = {},
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            // Scrolls on small screens
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // No menu: only the user's own profile has one
         ProfileHeader(profile = profile)
 
+        // The counters, and the "Suivre" button (hidden on the user's own account)
+        FollowBar(
+            profile = profile,
+            onCountClick = onFollowsClick,
+            onFollowClick = onFollowClick,
+            isFollowBusy = isFollowBusy,
+        )
+        if (followError != null) {
+            Text(
+                text = followError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
+        ProfilePages(
+            // The line under the labels takes the color of the avatar
+            accent = avatarColor(profile.avatarColor),
+            mixtape = {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    // A preview could not be played
+                    if (previewError != null) {
+                        Text(
+                            text = previewError,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    // No "Modifier" button: only the user can change their own podium
+                    PodiumCard(
+                        title = "SES TITRES PRÉFÉRÉS",
+                        podium = profile.podium,
+                        emptyText = "@${profile.username} n'a pas encore fait sa mixtape.",
+                        playingSongId = playingPodiumSongId,
+                        isPlaying = isPlaying,
+                        onPlayClick = onPodiumPlayClick,
+                    )
+
+                    // Hidden while the user has no labeled song: nothing to show to the others
+                    if (profile.labeledSongs.isNotEmpty()) {
+                        LabeledSongsSection(
+                            title = "SES CHANSONS",
+                            labeledSongs = profile.labeledSongs,
+                            playingLabel = playingLabel,
+                            isPlaying = isPlaying,
+                            onPlayClick = onLabeledSongPlayClick,
+                        )
+                    }
+
+                    // Hidden while the user has no badge
+                    if (profile.badges.isNotEmpty()) {
+                        BadgesSection(badges = profile.badges, emptyText = null)
+                    }
+                }
+            },
+            activity = {
+                UserActivityPage(
+                    profile = profile,
+                    playingDropId = playingDropId,
+                    isPlaying = isPlaying,
+                    previewError = previewError,
+                    onPlayClick = onPlayClick,
+                )
+            },
+            // Takes all the height left under the header
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+// The activity page of another user: the counters, the drop of the day and the last drops
+@Composable
+private fun UserActivityPage(
+    profile: ProfileOut,
+    playingDropId: Int?,
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: (ProfileDropOut) -> Unit,
+) {
+    // No scroll here: the page already scrolls inside ProfilePages
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         // No click on the likes: the "Mes likes" list of the others is private
         StatsRow(stats = profile.stats)
 
@@ -219,6 +342,9 @@ private fun CurrentDropCard(
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -235,7 +361,9 @@ private fun CurrentDropCard(
                 contentDescription = "Pochette de ${drop.title}",
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(14.dp)),
+                    .clip(RoundedCornerShape(14.dp))
+                    // The play button plays, the rest of the cover opens the poster
+                    .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
             )
 
             Column(
@@ -276,6 +404,15 @@ private fun CurrentDropCard(
                 buttonSize = 44.dp,
             )
         }
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(drop.songId, drop.title, drop.artist, drop.coverUrl, drop.genre),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
+        )
     }
 }
 
@@ -325,6 +462,8 @@ private fun UserProfilePreview() {
             onBack = {},
             onRetry = {},
             onPlayClick = {},
+            onPodiumPlayClick = {},
+            onLabeledSongPlayClick = {},
         )
     }
 }

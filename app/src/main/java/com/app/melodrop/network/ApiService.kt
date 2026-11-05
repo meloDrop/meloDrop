@@ -12,6 +12,7 @@ import com.app.melodrop.network.dto.DropCreate
 import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.network.dto.PreviewOut
+import com.app.melodrop.network.dto.SongDetailOut
 import com.app.melodrop.network.dto.TrackResult
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.ProfileDropOut
@@ -34,6 +35,12 @@ import com.app.melodrop.network.dto.PasswordUpdate
 import com.app.melodrop.network.dto.RescueOut
 import com.app.melodrop.network.dto.SkippedSongOut
 import com.app.melodrop.network.dto.UserSearchOut
+import com.app.melodrop.network.dto.LabeledSongOut
+import com.app.melodrop.network.dto.LabeledSongUpdate
+import com.app.melodrop.network.dto.PodiumSongOut
+import com.app.melodrop.network.dto.PodiumUpdate
+import retrofit2.http.PUT
+import com.app.melodrop.network.dto.FollowUserOut
 
 interface ApiService {
 
@@ -68,7 +75,7 @@ interface ApiService {
 
     // Up to 10 drops not seen yet, or an empty list
     @GET("feed")
-    suspend fun getFeed(): List<FeedItem>
+    suspend fun getFeed(@Query("follows_first") followsFirst: Boolean): List<FeedItem>
 
     // 204 with no body: nothing to read back
     @POST("drops/{drop_id}/save")
@@ -84,6 +91,10 @@ interface ApiService {
     // song_id is the meloDrop id of the song, not the Deezer id
     @GET("songs/{song_id}/preview")
     suspend fun getPreview(@Path("song_id") songId: Int): PreviewOut
+
+    // Everything about a song, for its poster: Deezer details and meloDrop counters
+    @GET("songs/{song_id}")
+    suspend fun getSong(@Path("song_id") songId: Int): SongDetailOut
 
     // Tracks found on Deezer, for example catalog/search?q=daft+punk
     @GET("catalog/search")
@@ -109,6 +120,17 @@ interface ApiService {
     @PATCH("me/profile")
     suspend fun updateProfile(@Body body: ProfileUpdate): ProfileOut
 
+    // Replaces the whole podium of the Mixtape, sends back the new podium
+    @PUT("me/podium")
+    suspend fun updatePodium(@Body body: PodiumUpdate): List<PodiumSongOut>
+
+    // Puts a song under a label of the Mixtape (or replaces it), sends back all the labeled songs
+    @PUT("me/labels/{label}")
+    suspend fun setLabeledSong(@Path("label") label: String, @Body body: LabeledSongUpdate): List<LabeledSongOut>
+
+    // Removes the song of a label from the Mixtape. 204 with no body
+    @DELETE("me/labels/{label}")
+    suspend fun removeLabeledSong(@Path("label") label: String)
 
     // The user's "Mes likes" list, the most recent first (or an empty list)
     @GET("me/likes")
@@ -158,4 +180,20 @@ interface ApiService {
     // Other users whose @username starts with the query, 20 max (or an empty list)
     @GET("users/search")
     suspend fun searchUsers(@Query("q") query: String): List<UserSearchOut>
+
+    // Follows a user: 204, nothing changes if already followed
+    @POST("users/{user_id}/follow")
+    suspend fun followUser(@Path("user_id") userId: Int)
+
+    // Stops following a user: 204, nothing changes if not followed
+    @DELETE("users/{user_id}/follow")
+    suspend fun unfollowUser(@Path("user_id") userId: Int)
+
+    // The users who follow a user, the most recent first
+    @GET("users/{user_id}/followers")
+    suspend fun getFollowers(@Path("user_id") userId: Int): List<FollowUserOut>
+
+    // The users a user follows, the most recent first
+    @GET("users/{user_id}/following")
+    suspend fun getFollowing(@Path("user_id") userId: Int): List<FollowUserOut>
 }

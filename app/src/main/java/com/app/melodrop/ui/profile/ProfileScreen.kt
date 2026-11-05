@@ -55,12 +55,15 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.ui.components.CoverImage
+import com.app.melodrop.network.dto.LabeledSongOut
 import com.app.melodrop.network.dto.LikedSongOut
+import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.ui.mypicks.PickThumbnail
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
 import com.app.melodrop.ui.components.Avatar
+import com.app.melodrop.ui.components.avatarColor
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.Unbounded
@@ -75,6 +78,8 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.text.TextStyle
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.CREATOR_USERNAME
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Number of covers on each line of "Mes drops" and "Mes picks"
 private const val COVERS_PER_ROW = 3
@@ -95,6 +100,12 @@ fun ProfileScreen(
     // Tap on the "Tout voir" tile of the picks: opens "Mes picks"
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
+    // Tap on "Modifier" on the podium: opens the podium screen
+    onEditPodium: () -> Unit,
+    // Tap on "Modifier" or "Ajouter une chanson" in "Mes chansons": opens the labels screen
+    onEditLabels: () -> Unit,
+    // Tap on "abonnés" or "abonnements": opens the lists, with the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
     viewModel: ProfileViewModel = viewModel(),
 ) {
     // Each time the tab opens: fresh counters and drops
@@ -122,8 +133,13 @@ fun ProfileScreen(
         onSkipsClick = onSkipsClick,
         onPicksClick = onPicksClick,
         onAccountClick = onAccountClick,
+        onEditPodium = onEditPodium,
+        onEditLabels = onEditLabels,
         onPlayClick = viewModel::togglePreview,
         onPickPlayClick = viewModel::togglePickPreview,
+        onPodiumPlayClick = viewModel::togglePodiumPreview,
+        onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
+        onFollowsClick = onFollowsClick,
     )
 }
 
@@ -139,10 +155,18 @@ private fun ProfileContent(
     onSkipsClick: () -> Unit,
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
+    onEditPodium: () -> Unit,
+    onEditLabels: () -> Unit,
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
     // Same, for the cover of a pick
     onPickPlayClick: (LikedSongOut) -> Unit,
+    // Same, for a cover of the podium
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    // Same, for a cover of "Mes chansons"
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // Tap on "abonnés" or "abonnements": the user's id and the tab
+    onFollowsClick: (Int, String) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -165,6 +189,8 @@ private fun ProfileContent(
                 onSkipsClick = onSkipsClick,
                 onPicksClick = onPicksClick,
                 onAccountClick = onAccountClick,
+                onEditPodium = onEditPodium,
+                onEditLabels = onEditLabels,
                 playingDropId = uiState.playingDropId,
                 isPlaying = uiState.isPlaying,
                 previewError = uiState.previewError,
@@ -173,6 +199,11 @@ private fun ProfileContent(
                 picksError = uiState.picksError,
                 playingPickId = uiState.playingPickId,
                 onPickPlayClick = onPickPlayClick,
+                playingPodiumSongId = uiState.playingPodiumSongId,
+                onPodiumPlayClick = onPodiumPlayClick,
+                playingLabel = uiState.playingLabel,
+                onLabeledSongPlayClick = onLabeledSongPlayClick,
+                onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
             )
 
             // First answer not there yet
@@ -188,7 +219,7 @@ private fun ProfileContent(
     }
 }
 
-// The profile itself: header, counters, then the "Mes drops" and "Mes picks" tabs
+// The profile itself: the header stays at the top, the activity and the Mixtape slide under it
 @Composable
 private fun ProfileBody(
     profile: ProfileOut,
@@ -199,6 +230,112 @@ private fun ProfileBody(
     onSkipsClick: () -> Unit,
     onPicksClick: () -> Unit,
     onAccountClick: () -> Unit,
+    onEditPodium: () -> Unit,
+    onEditLabels: () -> Unit,
+    playingDropId: Int?,
+    isPlaying: Boolean,
+    previewError: String?,
+    onPlayClick: (ProfileDropOut) -> Unit,
+    picks: List<LikedSongOut>,
+    picksError: String?,
+    playingPickId: Int?,
+    onPickPlayClick: (LikedSongOut) -> Unit,
+    playingPodiumSongId: Int?,
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
+    playingLabel: String?,
+    onLabeledSongPlayClick: (LabeledSongOut) -> Unit,
+    // Tap on "abonnés" or "abonnements": FollowTab.FOLLOWERS or FollowTab.FOLLOWING
+    onFollowsClick: (String) -> Unit = {},
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        // The menu is given to the header: only the user's own profile has one
+        ProfileHeader(profile = profile) {
+            ProfileMenu(
+                onLogout = onLogout,
+                onEditProfile = onEditProfile,
+                onAccountClick = onAccountClick,
+            )
+        }
+
+        // The counters only: nobody follows their own account
+        FollowBar(profile = profile, onCountClick = onFollowsClick)
+
+        ProfilePages(
+            // The line under the labels takes the color of the avatar
+            accent = avatarColor(profile.avatarColor),
+            mixtape = {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    // A preview could not be played
+                    if (previewError != null) {
+                        Text(
+                            text = previewError,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    PodiumCard(
+                        title = "MES TITRES PRÉFÉRÉS",
+                        podium = profile.podium,
+                        emptyText = "Ton podium est vide. Touche « Modifier » pour y mettre tes 3 titres préférés de tous les temps.",
+                        playingSongId = playingPodiumSongId,
+                        isPlaying = isPlaying,
+                        onPlayClick = onPodiumPlayClick,
+                        onEditClick = onEditPodium,
+                    )
+
+                    LabeledSongsSection(
+                        title = "MES CHANSONS",
+                        labeledSongs = profile.labeledSongs,
+                        playingLabel = playingLabel,
+                        isPlaying = isPlaying,
+                        onPlayClick = onLabeledSongPlayClick,
+                        onEditClick = onEditLabels,
+                    )
+
+                    // Given from the dashboard: the user can't change them
+                    BadgesSection(
+                        badges = profile.badges,
+                        emptyText = "Pas encore de badge. L'équipe meloDrop en donne pour récompenser certains membres : ils restent secrets jusqu'à ce que tu les reçoives.",
+                    )
+                }
+            },
+            activity = {
+                ActivityPage(
+                    profile = profile,
+                    onLikesClick = onLikesClick,
+                    onDropsClick = onDropsClick,
+                    onSkipsClick = onSkipsClick,
+                    onPicksClick = onPicksClick,
+                    playingDropId = playingDropId,
+                    isPlaying = isPlaying,
+                    previewError = previewError,
+                    onPlayClick = onPlayClick,
+                    picks = picks,
+                    picksError = picksError,
+                    playingPickId = playingPickId,
+                    onPickPlayClick = onPickPlayClick,
+                )
+            },
+            // Takes all the height left under the header
+            modifier = Modifier.weight(1f),
+            // The user's own profile opens on the activity: the Mixtape is on its right
+            mixtapeFirst = false,
+        )
+    }
+}
+
+// The activity page: counters, then the "Mes drops" and "Mes picks" tabs (the profile before the Mixtape)
+@Composable
+private fun ActivityPage(
+    profile: ProfileOut,
+    onLikesClick: () -> Unit,
+    onDropsClick: () -> Unit,
+    onSkipsClick: () -> Unit,
+    onPicksClick: () -> Unit,
     playingDropId: Int?,
     isPlaying: Boolean,
     previewError: String?,
@@ -215,22 +352,8 @@ private fun ProfileBody(
     // rememberSaveable: the choice survives a rotation and a trip to another tab
     var showPicks by rememberSaveable { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            // Scrolls on small screens
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        // The menu is given to the header: only the user's own profile has one
-        ProfileHeader(profile = profile) {
-            ProfileMenu(
-                onLogout = onLogout,
-                onEditProfile = onEditProfile,
-                onAccountClick = onAccountClick,
-            )
-        }
-
+    // No scroll here: the page already scrolls inside ProfilePages
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         // No gap inside: the link stays close to the counters
         Column {
             StatsRow(
@@ -653,6 +776,9 @@ private fun DropThumbnail(
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -666,8 +792,8 @@ private fun DropThumbnail(
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(16.dp))
-                    // The whole cover can be tapped, not only the small button
-                    .clickable(onClick = onPlayClick),
+                    // The play button plays, the rest of the cover opens the poster
+                    .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
             )
 
             // Small play button in the bottom right corner of the cover
@@ -705,6 +831,15 @@ private fun DropThumbnail(
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(drop.songId, drop.title, drop.artist, drop.coverUrl, drop.genre),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
         )
     }
 }
@@ -868,8 +1003,12 @@ private fun ProfileScreenPreview() {
             onSkipsClick = {},
             onPicksClick = {},
             onAccountClick = {},
+            onEditPodium = {},
+            onEditLabels = {},
             onPlayClick = {},
             onPickPlayClick = {},
+            onPodiumPlayClick = {},
+            onLabeledSongPlayClick = {},
         )
     }
 }
@@ -888,8 +1027,12 @@ private fun ProfileErrorPreview() {
             onSkipsClick = {},
             onPicksClick = {},
             onAccountClick = {},
+            onEditPodium = {},
+            onEditLabels = {},
             onPlayClick = {},
             onPickPlayClick = {},
+            onPodiumPlayClick = {},
+            onLabeledSongPlayClick = {},
         )
     }
 }

@@ -15,5 +15,7 @@ data class FeedItem(
     val genre: String? = null,
     @SerializedName("author_id") val authorId: Int,
     @SerializedName("author_username") val authorUsername: String,
-    @SerializedName("saves_count") val savesCount: Int
+    @SerializedName("saves_count") val savesCount: Int,
+    // True when the logged-in user follows the author: "Abonné" on the card
+    @SerializedName("is_followed") val isFollowed: Boolean = false
 )

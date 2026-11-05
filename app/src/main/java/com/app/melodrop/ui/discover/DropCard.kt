@@ -29,6 +29,7 @@ import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.foundation.shape.CircleShape
 
 // A drop in the feed: cover, song, genre, author and likes
 @Composable
@@ -76,6 +77,25 @@ fun DropCard(
                             .align(Alignment.TopStart)
                             .padding(12.dp),
                     )
+                }
+
+                // The user follows the author: marked in the other corner
+                if (drop.isFollowed) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp),
+                        shape = CircleShape,
+                        // Same dark background as the genre: readable on any cover
+                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+                    ) {
+                        Text(
+                            text = "Abonné",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
                 }
 
                 if (onPlayPause != null) {
@@ -170,6 +190,7 @@ private fun DropCardPreview() {
                 authorId = 2,
                 authorUsername = "elliot",
                 savesCount = 3,
+                isFollowed = true,
             ),
             isPlaying = false,
             onPlayPause = {},

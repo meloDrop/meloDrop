@@ -47,6 +47,8 @@ import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Connects the screen to its ViewModel
 @Composable
@@ -233,6 +235,9 @@ private fun LikedSongRow(
     onAuthorClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -245,7 +250,9 @@ private fun LikedSongRow(
             contentDescription = "Pochette de ${song.title}",
             modifier = Modifier
                 .size(56.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(12.dp))
+                // The play button plays, the rest of the cover opens the poster
+                .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
         )
 
         // Takes the space left, so the buttons stay on the right
@@ -324,6 +331,15 @@ private fun LikedSongRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(song.songId, song.title, song.artist, song.coverUrl),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
+        )
     }
 }
 

@@ -41,6 +41,12 @@ import com.app.melodrop.network.dto.SkippedSongOut
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.song.PosterSong
+import com.app.melodrop.ui.song.SongPosterDialog
 
 // Connects the screen to its ViewModel
 @Composable
@@ -187,6 +193,9 @@ private fun SkippedSongRow(
     onAuthorClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Tap on the cover: the poster of the song opens
+    var showPoster by remember { mutableStateOf(false) }
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -198,7 +207,9 @@ private fun SkippedSongRow(
             contentDescription = "Pochette de ${song.title}",
             modifier = Modifier
                 .size(56.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(12.dp))
+                // The play button plays, the rest of the cover opens the poster
+                .clickable(onClickLabel = "Voir la fiche du titre") { showPoster = true },
         )
 
         // Takes the space left, so the buttons stay on the right
@@ -257,6 +268,15 @@ private fun SkippedSongRow(
                 modifier = Modifier.padding(10.dp),
             )
         }
+    }
+
+    if (showPoster) {
+        SongPosterDialog(
+            song = PosterSong(song.songId, song.title, song.artist, song.coverUrl),
+            isPlaying = isPlaying,
+            onPlayClick = onPlayClick,
+            onDismiss = { showPoster = false },
+        )
     }
 }
 

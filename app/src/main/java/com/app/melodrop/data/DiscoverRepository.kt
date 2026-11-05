@@ -8,8 +8,9 @@ class DiscoverRepository {
 
     private val api = RetrofitClient.api
 
-    // The token is added by AuthInterceptor, nothing to do here
-    suspend fun getFeed(): List<FeedItem> = api.getFeed()
+    // The token is added by AuthInterceptor, nothing to do here.
+    // followsFirst: the drops of the followed users come first
+    suspend fun getFeed(followsFirst: Boolean): List<FeedItem> = api.getFeed(followsFirst)
 
     // Right swipe: like the drop, its song goes to "Mes likes"
     suspend fun save(dropId: Int) = api.saveDrop(dropId)

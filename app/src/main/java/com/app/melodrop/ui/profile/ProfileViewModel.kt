@@ -11,7 +11,9 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.ProfileRepository
+import com.app.melodrop.network.dto.LabeledSongOut
 import com.app.melodrop.network.dto.LikedSongOut
+import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import kotlinx.coroutines.launch
@@ -33,6 +35,10 @@ data class ProfileUiState(
     val playingDropId: Int? = null,
     // Pick whose preview is loaded in the player (its song id), null if none
     val playingPickId: Int? = null,
+    // Song of the podium whose preview is loaded in the player (its song id), null if none
+    val playingPodiumSongId: Int? = null,
+    // Labeled song whose preview is loaded in the player (its label code), null if none
+    val playingLabel: String? = null,
     // True when the preview plays: pause icon on its cover
     val isPlaying: Boolean = false,
     // Short message above the drops when a preview cannot be played
@@ -70,6 +76,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 uiState = uiState.copy(
                     playingDropId = null,
                     playingPickId = null,
+                    playingPodiumSongId = null,
+                    playingLabel = null,
                     previewError = "Extrait indisponible pour ce titre.",
                 )
             }
@@ -122,8 +130,14 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        // Another drop: it becomes the one loaded, no pick is loaded any more
-        uiState = uiState.copy(playingDropId = drop.id, playingPickId = null, previewError = null)
+        // Another drop: it becomes the one loaded, no pick and no podium song are loaded any more
+        uiState = uiState.copy(
+            playingDropId = drop.id,
+            playingPickId = null,
+            playingPodiumSongId = null,
+            playingLabel = null,
+            previewError = null,
+        )
         startPreview(drop.songId) { uiState.playingDropId == drop.id }
     }
 
@@ -134,9 +148,51 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        // Another pick: it becomes the one loaded, no drop is loaded any more
-        uiState = uiState.copy(playingDropId = null, playingPickId = pick.songId, previewError = null)
+        // Another pick: it becomes the one loaded, no drop and no podium song are loaded any more
+        uiState = uiState.copy(
+            playingDropId = null,
+            playingPickId = pick.songId,
+            playingPodiumSongId = null,
+            playingLabel = null,
+            previewError = null,
+        )
         startPreview(pick.songId) { uiState.playingPickId == pick.songId }
+    }
+
+    // Tap on a cover of the podium: same as for a drop, for a song of the Mixtape
+    fun togglePodiumPreview(song: PodiumSongOut) {
+        if (song.songId == uiState.playingPodiumSongId) {
+            if (player.playWhenReady) player.pause() else player.play()
+            return
+        }
+
+        // Another song: it becomes the one loaded, no drop and no pick are loaded any more
+        uiState = uiState.copy(
+            playingDropId = null,
+            playingPickId = null,
+            playingPodiumSongId = song.songId,
+            playingLabel = null,
+            previewError = null,
+        )
+        startPreview(song.songId) { uiState.playingPodiumSongId == song.songId }
+    }
+
+    // Tap on a cover of "Mes chansons": same as for a drop, for a labeled song of the Mixtape
+    fun toggleLabeledSongPreview(song: LabeledSongOut) {
+        if (song.label == uiState.playingLabel) {
+            if (player.playWhenReady) player.pause() else player.play()
+            return
+        }
+
+        // Another song: it becomes the one loaded, nothing else is loaded any more
+        uiState = uiState.copy(
+            playingDropId = null,
+            playingPickId = null,
+            playingPodiumSongId = null,
+            playingLabel = song.label,
+            previewError = null,
+        )
+        startPreview(song.songId) { uiState.playingLabel == song.label }
     }
 
     // Stops the current preview, gets a fresh link, then plays the song.
@@ -162,6 +218,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 uiState = uiState.copy(
                     playingDropId = null,
                     playingPickId = null,
+                    playingPodiumSongId = null,
+                    playingLabel = null,
                     previewError = "Extrait indisponible pour ce titre.",
                 )
                 return@launch

@@ -6,6 +6,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.schemas.stats import StatsOut
+from app.schemas.badges import UserBadgeOut
+from app.schemas.labeled_songs import LabeledSongOut
+from app.schemas.podium import PodiumSongOut
 
 # Background colors an avatar can have (same names in Avatar.kt)
 AvatarColor = Literal["lavender", "peach", "butter", "mint", "rose"]
@@ -46,6 +49,21 @@ class ProfileOut(BaseModel):
     current_drop: ProfileDropOut | None = None
     # The 5 last expired drops, the most recent first
     recent_drops: list[ProfileDropOut]
+    # The podium of the Mixtape, from the 1st place to the last: empty if not made yet
+    podium: list[PodiumSongOut]
+    # The labeled songs of the Mixtape, in the order of the labels: empty if none yet
+    labeled_songs: list[LabeledSongOut]
+    # The badges given from the dashboard, the most recently given first: empty if none yet
+    badges: list[UserBadgeOut]
+    # Number of users who follow this user, and number of users this user follows
+    followers_count: int
+    following_count: int
+    # True when the logged-in user follows this user
+    is_followed: bool
+    # True when this user follows the logged-in user ("Suivre en retour" in the app)
+    follows_you: bool
+    # True on the logged-in user's own profile: no "Suivre" button
+    is_me: bool
 
 
 class ProfileUpdate(BaseModel):

@@ -29,6 +29,47 @@ data class ProfileDropOut(
     @SerializedName("saves_count") val savesCount: Int
 )
 
+// A song on the podium of the Mixtape, with its place
+data class PodiumSongOut(
+    // 1, 2 or 3
+    val place: Int,
+    // Id of the song in meloDrop: used for the preview
+    @SerializedName("song_id") val songId: Int,
+    // Deezer id of the song: sent back with the others to save the podium again
+    @SerializedName("deezer_track_id") val deezerTrackId: Long,
+    val title: String,
+    val artist: String,
+    @SerializedName("cover_url") val coverUrl: String?
+)
+
+// A song of the Mixtape under a label, like "Le son qui me fait chialer"
+data class LabeledSongOut(
+    // Code of the label, like "cry": its text and its color are in SongLabels.kt
+    val label: String,
+    // Id of the song in meloDrop: used for the preview
+    @SerializedName("song_id") val songId: Int,
+    @SerializedName("deezer_track_id") val deezerTrackId: Long,
+    val title: String,
+    val artist: String,
+    @SerializedName("cover_url") val coverUrl: String?
+)
+
+// A badge given by the meloDrop team from the dashboard, shown on the Mixtape
+data class BadgeOut(
+    // Id of the badge
+    val id: Int,
+    // Shown under the badge, like "Testeur de la 1re heure"
+    val name: String,
+    // Why the user got it, shown when the badge is tapped
+    val description: String,
+    // Code of the icon, like "flame": its drawing is in BadgeIcons.kt
+    val icon: String,
+    // Code of the color, like "peach", or "spectrum" for all the pastels
+    val color: String,
+    // When the badge was given, in UTC, like "2026-11-03T18:00:00Z"
+    @SerializedName("awarded_at") val awardedAt: String
+)
+
 // A user's profile: the same for the user's own profile and for the others (ADR-0018)
 data class ProfileOut(
     val id: Int,
@@ -46,7 +87,23 @@ data class ProfileOut(
     // The drop online today, null if there is none
     @SerializedName("current_drop") val currentDrop: ProfileDropOut? = null,
     // The 5 last expired drops, the most recent first
-    @SerializedName("recent_drops") val recentDrops: List<ProfileDropOut>
+    @SerializedName("recent_drops") val recentDrops: List<ProfileDropOut>,
+    // The podium of the Mixtape, from the 1st place to the last: empty if not made yet.
+    // Default value: the previews that build a ProfileOut by hand do not need to change
+    val podium: List<PodiumSongOut> = emptyList(),
+    // The labeled songs of the Mixtape, in the order of the labels: empty if none yet
+    @SerializedName("labeled_songs") val labeledSongs: List<LabeledSongOut> = emptyList(),
+    // The badges given by the meloDrop team, the most recently given first: empty if none yet
+    val badges: List<BadgeOut> = emptyList(),
+    // Number of users who follow this user, and number of users this user follows
+    @SerializedName("followers_count") val followersCount: Int = 0,
+    @SerializedName("following_count") val followingCount: Int = 0,
+    // True when the logged-in user follows this user: "Abonné" on the button
+    @SerializedName("is_followed") val isFollowed: Boolean = false,
+    // True when this user follows the logged-in user: "Suivre en retour" on the button
+    @SerializedName("follows_you") val followsYou: Boolean = false,
+    // True on the logged-in user's own profile: no "Suivre" button
+    @SerializedName("is_me") val isMe: Boolean = false
 )
 
 
@@ -59,4 +116,15 @@ data class ProfileUpdate(
     @SerializedName("avatar_color") val avatarColor: String,
     // Name of one of the 7 drop styles, like "rock" (AVATAR_STYLES)
     @SerializedName("avatar_style") val avatarStyle: String
+)
+
+// Data sent to replace the whole podium: the first id goes to the 1st place
+data class PodiumUpdate(
+    // Deezer ids from the search results, 3 at most; an empty list empties the podium
+    @SerializedName("deezer_track_ids") val deezerTrackIds: List<Long>
+)
+
+// Data sent to put a song under a label: its Deezer id, from the search results
+data class LabeledSongUpdate(
+    @SerializedName("deezer_track_id") val deezerTrackId: Long
 )

@@ -51,6 +51,15 @@ class SkipNotFoundError(Exception):
 class UserNotFoundError(Exception):
     """Raised when no user has this id."""
 
+class DuplicateSongError(Exception):
+    """Raised when the same song is given twice for the podium."""
+
+class LabeledSongNotFoundError(Exception):
+    """Raised when there is no song under this label on the user's Mixtape."""
+
+class CannotFollowSelfError(Exception):
+    """Raised when a user tries to follow their own account."""
+
 # Admin actions
 
 class OwnAccountError(Exception):
@@ -64,3 +73,18 @@ class CoverNotAllowedError(Exception):
 
 class CoverNotFoundError(Exception):
     """Raised when a Deezer cover can't be downloaded, or is not a small image."""
+
+# Badges, created from the dashboard
+
+class BadgeNotFoundError(Exception):
+    """Raised when no badge has this id."""
+
+class BadgeNameTakenError(Exception):
+    """Raised when another badge already has this name."""
+
+class BadgeAlreadyAwardedError(Exception):
+    """Raised when the user already has this badge."""
+
+class UserBadgeNotFoundError(Exception):
+    """Raised when the user does not have this badge."""
+

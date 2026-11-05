@@ -71,3 +71,17 @@ class CoverNotAllowedError(Exception):
 class CoverNotFoundError(Exception):
     """Raised when a Deezer cover can't be downloaded, or is not a small image."""
 
+# Badges, created from the dashboard
+
+class BadgeNotFoundError(Exception):
+    """Raised when no badge has this id."""
+
+class BadgeNameTakenError(Exception):
+    """Raised when another badge already has this name."""
+
+class BadgeAlreadyAwardedError(Exception):
+    """Raised when the user already has this badge."""
+
+class UserBadgeNotFoundError(Exception):
+    """Raised when the user does not have this badge."""
+

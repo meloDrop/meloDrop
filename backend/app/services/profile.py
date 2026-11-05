@@ -13,6 +13,7 @@ from app.schemas.profile import ProfileDropOut, ProfileOut, ProfileUpdate
 from app.services.drops import get_active_drop
 from app.services.stats import get_stats
 from app.utils.time import utc_now
+from app.services.badges import get_user_badges
 from app.services.labeled_songs import get_labeled_songs
 from app.services.podium import get_podium
 
@@ -77,6 +78,7 @@ def get_profile(db: Session, user_id: int) -> ProfileOut:
         recent_drops=recent_drops,
         podium=get_podium(db, user.id),
         labeled_songs=get_labeled_songs(db, user.id),
+        badges=get_user_badges(db, user.id),
     )
 
 

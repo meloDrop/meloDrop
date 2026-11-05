@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database import get_db
-from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, podium, labeled_songs, profile, admin, users
+from app.routers import auth, health, catalog, songs, drops, feed, swipes, likes, skips, picks, podium, labeled_songs, profile, admin, admin_badges, users
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("melodrop")
 
@@ -87,3 +87,6 @@ app.include_router(users.router)
 # Admin: actions on the accounts, admin role needed
 app.include_router(admin.router)
 app.include_router(admin.page_router)
+
+# Badges: created in the dashboard, then given to the users
+app.include_router(admin_badges.router)

@@ -282,6 +282,12 @@ private fun ProfileBody(
                         onPlayClick = onLabeledSongPlayClick,
                         onEditClick = onEditLabels,
                     )
+
+                    // Given from the dashboard: the user can't change them
+                    BadgesSection(
+                        badges = profile.badges,
+                        emptyText = "Pas encore de badge. L'équipe meloDrop en donne pour récompenser certains membres : ils restent secrets jusqu'à ce que tu les reçoives.",
+                    )
                 }
             },
             activity = {

@@ -35,6 +35,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.ui.components.CoverImage
+import com.app.melodrop.network.dto.PodiumSongOut
 import com.app.melodrop.network.dto.ProfileDropOut
 import com.app.melodrop.network.dto.ProfileOut
 import com.app.melodrop.network.dto.StatsOut
@@ -71,6 +72,7 @@ fun UserProfileScreen(
         onBack = onBack,
         onRetry = { viewModel.load(userId) },
         onPlayClick = viewModel::togglePreview,
+        onPodiumPlayClick = viewModel::togglePodiumPreview,
     )
 }
 
@@ -82,6 +84,8 @@ private fun UserProfileContent(
     onRetry: () -> Unit,
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
+    // Same, for a cover of the podium
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -111,6 +115,8 @@ private fun UserProfileContent(
                 isPlaying = uiState.isPlaying,
                 previewError = uiState.previewError,
                 onPlayClick = onPlayClick,
+                playingPodiumSongId = uiState.playingPodiumSongId,
+                onPodiumPlayClick = onPodiumPlayClick,
             )
 
             uiState.isLoading -> Box(
@@ -151,6 +157,9 @@ private fun UserProfileBody(
     isPlaying: Boolean,
     previewError: String?,
     onPlayClick: (ProfileDropOut) -> Unit,
+    // Song of the podium whose preview is loaded, null if none
+    playingPodiumSongId: Int?,
+    onPodiumPlayClick: (PodiumSongOut) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -163,11 +172,26 @@ private fun UserProfileBody(
             // The line under the labels takes the color of the avatar
             accent = avatarColor(profile.avatarColor),
             mixtape = {
-                // Filled in the next steps: podium, songs and badges
-                Text(
-                    text = "La mixtape de @${profile.username} arrive bientôt.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // A preview could not be played
+                    if (previewError != null) {
+                        Text(
+                            text = previewError,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    // No "Modifier" button: only the user can change their own podium
+                    PodiumCard(
+                        title = "SES TITRES PRÉFÉRÉS",
+                        podium = profile.podium,
+                        emptyText = "@${profile.username} n'a pas encore fait sa mixtape.",
+                        playingSongId = playingPodiumSongId,
+                        isPlaying = isPlaying,
+                        onPlayClick = onPodiumPlayClick,
+                    )
+                }
             },
             activity = {
                 UserActivityPage(
@@ -358,6 +382,7 @@ private fun UserProfilePreview() {
             onBack = {},
             onRetry = {},
             onPlayClick = {},
+            onPodiumPlayClick = {},
         )
     }
 }

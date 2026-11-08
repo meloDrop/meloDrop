@@ -2,6 +2,27 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.9.0] - 08-11-2026
+
+### Ajouté
+- Une carte par chanson dans Discover (ADR-0021) : quand plusieurs membres droppent le même titre, il n'apparaît qu'une fois avec « X personnes ont droppé cette chanson », et un like ou un pick compte pour chaque droppeur. Un appui sur cette ligne, ou sur les likes, ouvre qui a droppé le titre et qui l'a liké (un pick y apparaît comme un like).
+- Qui a liké et qui a pické mon drop : depuis les tuiles likes et picks de l'écran Drop, et depuis les stats sous les drops de l'utilisateur (profil et « Mes drops »), en deux onglets.
+- « Voir plus » et un compteur de drops cliquable sur le profil des autres : « Ses drops » affiche tous leurs drops.
+- « drop par X personnes » dans « Mes likes », « Mes picks » et « Mes skips », qui ouvre la liste des droppeurs. La recherche de « Mes likes » et « Mes picks » cherche dans tous les droppeurs.
+- Tutos sur des écrans d'exemple la première fois que Discover, Drop et Profil s'ouvrent sur un téléphone, et après la création d'un compte : les swipes sont montrés sur une carte d'exemple. « Revoir le tuto » dans la feuille « Nouveautés » enchaîne les trois.
+- Badges automatiques : un badge peut avoir une règle et un seuil, et il est donné tout seul quand un membre l'atteint (dashboard admin).
+- Backend : routes `GET /drops/{drop_id}/likers` et `GET /songs/{song_id}/likers` ; `droppers` dans `GET /feed`, `GET /me/likes`, `GET /me/picks` et `GET /me/skips` ; `credited_count` dans le repêchage d'un skip ; colonnes `rule` et `threshold` dans `badges` (migration Alembic).
+
+### Modifié
+- Le fil tire au sort les chansons, plus les drops : un titre droppé par beaucoup de membres ne passe pas en premier. Les titres déjà dans « Mes likes », skippés depuis moins de 7 jours, ou droppés par l'utilisateur et encore en ligne ne s'affichent pas.
+- Un swipe, et un repêchage depuis « Mes skips », comptent pour chaque drop du titre encore en ligne. « Mes skips » affiche un titre une seule fois.
+- La feuille « Nouveautés » attend la fin d'un tuto. Ses textes présentent la version 0.9.0.
+- La vue du fil dans le dashboard admin suit les mêmes règles que l'appli.
+
+### Corrigé
+- Petits écrans : le texte d'aide de Discover sur une ligne suit l'ordre des boutons (Passer, Pick, Liker).
+
+
 ## [0.8.0] - 05-11-2026
 
 ### Ajouté

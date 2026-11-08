@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Rect
@@ -159,7 +160,12 @@ fun Modifier.tutorialTarget(target: TutorialTarget): Modifier = composed {
     val requester = remember { BringIntoViewRequester() }
     val isCurrent = Tutorial.currentStep?.target == target
     LaunchedEffect(isCurrent) {
-        if (isCurrent) requester.bringIntoView()
+        if (isCurrent) {
+            // Waits for the next frame: an element that just appeared (new page, new state
+            // of the example) must be laid out before the page can scroll to it
+            withFrameNanos { }
+            requester.bringIntoView()
+        }
     }
 
     Modifier

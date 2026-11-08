@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,11 +18,16 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -32,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -60,12 +67,15 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 // Space between the element and the edge of the hole
 private val HOLE_PADDING = 8.dp
 
-// Space between the hole and the bubble
-private val BUBBLE_GAP = 16.dp
+// Space between the hole and the bubble, and between the bubble and the edges of the screen
+private val BUBBLE_GAP = 12.dp
 
-// Room the bubble needs above or under the element. Less than that on both sides
-// (a big element, like the card): the bubble goes at the bottom, over the screen
-private val BUBBLE_ROOM = 220.dp
+// Smallest bubble: the step number, the title, one line of text and the buttons.
+// When neither side of the element has that much room, the bubble covers a bit of it
+private val BUBBLE_MIN_HEIGHT = 170.dp
+
+// On a tablet or a phone held sideways, the bubble does not take the whole width
+private val BUBBLE_MAX_WIDTH = 480.dp
 
 // The tutorial over the whole app: an example screen of the tab, the dark veil with a hole
 // on the element of the step, and a bubble that explains it. Shows nothing without a tutorial.
@@ -189,23 +199,48 @@ private fun Spotlight(screen: TutorialScreen, step: TutorialStep, target: Rect) 
             )
         }
 
-        // Under the element if there is room, otherwise above it,
-        // otherwise at the bottom of the screen, over the element
+        // The part of the screen the bubble can use: under the status bar
+        // and above the navigation bar, with a small gap
+        val bars = WindowInsets.systemBars.asPaddingValues()
+        val safeTop = bars.calculateTopPadding() + BUBBLE_GAP
+        val safeBottom = maxHeight - bars.calculateBottomPadding() - BUBBLE_GAP
+
+        // Room above and under the element, inside that part
         val holeTop = with(density) { hole.top.toDp() }
         val holeBottom = with(density) { hole.bottom.toDp() }
-        val bubblePlace = when {
-            maxHeight - holeBottom >= BUBBLE_ROOM -> Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = holeBottom + BUBBLE_GAP)
+        val roomAbove = holeTop - BUBBLE_GAP - safeTop
+        val roomBelow = safeBottom - (holeBottom + BUBBLE_GAP)
 
-            holeTop >= BUBBLE_ROOM -> Modifier
+        // The bubble goes on the side with the most room, and never gets taller than
+        // that room: the text scrolls inside, the buttons always stay on the screen
+        val isBelow = roomBelow >= roomAbove
+        val room = maxOf(roomAbove, roomBelow)
+        val bubblePlace = when {
+            // Next to the element, under it
+            // coerceAtLeast: a padding cannot be negative, even for an element
+            // that is still sliding in from outside the screen
+            isBelow && room >= BUBBLE_MIN_HEIGHT -> Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = (holeBottom + BUBBLE_GAP).coerceAtLeast(0.dp))
+                .heightIn(max = room)
+
+            // Next to the element, above it
+            room >= BUBBLE_MIN_HEIGHT -> Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = maxHeight - holeTop + BUBBLE_GAP)
+                .padding(bottom = (maxHeight - holeTop + BUBBLE_GAP).coerceAtLeast(0.dp))
+                .heightIn(max = room)
+
+            // A big element on a small screen: against the edge with the most room,
+            // just tall enough for the buttons, so it covers as little of the element as possible
+            isBelow -> Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = maxHeight - safeBottom)
+                .heightIn(max = BUBBLE_MIN_HEIGHT)
 
             else -> Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = BUBBLE_GAP)
+                .align(Alignment.TopCenter)
+                .padding(top = safeTop)
+                .heightIn(max = BUBBLE_MIN_HEIGHT)
         }
 
         TutorialBubble(
@@ -216,7 +251,7 @@ private fun Spotlight(screen: TutorialScreen, step: TutorialStep, target: Rect) 
             isLast = Tutorial.isLastStep,
             onNext = Tutorial::next,
             onSkip = Tutorial::stop,
-            modifier = bubblePlace.padding(horizontal = 24.dp),
+            modifier = bubblePlace.padding(horizontal = 16.dp),
         )
     }
 }
@@ -234,15 +269,20 @@ private fun TutorialBubble(
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // A new step starts at the top of its text
+    val textScroll = remember(step) { ScrollState(0) }
+
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .widthIn(max = BUBBLE_MAX_WIDTH)
+            .fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, Lavender),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // "DISCOVER · 2 / 7": the user knows where they are and how long it is
             Text(
@@ -250,18 +290,29 @@ private fun TutorialBubble(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = step.title,
-                fontFamily = Unbounded,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = step.text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+
+            // The title and the text take the height left above the buttons, and scroll
+            // when it is too short (small screen, big font): the buttons stay visible.
+            // fill = false: when there is room, the bubble keeps the height of its text
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(textScroll),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = step.title,
+                    fontFamily = Unbounded,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = step.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -297,6 +348,26 @@ private fun TutorialBubblePreview() {
             onNext = {},
             onSkip = {},
             modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+// The smallest bubble, on a small screen: the text scrolls, the buttons stay visible
+@Preview(showBackground = true, backgroundColor = 0xFF0C0C10, widthDp = 320)
+@Composable
+private fun TutorialBubbleSmallPreview() {
+    MeloDropTheme {
+        TutorialBubble(
+            screenLabel = "DISCOVER",
+            step = DiscoverSteps[2],
+            number = 3,
+            count = DiscoverSteps.size,
+            isLast = false,
+            onNext = {},
+            onSkip = {},
+            modifier = Modifier
+                .padding(16.dp)
+                .heightIn(max = BUBBLE_MIN_HEIGHT),
         )
     }
 }

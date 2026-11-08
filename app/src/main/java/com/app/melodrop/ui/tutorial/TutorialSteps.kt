@@ -54,7 +54,7 @@ val DropSteps = listOf(
     TutorialStep(
         target = TutorialTarget.DROP_RESULT,
         title = "Écoute, puis choisis",
-        text = "Touche ▶ pour écouter l'extrait, puis touche le titre pour le choisir.",
+        text = "Touche ▶ pour écouter l'extrait, puis touche le titre pour le choisir. On ne peut malheureusement pas choisir le moment de l'extrait.",
     ),
     TutorialStep(
         target = TutorialTarget.DROP_CONFIRM,

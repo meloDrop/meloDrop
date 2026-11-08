@@ -69,17 +69,16 @@ class MyDropsViewModel(application: Application) : AndroidViewModel(application)
                 uiState = uiState.copy(playingDropId = null, previewError = "Extrait indisponible pour ce titre.")
             }
         })
-
-        // Loads the list as soon as the screen opens
-        load()
     }
 
-    fun load() {
+    // Loads the drops: the user's own ones (userId null), or those of another user.
+    // Called by the screen when it opens, and by the "RÉESSAYER" button
+    fun load(userId: Int? = null) {
         uiState = uiState.copy(isLoading = true, error = null)
 
         viewModelScope.launch {
             uiState = try {
-                val drops = repository.getMyDrops()
+                val drops = if (userId == null) repository.getMyDrops() else repository.getUserDrops(userId)
                 uiState.copy(isLoading = false, drops = drops, onlineDropId = findOnlineDrop(drops))
             } catch (e: HttpException) {
                 uiState.copy(isLoading = false, error = "Erreur du serveur (${e.code()}).")

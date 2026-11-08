@@ -51,6 +51,7 @@ fun MainScreen(onLogout: () -> Unit) {
             currentRoute == Routes.USER_PROFILE ||
             currentRoute == Routes.SEARCH_USERS ||
             currentRoute == Routes.MY_DROPS ||
+            currentRoute == Routes.USER_DROPS ||
             currentRoute == Routes.MY_PICKS ||
             currentRoute == Routes.EDIT_PODIUM ||
             currentRoute == Routes.EDIT_LABELS ||
@@ -197,6 +198,23 @@ fun MainScreen(onLogout: () -> Unit) {
                         // Closes this screen only, even after a double tap
                         onBack = { navController.popBackStack(Routes.USER_PROFILE, inclusive = true) },
                         onFollowsClick = ::openFollows,
+                        // "Voir plus" or the "drops" counter.
+                        // launchSingleTop: a double tap does not open the list twice
+                        onDropsClick = { id ->
+                            navController.navigate(Routes.userDrops(id)) { launchSingleTop = true }
+                        },
+                    )
+                }
+                composable(
+                    route = Routes.USER_DROPS,
+                    // {userId} in the route is a number
+                    arguments = listOf(navArgument("userId") { type = NavType.IntType }),
+                ) { entry ->
+                    // Same screen as "Mes drops", for the drops of another user
+                    MyDropsScreen(
+                        userId = entry.arguments?.getInt("userId"),
+                        // Closes this screen only: back to the profile of the user
+                        onBack = { navController.popBackStack(Routes.USER_DROPS, inclusive = true) },
                     )
                 }
                 composable(

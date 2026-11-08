@@ -87,8 +87,9 @@ private val PICK_RAISE = 16.dp
 // the hint takes one line, so the cover keeps some room
 private val COMPACT_DECK_HEIGHT = 600.dp
 
-// Hint on one line, for short screens
-private const val SHORT_HINT = "← Passer    Liker →    ↑ Pick"
+// Hint on one line, for short screens. Same order as the buttons under the card:
+// Passer on the left, Pick in the middle, Liker on the right
+private const val SHORT_HINT = "← Passer    ↑ Pick    Liker →"
 
 // The three choices on a card. Each one sends the card a different way:
 // skip to the left, like to the right, pick to the top

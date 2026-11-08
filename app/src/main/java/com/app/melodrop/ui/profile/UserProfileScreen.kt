@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +62,8 @@ fun UserProfileScreen(
     onBack: () -> Unit,
     // Tap on "abonnés" or "abonnements": opens the lists, with the user's id and the tab
     onFollowsClick: (Int, String) -> Unit = { _, _ -> },
+    // "Voir plus" or the "drops" counter: opens all the drops, with the user's id
+    onDropsClick: (Int) -> Unit = {},
     viewModel: UserProfileViewModel = viewModel(),
 ) {
     // Loads the profile when the screen opens (and again if the id changes)
@@ -87,6 +90,7 @@ fun UserProfileScreen(
         onLabeledSongPlayClick = viewModel::toggleLabeledSongPreview,
         onFollowClick = viewModel::toggleFollow,
         onFollowsClick = onFollowsClick,
+        onDropsClick = onDropsClick,
         onSendReport = viewModel::sendReport,
         onCloseReport = viewModel::closeReport,
     )
@@ -108,6 +112,8 @@ private fun UserProfileContent(
     onFollowClick: () -> Unit = {},
     // Tap on "abonnés" or "abonnements": the user's id and the tab
     onFollowsClick: (Int, String) -> Unit = { _, _ -> },
+    // "Voir plus" or the "drops" counter: the user's id
+    onDropsClick: (Int) -> Unit = {},
     // "Envoyer" in the report window: the reason code and the message
     onSendReport: (String, String) -> Unit = { _, _ -> },
     // The report window is closed
@@ -153,6 +159,7 @@ private fun UserProfileContent(
                 onFollowClick = onFollowClick,
                 onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
                 onReportClick = { showReport = true },
+                onDropsClick = { onDropsClick(profile.id) },
             )
 
             uiState.isLoading -> Box(
@@ -224,6 +231,8 @@ private fun UserProfileBody(
     onFollowsClick: (String) -> Unit = {},
     // "Signaler le profil" in the "⋮" menu
     onReportClick: () -> Unit = {},
+    // "Voir plus" or the "drops" counter: opens all the drops of the user
+    onDropsClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -299,6 +308,7 @@ private fun UserProfileBody(
                     isPlaying = isPlaying,
                     previewError = previewError,
                     onPlayClick = onPlayClick,
+                    onDropsClick = onDropsClick,
                 )
             },
             // Takes all the height left under the header
@@ -315,11 +325,19 @@ private fun UserActivityPage(
     isPlaying: Boolean,
     previewError: String?,
     onPlayClick: (ProfileDropOut) -> Unit,
+    // "Voir plus" or the "drops" counter: opens all the drops of the user
+    onDropsClick: () -> Unit = {},
 ) {
+    // The profile only sends the drop of the day and the last ones:
+    // "Voir plus" shows up when the user has shared more
+    val shownCount = profile.recentDrops.size + (if (profile.currentDrop != null) 1 else 0)
+    val hasMoreDrops = profile.stats.dropsCount > shownCount
+
     // No scroll here: the page already scrolls inside ProfilePages
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        // The drops counter opens all the drops, like on the user's own profile.
         // No click on the likes: the "Mes likes" list of the others is private
-        StatsRow(stats = profile.stats)
+        StatsRow(stats = profile.stats, onDropsClick = onDropsClick)
 
         // A preview could not be played
         if (previewError != null) {
@@ -349,7 +367,23 @@ private fun UserActivityPage(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionTitle("DERNIERS DROPS")
+            // The title on the left, "Voir plus" against the right edge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SectionTitle("DERNIERS DROPS")
+                if (hasMoreDrops) {
+                    TextButton(onClick = onDropsClick) {
+                        Text(
+                            text = "Voir plus ›",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
 
             if (profile.recentDrops.isEmpty()) {
                 Text(

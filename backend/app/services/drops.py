@@ -5,13 +5,14 @@ from datetime import timedelta, timezone
 
 from sqlalchemy.orm import Session
 
-from app.exceptions import DeezerError, DropAlreadyActiveError
+from app.exceptions import DeezerError, DropAlreadyActiveError, DropNotFoundError
 from app.models.drop import Drop
 from app.models.save import Save
 from app.models.skip import Skip
 from app.models.song import Song
+from app.models.user import User
 from app.providers.deezer import DeezerProvider
-from app.schemas.drops import DropOut, MyDropOut
+from app.schemas.drops import DropLikerOut, DropOut, MyDropOut
 from app.services.auto_badges import DROP_RULES, check_auto_badges
 from app.utils.time import utc_now
 
@@ -141,3 +142,35 @@ def get_my_drop(db: Session, user_id: int) -> MyDropOut | None:
         expires_at=drop.expires_at.replace(tzinfo=timezone.utc),
         **count_swipes(db, drop.id),
     )
+
+
+def get_drop_likers(db: Session, user_id: int, drop_id: int) -> list[DropLikerOut]:
+    """Return the users who liked or picked one of the user's drops, the most recent first."""
+    # The drop must exist and be one of the user's own drops:
+    # who liked a drop is only shown to its author
+    drop = db.get(Drop, drop_id)
+    if drop is None or drop.user_id != user_id:
+        raise DropNotFoundError("drop_not_found")
+
+    # Each like of the drop, with the user who gave it
+    rows = (
+        db.query(User, Save.is_pick)
+        .join(Save, Save.user_id == User.id)
+        .filter(Save.drop_id == drop_id)
+        .order_by(Save.created_at.desc(), Save.id.desc())
+        .all()
+    )
+
+    likers = []
+    for user, is_pick in rows:
+        likers.append(
+            DropLikerOut(
+                id=user.id,
+                username=user.username,
+                display_name=user.display_name,
+                avatar_color=user.avatar_color,
+                avatar_style=user.avatar_style,
+                is_pick=is_pick,
+            )
+        )
+    return likers

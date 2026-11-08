@@ -80,6 +80,14 @@ import androidx.compose.ui.text.TextStyle
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.CREATOR_USERNAME
 import com.app.melodrop.ui.likers.DropLikersSheet
+import com.app.melodrop.ui.tutorial.DemoPicks
+import com.app.melodrop.ui.tutorial.DemoProfile
+import com.app.melodrop.ui.tutorial.FirstVisitTutorial
+import com.app.melodrop.ui.tutorial.MixtapeTargets
+import com.app.melodrop.ui.tutorial.Tutorial
+import com.app.melodrop.ui.tutorial.TutorialScreen
+import com.app.melodrop.ui.tutorial.TutorialTarget
+import com.app.melodrop.ui.tutorial.tutorialTarget
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
 
@@ -117,6 +125,9 @@ fun ProfileScreen(
         viewModel.load()
     }
 
+    // First visit of Profil on this phone, or new account: the tutorial opens
+    FirstVisitTutorial(TutorialScreen.PROFILE)
+
     // Leaving the Profile tab (other tab or sub-screen): the music stops
     DisposableEffect(Unit) {
         onDispose { viewModel.pausePreview() }
@@ -148,6 +159,34 @@ fun ProfileScreen(
     )
 }
 
+// The example screen of the Profil tutorial: a member with a full activity and a full
+// Mixtape. The page follows the step. Drawn by the tutorial over the app, never used for real
+@Composable
+internal fun ProfileTutorialDemo() {
+    // The steps of the Mixtape on its page (on the right), the others on the activity
+    val target = Tutorial.currentStep?.target
+    val page = if (target != null && target in MixtapeTargets) 1 else 0
+
+    ProfileContent(
+        uiState = ProfileUiState(isLoading = false, profile = DemoProfile, picks = DemoPicks),
+        onRetry = {},
+        onLogout = {},
+        onEditProfile = {},
+        onLikesClick = {},
+        onDropsClick = {},
+        onSkipsClick = {},
+        onPicksClick = {},
+        onAccountClick = {},
+        onEditPodium = {},
+        onEditLabels = {},
+        onPlayClick = {},
+        onPickPlayClick = {},
+        onPodiumPlayClick = {},
+        onLabeledSongPlayClick = {},
+        demoPage = page,
+    )
+}
+
 // Pure UI: shows the profile, a spinner or an error, from the state it receives
 @Composable
 private fun ProfileContent(
@@ -174,6 +213,8 @@ private fun ProfileContent(
     onFollowsClick: (Int, String) -> Unit = { _, _ -> },
     // Tap on "drop par @username" under a pick
     onAuthorClick: (Int) -> Unit = {},
+    // Tutorial only: the page to show (0 = activity, 1 = Mixtape)
+    demoPage: Int? = null,
 ) {
     Column(
         modifier = Modifier
@@ -212,6 +253,7 @@ private fun ProfileContent(
                 onLabeledSongPlayClick = onLabeledSongPlayClick,
                 onFollowsClick = { tab -> onFollowsClick(profile.id, tab) },
                 onAuthorClick = onAuthorClick,
+                demoPage = demoPage,
             )
 
             // First answer not there yet
@@ -256,6 +298,8 @@ private fun ProfileBody(
     onFollowsClick: (String) -> Unit = {},
     // Tap on "drop par @username" under a pick
     onAuthorClick: (Int) -> Unit = {},
+    // Tutorial only: the page to show (0 = activity, 1 = Mixtape)
+    demoPage: Int? = null,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -287,30 +331,37 @@ private fun ProfileBody(
                         )
                     }
 
-                    PodiumCard(
-                        title = "MES TITRES PRÉFÉRÉS",
-                        podium = profile.podium,
-                        emptyText = "Ton podium est vide. Touche « Modifier » pour y mettre tes 3 titres préférés de tous les temps.",
-                        playingSongId = playingPodiumSongId,
-                        isPlaying = isPlaying,
-                        onPlayClick = onPodiumPlayClick,
-                        onEditClick = onEditPodium,
-                    )
+                    // Each section in a Box: the tutorial notes its place
+                    Box(modifier = Modifier.tutorialTarget(TutorialTarget.PODIUM)) {
+                        PodiumCard(
+                            title = "MES TITRES PRÉFÉRÉS",
+                            podium = profile.podium,
+                            emptyText = "Ton podium est vide. Touche « Modifier » pour y mettre tes 3 titres préférés de tous les temps.",
+                            playingSongId = playingPodiumSongId,
+                            isPlaying = isPlaying,
+                            onPlayClick = onPodiumPlayClick,
+                            onEditClick = onEditPodium,
+                        )
+                    }
 
-                    LabeledSongsSection(
-                        title = "MES CHANSONS",
-                        labeledSongs = profile.labeledSongs,
-                        playingLabel = playingLabel,
-                        isPlaying = isPlaying,
-                        onPlayClick = onLabeledSongPlayClick,
-                        onEditClick = onEditLabels,
-                    )
+                    Box(modifier = Modifier.tutorialTarget(TutorialTarget.LABELS)) {
+                        LabeledSongsSection(
+                            title = "MES CHANSONS",
+                            labeledSongs = profile.labeledSongs,
+                            playingLabel = playingLabel,
+                            isPlaying = isPlaying,
+                            onPlayClick = onLabeledSongPlayClick,
+                            onEditClick = onEditLabels,
+                        )
+                    }
 
                     // Given from the dashboard: the user can't change them
-                    BadgesSection(
-                        badges = profile.badges,
-                        emptyText = "Pas encore de badge. L'équipe meloDrop en donne pour récompenser certains membres : ils restent secrets jusqu'à ce que tu les reçoives.",
-                    )
+                    Box(modifier = Modifier.tutorialTarget(TutorialTarget.BADGES)) {
+                        BadgesSection(
+                            badges = profile.badges,
+                            emptyText = "Pas encore de badge. L'équipe meloDrop en donne pour récompenser certains membres : ils restent secrets jusqu'à ce que tu les reçoives.",
+                        )
+                    }
                 }
             },
             activity = {
@@ -335,6 +386,7 @@ private fun ProfileBody(
             modifier = Modifier.weight(1f),
             // The user's own profile opens on the activity: the Mixtape is on its right
             mixtapeFirst = false,
+            demoPage = demoPage,
         )
     }
 }
@@ -371,16 +423,20 @@ private fun ActivityPage(
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         // No gap inside: the link stays close to the counters
         Column {
-            StatsRow(
-                stats = profile.stats,
-                onLikesClick = onLikesClick,
-                onDropsClick = onDropsClick,
-            )
+            Box(modifier = Modifier.tutorialTarget(TutorialTarget.PROFILE_STATS)) {
+                StatsRow(
+                    stats = profile.stats,
+                    onLikesClick = onLikesClick,
+                    onDropsClick = onDropsClick,
+                )
+            }
 
             // Discreet link under "titres likés", on the user's own profile only
             TextButton(
                 onClick = onSkipsClick,
-                modifier = Modifier.align(Alignment.End),
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .tutorialTarget(TutorialTarget.PROFILE_SKIPS),
             ) {
                 Text(
                     text = "Mes skips ›",
@@ -392,7 +448,9 @@ private fun ActivityPage(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            ProfileTabs(showPicks = showPicks, onSelect = { showPicks = it })
+            Box(modifier = Modifier.tutorialTarget(TutorialTarget.PROFILE_TABS)) {
+                ProfileTabs(showPicks = showPicks, onSelect = { showPicks = it })
+            }
 
             // A preview could not be played
             if (previewError != null) {

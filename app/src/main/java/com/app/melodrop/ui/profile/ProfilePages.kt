@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Rose
+import com.app.melodrop.ui.tutorial.TutorialTarget
+import com.app.melodrop.ui.tutorial.tutorialTarget
 import kotlinx.coroutines.launch
 
 // The two pages of a profile, with the text of their label
@@ -59,6 +62,8 @@ internal fun ProfilePages(
     // The page that opens first, on the left: the Mixtape on the profile of the others,
     // the activity on the user's own profile
     mixtapeFirst: Boolean = true,
+    // Tutorial only: the page to show, chosen by the step. null: the user slides the pages
+    demoPage: Int? = null,
 ) {
     // The pages from left to right
     val pages = if (mixtapeFirst) {
@@ -73,6 +78,13 @@ internal fun ProfilePages(
     // A tap on a label slides to its page: the animation needs a coroutine
     val scope = rememberCoroutineScope()
 
+    // Tutorial: the pages slide by themselves to the page of the step
+    if (demoPage != null) {
+        LaunchedEffect(demoPage) {
+            pagerState.animateScrollToPage(demoPage)
+        }
+    }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -84,7 +96,9 @@ internal fun ProfilePages(
             currentPage = pagerState.currentPage,
             accent = accent,
             onSelect = { page -> scope.launch { pagerState.animateScrollToPage(page) } },
-            modifier = Modifier.align(Alignment.CenterHorizontally),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .tutorialTarget(TutorialTarget.PROFILE_PAGES),
         )
 
         HorizontalPager(

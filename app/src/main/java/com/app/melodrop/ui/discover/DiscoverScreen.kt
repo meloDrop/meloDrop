@@ -7,6 +7,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -34,7 +37,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,12 +60,14 @@ import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
 import com.app.melodrop.ui.theme.Night
+import com.app.melodrop.ui.tutorial.DemoFeed
+import com.app.melodrop.ui.tutorial.FirstVisitTutorial
 import com.app.melodrop.ui.tutorial.Tutorial
-import com.app.melodrop.ui.tutorial.TutorialLastStep
-import com.app.melodrop.ui.tutorial.TutorialSteps
+import com.app.melodrop.ui.tutorial.TutorialScreen
 import com.app.melodrop.ui.tutorial.TutorialTarget
 import com.app.melodrop.ui.tutorial.tutorialTarget
 import com.app.melodrop.ui.whatsnew.WhatsNewSheet
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import androidx.compose.material3.IconButton
@@ -87,6 +91,18 @@ private val PICK_RAISE = 16.dp
 // Below this height for the card, the buttons and the hint, the screen is short:
 // the hint takes one line, so the cover keeps some room
 private val COMPACT_DECK_HEIGHT = 600.dp
+
+// Tutorial: how far the example card goes, as a fraction of its width (past SWIPE_THRESHOLD)
+private const val DEMO_SWIPE = 0.4f
+
+// Tutorial: time of each part of an example swipe (ms)
+private const val DEMO_MOVE_MS = 700
+private const val DEMO_HOLD_MS = 500L
+private const val DEMO_BACK_MS = 400
+private const val DEMO_PAUSE_MS = 500L
+
+// Tutorial: size of the round mark that shows the finger
+private val TOUCH_POINT_SIZE = 44.dp
 
 // Hint on one line, for short screens. Same order as the buttons under the card:
 // Passer on the left, Pick in the middle, Liker on the right
@@ -113,6 +129,15 @@ fun DiscoverScreen(
     // App sent to the background (home button, screen off): the music stops too
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         viewModel.pausePreview()
+    }
+
+    // First visit of Discover on this phone, or new account: the tutorial opens
+    FirstVisitTutorial(TutorialScreen.DISCOVER)
+
+    // While a tutorial covers the screen, the previews wait: no music behind the example
+    val isTutorialOpen = Tutorial.screen != null
+    LaunchedEffect(isTutorialOpen) {
+        viewModel.setTutorialOpen(isTutorialOpen)
     }
 
     // Card whose list of droppers and likes is open, with the tab to show
@@ -147,24 +172,36 @@ fun DiscoverScreen(
         )
     }
 
-    // "Nouveautés" sheet, over the screen: by itself after an update, or with the "i" button
-    if (viewModel.showWhatsNew) {
+    // "Nouveautés" sheet, over the screen: by itself after an update, or with the "i" button.
+    // It waits for the end of a tutorial, so the two never show at the same time
+    if (viewModel.showWhatsNew && !isTutorialOpen) {
         WhatsNewSheet(
             onDismiss = viewModel::closeWhatsNew,
-            // Only when this version has a tour: the sheet offers to see it again
-            onReplayTutorial = if (TutorialSteps.isNotEmpty()) viewModel::replayTutorial else null,
+            // "Revoir le tuto": the sheet closes, the three tutorials follow one another
+            onReplayTutorial = {
+                viewModel.closeWhatsNew()
+                Tutorial.startAll()
+            },
         )
     }
+}
 
-    // A tour waits and the feed is loaded: the elements to highlight are on screen
-    if (viewModel.tutorialPending && !viewModel.uiState.isLoading) {
-        LaunchedEffect(Unit) {
-            // Waits for the next frame: every element has had time to note its place
-            withFrameNanos { }
-            Tutorial.start(TutorialSteps + TutorialLastStep)
-            viewModel.onTutorialStarted()
-        }
-    }
+// The example screen of the Discover tutorial: a song dropped by three members.
+// Drawn by the tutorial over the app, never used for real
+@Composable
+internal fun DiscoverTutorialDemo() {
+    DiscoverContent(
+        uiState = DiscoverUiState(drops = DemoFeed),
+        onRefresh = {},
+        onSwiped = { _, _ -> },
+        onPicked = {},
+        onPlayPause = {},
+        onAuthorClick = {},
+        onSearchClick = {},
+        onInfoClick = {},
+        // The card shows the three swipes by itself during its step
+        demoSwipes = Tutorial.currentStep?.target == TutorialTarget.CARD,
+    )
 }
 
 // Pure UI: only displays the state it receives
@@ -185,6 +222,8 @@ private fun DiscoverContent(
     onFollowsFirstClick: () -> Unit = {},
     // Tap on the droppers or the likes of the card: the card, and true for the likes
     onPeopleClick: (FeedItem, Boolean) -> Unit = { _, _ -> },
+    // Tutorial only: the card shows the three swipes by itself
+    demoSwipes: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -267,6 +306,7 @@ private fun DiscoverContent(
                     onPlayPause = onPlayPause,
                     onAuthorClick = onAuthorClick,
                     onPeopleClick = onPeopleClick,
+                    demoSwipes = demoSwipes,
                 )
             }
         }
@@ -282,6 +322,8 @@ private fun DropDeck(
     onPlayPause: () -> Unit,
     onAuthorClick: (Int) -> Unit,
     onPeopleClick: (FeedItem, Boolean) -> Unit = { _, _ -> },
+    // Tutorial only: the card shows the three swipes by itself
+    demoSwipes: Boolean = false,
 ) {
     val drops = uiState.drops
     val top = drops.first()
@@ -309,10 +351,29 @@ private fun DropDeck(
     // Card width in pixels, known after the first layout
     var cardWidth by remember { mutableFloatStateOf(1f) }
 
-    // The deck leaves (empty feed, error, other tab): the Pick button is no longer
-    // on screen, so the tour must not point at its old place
-    DisposableEffect(Unit) {
-        onDispose { Tutorial.targets.remove(TutorialTarget.PICK) }
+    // Tutorial: the card swipes to the right, to the left, then up, again and again.
+    // Outside the tutorial (or when its step ends), the card goes back to the center
+    LaunchedEffect(demoSwipes, cardWidth) {
+        if (!demoSwipes) {
+            if (offsetX.value != 0f || offsetY.value != 0f) {
+                offsetX.snapTo(0f)
+                offsetY.snapTo(0f)
+            }
+            return@LaunchedEffect
+        }
+        // Width not known before the first layout: the effect starts again once it is
+        if (cardWidth <= 1f) return@LaunchedEffect
+
+        // A bit past the threshold: the stamp shows fully, like a real swipe
+        val distance = cardWidth * DEMO_SWIPE
+        while (true) {
+            delay(DEMO_PAUSE_MS)
+            demoSwipe(offsetX, distance)
+            delay(DEMO_PAUSE_MS)
+            demoSwipe(offsetX, -distance)
+            delay(DEMO_PAUSE_MS)
+            demoSwipe(offsetY, -distance)
+        }
     }
 
     // Sends the card on top off the screen, then the choice counts.
@@ -377,6 +438,7 @@ private fun DropDeck(
                         onPlayPause = onPlayPause,
                         onAuthorClick = { onAuthorClick(top.authorId) },
                         onPeopleClick = { showLikers -> onPeopleClick(top, showLikers) },
+                        showTouchPoint = demoSwipes,
                     )
                 }
             }
@@ -384,6 +446,7 @@ private fun DropDeck(
             // Same choices as the swipes, for those who prefer to tap.
             // Aligned at the bottom: the raised Pick button stands out in the middle
             Row(
+                modifier = Modifier.tutorialTarget(TutorialTarget.CHOICE_BUTTONS),
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
@@ -450,11 +513,15 @@ private fun SwipeableDropCard(
     onAuthorClick: () -> Unit,
     // Tap on the droppers (false) or on the likes (true) of the card
     onPeopleClick: (Boolean) -> Unit = {},
+    // Tutorial only: a round mark, like a finger, moves with the card
+    showTouchPoint: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
+            // Before graphicsLayer: the tutorial notes the card at rest, not while it moves
+            .tutorialTarget(TutorialTarget.CARD)
             .onSizeChanged { onWidthChange(it.width.toFloat()) }
             // Starts again when the width is known, and when the card starts leaving
             .pointerInput(width, isLeaving) {
@@ -542,7 +609,27 @@ private fun SwipeableDropCard(
             // In the middle of the card: it rises with it
             modifier = Modifier.align(Alignment.Center),
         )
+
+        // Tutorial: a round mark where a finger would hold the card. Inside the card,
+        // so it moves and tilts with it
+        if (showTouchPoint) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 72.dp)
+                    .size(TOUCH_POINT_SIZE)
+                    .background(Color.White.copy(alpha = 0.3f), CircleShape)
+                    .border(2.dp, Color.White.copy(alpha = 0.8f), CircleShape),
+            )
+        }
     }
+}
+
+// Tutorial: one swipe of the example card, there and back
+private suspend fun demoSwipe(offset: Animatable<Float, AnimationVector1D>, distance: Float) {
+    offset.animateTo(distance, tween(DEMO_MOVE_MS))
+    delay(DEMO_HOLD_MS)
+    offset.animateTo(0f, tween(DEMO_BACK_MS))
 }
 
 // Stamp shown on the card while it moves

@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -64,6 +64,14 @@ import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.TrackRow
 import com.app.melodrop.ui.components.likeRateLabel
 import com.app.melodrop.ui.likers.DropLikersSheet
+import com.app.melodrop.ui.tutorial.DemoSearchQuery
+import com.app.melodrop.ui.tutorial.DemoTracks
+import com.app.melodrop.ui.tutorial.FirstVisitTutorial
+import com.app.melodrop.ui.tutorial.Tutorial
+import com.app.melodrop.ui.tutorial.TutorialScreen
+import com.app.melodrop.ui.tutorial.TutorialTarget
+import com.app.melodrop.ui.tutorial.demoMyDrop
+import com.app.melodrop.ui.tutorial.tutorialTarget
 import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import kotlinx.coroutines.delay
@@ -80,6 +88,9 @@ fun DropScreen(
 ) {
     // Tab of the list of likes to open: false = Likes, true = Picks, null = list closed
     var likersTab by remember { mutableStateOf<Boolean?>(null) }
+
+    // First visit of Drop on this phone, or new account: the tutorial opens
+    FirstVisitTutorial(TutorialScreen.DROP)
 
     // Leaving the Drop tab: the music stops
     DisposableEffect(Unit) {
@@ -146,6 +157,43 @@ fun DropScreen(
             onDismiss = { likersTab = null },
         )
     }
+}
+
+// The example screen of the Drop tutorial: the search, the chosen track, then the drop
+// of the day, depending on the step. Drawn by the tutorial over the app, never used for real
+@Composable
+internal fun DropTutorialDemo() {
+    // remember: the time left counts from the opening of the tutorial
+    val myDrop = remember { demoMyDrop() }
+
+    val uiState = when (Tutorial.currentStep?.target) {
+        TutorialTarget.DROP_CONFIRM -> DropUiState(
+            isCheckingDrop = false,
+            query = DemoSearchQuery,
+            results = DemoTracks,
+            selectedTrack = DemoTracks.first(),
+        )
+        TutorialTarget.DROP_STATS, TutorialTarget.DROP_TIMER -> DropUiState(
+            isCheckingDrop = false,
+            myDrop = myDrop,
+        )
+        else -> DropUiState(
+            isCheckingDrop = false,
+            query = DemoSearchQuery,
+            results = DemoTracks,
+        )
+    }
+
+    DropContent(
+        uiState = uiState,
+        onQueryChange = {},
+        onPlayClick = {},
+        onTrackClick = {},
+        onSubmit = {},
+        onChangeTrack = {},
+        onRefresh = {},
+        onMyDropPlayClick = {},
+    )
 }
 
 // Pure UI: shows one step at a time, from the state it receives
@@ -242,7 +290,9 @@ private fun SearchStep(
             onValueChange = onQueryChange,
             label = { Text("Titre ou artiste") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .tutorialTarget(TutorialTarget.DROP_SEARCH),
             // The keyboard shows a search key instead of "enter"
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             // The search already runs while typing: the key only closes the keyboard
@@ -277,13 +327,16 @@ private fun SearchStep(
                     contentPadding = PaddingValues(bottom = 8.dp),
                 ) {
                     // key: Compose follows each row by its Deezer id
-                    items(uiState.results, key = { it.deezerTrackId }) { track ->
-                        TrackRow(
-                            track = track,
-                            isPlaying = uiState.isPlaying && uiState.playingTrackId == track.deezerTrackId,
-                            onPlayClick = { onPlayClick(track) },
-                            onClick = { onTrackClick(track) },
-                        )
+                    itemsIndexed(uiState.results, key = { _, track -> track.deezerTrackId }) { index, track ->
+                        // The tutorial highlights the first result
+                        Box(modifier = if (index == 0) Modifier.tutorialTarget(TutorialTarget.DROP_RESULT) else Modifier) {
+                            TrackRow(
+                                track = track,
+                                isPlaying = uiState.isPlaying && uiState.playingTrackId == track.deezerTrackId,
+                                onPlayClick = { onPlayClick(track) },
+                                onClick = { onTrackClick(track) },
+                            )
+                        }
                     }
                 }
             }
@@ -335,7 +388,9 @@ private fun ConfirmStep(
         Button(
             onClick = onSubmit,
             enabled = !uiState.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .tutorialTarget(TutorialTarget.DROP_CONFIRM),
         ) {
             if (uiState.isSubmitting) {
                 CircularProgressIndicator(
@@ -449,7 +504,9 @@ private fun MyDropView(
 
         // Three tiles side by side, with the same width: what the swipes gave
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .tutorialTarget(TutorialTarget.DROP_STATS),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // The arrow shows that the tile can be tapped: it opens who liked
@@ -496,7 +553,9 @@ private fun MyDropView(
                 value = timeLeftLabel(minutesLeft),
                 label = "avant expiration",
                 color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .tutorialTarget(TutorialTarget.DROP_TIMER),
             )
         }
 

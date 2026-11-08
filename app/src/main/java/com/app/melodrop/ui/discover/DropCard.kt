@@ -29,6 +29,8 @@ import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.tutorial.TutorialTarget
+import com.app.melodrop.ui.tutorial.tutorialTarget
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.BoxWithConstraints
 
@@ -141,7 +143,10 @@ fun DropCard(
             val droppersCount = drop.droppers.orEmpty().size
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // Only on the card on top: the one waiting behind cannot be tapped
+                    .then(if (onPeopleClick != null) Modifier.tutorialTarget(TutorialTarget.CARD_PEOPLE) else Modifier),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

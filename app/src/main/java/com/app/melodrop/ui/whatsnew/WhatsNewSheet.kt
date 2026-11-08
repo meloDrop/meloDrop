@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,7 +44,11 @@ private val BulletColors = listOf(Lavender, Peach, Butter, Mint, Rose)
 // OptIn: ModalBottomSheet is marked as experimental in Material 3
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WhatsNewSheet(onDismiss: () -> Unit) {
+fun WhatsNewSheet(
+    onDismiss: () -> Unit,
+    // "Revoir le tuto" button. null: this version has no tour, the button is hidden
+    onReplayTutorial: (() -> Unit)? = null,
+) {
     // skipPartiallyExpanded: the sheet opens fully at once, not half-way
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -59,13 +64,23 @@ fun WhatsNewSheet(onDismiss: () -> Unit) {
                 // The sheet slides down first, then it is removed
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
             },
+            showReplay = onReplayTutorial != null,
+            onReplayClick = {
+                // Same: the sheet slides down, then the tour starts
+                scope.launch { sheetState.hide() }.invokeOnCompletion { onReplayTutorial?.invoke() }
+            },
         )
     }
 }
 
-// Pure UI: title, version, one line per change and the OK button
+// Pure UI: title, version, one line per change, the OK button
+// and, when the version has a tour, the "Revoir le tuto" button
 @Composable
-private fun WhatsNewContent(onOkClick: () -> Unit) {
+private fun WhatsNewContent(
+    onOkClick: () -> Unit,
+    showReplay: Boolean = false,
+    onReplayClick: () -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -113,6 +128,16 @@ private fun WhatsNewContent(onOkClick: () -> Unit) {
         ) {
             Text("OK")
         }
+
+        // Shown only when this version has a tour
+        if (showReplay) {
+            TextButton(
+                onClick = onReplayClick,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Revoir le tuto")
+            }
+        }
     }
 }
 
@@ -122,7 +147,7 @@ private fun WhatsNewContent(onOkClick: () -> Unit) {
 private fun WhatsNewContentPreview() {
     MeloDropTheme {
         Surface(color = MaterialTheme.colorScheme.surface) {
-            WhatsNewContent(onOkClick = {})
+            WhatsNewContent(onOkClick = {}, showReplay = true)
         }
     }
 }

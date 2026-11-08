@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -33,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,6 +57,11 @@ import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
 import com.app.melodrop.ui.theme.Night
+import com.app.melodrop.ui.tutorial.Tutorial
+import com.app.melodrop.ui.tutorial.TutorialLastStep
+import com.app.melodrop.ui.tutorial.TutorialSteps
+import com.app.melodrop.ui.tutorial.TutorialTarget
+import com.app.melodrop.ui.tutorial.tutorialTarget
 import com.app.melodrop.ui.whatsnew.WhatsNewSheet
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -121,7 +128,21 @@ fun DiscoverScreen(
 
     // "Nouveautés" sheet, over the screen: by itself after an update, or with the "i" button
     if (viewModel.showWhatsNew) {
-        WhatsNewSheet(onDismiss = viewModel::closeWhatsNew)
+        WhatsNewSheet(
+            onDismiss = viewModel::closeWhatsNew,
+            // Only when this version has a tour: the sheet offers to see it again
+            onReplayTutorial = if (TutorialSteps.isNotEmpty()) viewModel::replayTutorial else null,
+        )
+    }
+
+    // A tour waits and the feed is loaded: the elements to highlight are on screen
+    if (viewModel.tutorialPending && !viewModel.uiState.isLoading) {
+        LaunchedEffect(Unit) {
+            // Waits for the next frame: every element has had time to note its place
+            withFrameNanos { }
+            Tutorial.start(TutorialSteps + TutorialLastStep)
+            viewModel.onTutorialStarted()
+        }
     }
 }
 
@@ -159,7 +180,10 @@ private fun DiscoverContent(
                 MeloDropTitle()
                 // The two buttons side by side, against the right edge
                 Row {
-                    IconButton(onClick = onInfoClick) {
+                    IconButton(
+                        onClick = onInfoClick,
+                        modifier = Modifier.tutorialTarget(TutorialTarget.INFO),
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_info_drop),
                             contentDescription = "Nouveautés de la version",
@@ -168,7 +192,10 @@ private fun DiscoverContent(
                             modifier = Modifier.size(28.dp),
                         )
                     }
-                    IconButton(onClick = onSearchClick) {
+                    IconButton(
+                        onClick = onSearchClick,
+                        modifier = Modifier.tutorialTarget(TutorialTarget.SEARCH),
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_search),
                             contentDescription = "Rechercher un utilisateur",
@@ -179,7 +206,11 @@ private fun DiscoverContent(
             }
 
             // The user chooses whether the drops of the followed users come first
-            FollowsFirstChip(selected = followsFirst, onClick = onFollowsFirstClick)
+            FollowsFirstChip(
+                selected = followsFirst,
+                onClick = onFollowsFirstClick,
+                modifier = Modifier.tutorialTarget(TutorialTarget.FOLLOWS_FIRST),
+            )
         }
 
         // Takes all the space left under the title, content centered
@@ -252,6 +283,12 @@ private fun DropDeck(
     var isLeaving by remember(top.id) { mutableStateOf(false) }
     // Card width in pixels, known after the first layout
     var cardWidth by remember { mutableFloatStateOf(1f) }
+
+    // The deck leaves (empty feed, error, other tab): the Pick button is no longer
+    // on screen, so the tour must not point at its old place
+    DisposableEffect(Unit) {
+        onDispose { Tutorial.targets.remove(TutorialTarget.PICK) }
+    }
 
     // Sends the card on top off the screen, then the choice counts.
     // Used by the swipes and by the three buttons, so both look the same
@@ -342,8 +379,10 @@ private fun DropDeck(
                     buttonSize = CHOICE_BUTTON_SIZE,
                     enabled = !isLeaving,
                     onClick = { flyOut(Choice.PICK) },
-                    // Raised above the two others
-                    modifier = Modifier.padding(bottom = PICK_RAISE),
+                    // Raised above the two others. The tour notes the button, not the space under it
+                    modifier = Modifier
+                        .padding(bottom = PICK_RAISE)
+                        .tutorialTarget(TutorialTarget.PICK),
                 )
                 ChoiceButton(
                     iconRes = R.drawable.ic_favorite,

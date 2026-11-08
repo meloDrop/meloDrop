@@ -2,6 +2,16 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.9.1] - 08-11-2026
+
+### Modifié
+- Les textes de la feuille « Nouveautés » présentent la version 0.9.1.
+
+### Corrigé
+- Tuto : la bulle pouvait cacher l'élément mis en lumière, ou dépasser en bas de l'écran et cacher le bouton « Suivant ». Elle se place maintenant du côté de l'élément où il y a le plus de place, sans passer sous la barre d'état ni sous la barre de navigation, et ne dépasse jamais cette place : son texte défile, les boutons restent visibles. Elle fait 480 dp de large au plus sur une tablette ou un téléphone tourné, et la page défile jusqu'à l'élément de l'étape une fois qu'il est placé.
+- Petits écrans : la pochette de la carte Discover laissait des bandes vides sur ses côtés. La même pochette, agrandie, floutée (Android 12 et plus) et assombrie, les remplit maintenant.
+
+
 ## [0.9.0] - 08-11-2026
 
 ### Ajouté

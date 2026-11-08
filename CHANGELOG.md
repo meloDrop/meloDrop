@@ -3,6 +3,16 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.9.1] - 2026-11-08
+
+### Changed
+- The texts of the "Nouveautés" sheet present version 0.9.1.
+
+### Fixed
+- Tutorial: the bubble could cover the highlighted element, or go past the bottom of the screen and hide the "Suivant" button. It now goes on the side of the element with the most room, inside the status and navigation bars, and never gets taller than that room: its text scrolls, the buttons stay visible. It is 480 dp wide at most on a tablet or a phone held sideways, and the page scrolls to the element of the step once it is laid out.
+- Short screens: the cover of the Discover card left empty bands on its sides. The same cover, enlarged, blurred (Android 12 and later) and darkened, now fills them.
+
+
 ## [0.9.0] - 2026-11-08
 
 ### Added

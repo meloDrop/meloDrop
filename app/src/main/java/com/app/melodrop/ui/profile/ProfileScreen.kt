@@ -79,6 +79,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.text.TextStyle
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.CREATOR_USERNAME
+import com.app.melodrop.ui.likers.DropLikersSheet
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
 
@@ -359,6 +360,9 @@ private fun ActivityPage(
     // The drop of the day first, then the past ones
     val drops = listOfNotNull(profile.currentDrop) + profile.recentDrops
 
+    // Drop whose list of likes is open, null when the list is closed
+    var likersDropId by remember { mutableStateOf<Int?>(null) }
+
     // Tab shown under the counters: false = "Mes drops", true = "Mes picks".
     // rememberSaveable: the choice survives a rotation and a trip to another tab
     var showPicks by rememberSaveable { mutableStateOf(false) }
@@ -414,6 +418,8 @@ private fun ActivityPage(
                     onlineDropId = profile.currentDrop?.id,
                     // The user's own drops: views and like rate under each cover
                     showStats = true,
+                    // Tap on the stats: who liked and who picked the drop
+                    onStatsClick = { drop -> likersDropId = drop.id },
                 )
 
                 // "Mes picks" tab: the picks could not be loaded
@@ -437,6 +443,17 @@ private fun ActivityPage(
                 )
             }
         }
+    }
+
+    // Local copy: Kotlin can then treat it as not null
+    val dropId = likersDropId
+    if (dropId != null) {
+        DropLikersSheet(
+            dropId = dropId,
+            startOnPicks = false,
+            onUserClick = onAuthorClick,
+            onDismiss = { likersDropId = null },
+        )
     }
 }
 
@@ -758,6 +775,8 @@ internal fun DropsGrid(
     onlineDropId: Int? = null,
     // True on the user's own drops: views and like rate under each title
     showStats: Boolean = false,
+    // Tap on the stats of a drop: opens who liked it. null: the stats cannot be tapped
+    onStatsClick: ((ProfileDropOut) -> Unit)? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         drops.chunked(COVERS_PER_ROW).forEach { line ->
@@ -773,6 +792,8 @@ internal fun DropsGrid(
                         isPlaying = isPlaying && drop.id == playingDropId,
                         onPlayClick = { onPlayClick(drop) },
                         showStats = showStats,
+                        // let: null stays null, so the stats of the others cannot be tapped
+                        onStatsClick = onStatsClick?.let { click -> { click(drop) } },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -793,6 +814,7 @@ private fun DropThumbnail(
     isPlaying: Boolean,
     onPlayClick: () -> Unit,
     showStats: Boolean = false,
+    onStatsClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     // Tap on the cover: the poster of the song opens
@@ -853,7 +875,22 @@ private fun DropThumbnail(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (showStats) {
+            if (showStats && onStatsClick != null) {
+                // The arrow shows that the stats can be tapped: they open who liked the drop
+                Text(
+                    text = "${dropStatsLabel(drop.viewsCount, drop.savesCount)} ›",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClickLabel = "Voir qui a liké", onClick = onStatsClick)
+                        // A bit higher: easier to tap with a finger
+                        .padding(vertical = 4.dp),
+                )
+            } else if (showStats) {
                 Text(
                     text = dropStatsLabel(drop.viewsCount, drop.savesCount),
                     style = MaterialTheme.typography.labelSmall,

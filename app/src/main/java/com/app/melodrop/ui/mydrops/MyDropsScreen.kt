@@ -17,6 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -29,6 +33,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.network.dto.ProfileDropOut
+import com.app.melodrop.ui.likers.DropLikersSheet
 import com.app.melodrop.ui.profile.DropsGrid
 import com.app.melodrop.ui.theme.MeloDropTheme
 
@@ -38,8 +43,13 @@ fun MyDropsScreen(
     onBack: () -> Unit,
     // null: the user's own drops ("Mes drops"). An id: the drops of another user ("Ses drops")
     userId: Int? = null,
+    // Tap on a user in the list of likes of a drop: opens their profile
+    onUserClick: (Int) -> Unit = {},
     viewModel: MyDropsViewModel = viewModel(),
 ) {
+    // Drop whose list of likes is open, null when the list is closed
+    var likersDropId by remember { mutableStateOf<Int?>(null) }
+
     // Loads the drops when the screen opens (and again if the id changes)
     LaunchedEffect(userId) {
         viewModel.load(userId)
@@ -61,7 +71,19 @@ fun MyDropsScreen(
         onPlayClick = viewModel::togglePreview,
         onRetry = { viewModel.load(userId) },
         isMine = userId == null,
+        onStatsClick = { drop -> likersDropId = drop.id },
     )
+
+    // Who liked and who picked one of the user's drops, opened from its stats
+    val dropId = likersDropId
+    if (dropId != null) {
+        DropLikersSheet(
+            dropId = dropId,
+            startOnPicks = false,
+            onUserClick = onUserClick,
+            onDismiss = { likersDropId = null },
+        )
+    }
 }
 
 // Pure UI: back arrow, title, then the grid, a spinner or an error
@@ -74,6 +96,8 @@ private fun MyDropsContent(
     onRetry: () -> Unit,
     // True: the user's own drops. False: the drops of another user, without their stats
     isMine: Boolean = true,
+    // Tap on the stats under one of the user's drops: opens who liked it
+    onStatsClick: (ProfileDropOut) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -169,6 +193,8 @@ private fun MyDropsContent(
                     onlineDropId = uiState.onlineDropId,
                     // Views and like rate under each cover, on the user's own drops only
                     showStats = isMine,
+                    // Only the author can see who liked: the stats of the others cannot be tapped
+                    onStatsClick = if (isMine) onStatsClick else null,
                 )
             }
         }

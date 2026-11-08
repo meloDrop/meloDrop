@@ -36,7 +36,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +63,7 @@ import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.components.TrackRow
 import com.app.melodrop.ui.components.likeRateLabel
+import com.app.melodrop.ui.likers.DropLikersSheet
 import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import kotlinx.coroutines.delay
@@ -69,7 +73,14 @@ import java.time.OffsetDateTime
 
 // Connects the screen to its ViewModel
 @Composable
-fun DropScreen(viewModel: DropViewModel = viewModel()) {
+fun DropScreen(
+    // Tap on a user in the list of likes: opens their profile
+    onUserClick: (Int) -> Unit = {},
+    viewModel: DropViewModel = viewModel(),
+) {
+    // Tab of the list of likes to open: false = Likes, true = Picks, null = list closed
+    var likersTab by remember { mutableStateOf<Boolean?>(null) }
+
     // Leaving the Drop tab: the music stops
     DisposableEffect(Unit) {
         onDispose { viewModel.pausePreview() }
@@ -121,7 +132,20 @@ fun DropScreen(viewModel: DropViewModel = viewModel()) {
         onChangeTrack = viewModel::clearSelection,
         onRefresh = viewModel::loadMyDrop,
         onMyDropPlayClick = viewModel::toggleMyDropPreview,
+        onLikersClick = { showPicks -> likersTab = showPicks },
     )
+
+    // Who liked and who picked the drop of the day, opened from its counters
+    val myDrop = viewModel.uiState.myDrop
+    val tab = likersTab
+    if (myDrop != null && tab != null) {
+        DropLikersSheet(
+            dropId = myDrop.id,
+            startOnPicks = tab,
+            onUserClick = onUserClick,
+            onDismiss = { likersTab = null },
+        )
+    }
 }
 
 // Pure UI: shows one step at a time, from the state it receives
@@ -135,6 +159,8 @@ private fun DropContent(
     onChangeTrack: () -> Unit,
     onRefresh: () -> Unit,
     onMyDropPlayClick: () -> Unit,
+    // Tap on the likes or picks counter: false = Likes tab, true = Picks tab
+    onLikersClick: (Boolean) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -164,6 +190,7 @@ private fun DropContent(
                 previewError = uiState.previewError,
                 onPlayClick = onMyDropPlayClick,
                 onRefresh = onRefresh,
+                onLikersClick = onLikersClick,
             )
 
             selectedTrack != null -> ConfirmStep(
@@ -339,6 +366,8 @@ private fun MyDropView(
     previewError: String?,
     onPlayClick: () -> Unit,
     onRefresh: () -> Unit,
+    // Tap on the likes or picks counter: false = Likes tab, true = Picks tab
+    onLikersClick: (Boolean) -> Unit = {},
 ) {
     // Current time, refreshed every minute for the countdown
     val now by produceState(initialValue = Instant.now()) {
@@ -423,18 +452,26 @@ private fun MyDropView(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // The arrow shows that the tile can be tapped: it opens who liked
             StatTile(
                 value = likes.toString(),
-                label = if (likes == 1) "like" else "likes",
+                label = if (likes == 1) "like ›" else "likes ›",
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    // Clip first, so the ripple of the tap keeps the round corners
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClickLabel = "Voir qui a liké") { onLikersClick(false) },
             )
             StatTile(
                 value = drop.picksCount.toString(),
-                label = if (drop.picksCount == 1) "pick" else "picks",
+                label = if (drop.picksCount == 1) "pick ›" else "picks ›",
                 // Butter yellow, like the Pick button in Discover
                 color = Butter,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClickLabel = "Voir qui a pické") { onLikersClick(true) },
             )
             StatTile(
                 value = drop.viewsCount.toString(),

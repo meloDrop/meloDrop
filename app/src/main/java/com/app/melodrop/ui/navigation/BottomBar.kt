@@ -32,14 +32,22 @@ import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
 import com.app.melodrop.ui.theme.Rose
+import com.app.melodrop.ui.tutorial.TutorialTarget
+import com.app.melodrop.ui.tutorial.tutorialTarget
 
-// One tab of the bottom bar: its route, its label and its color when active
-private data class Tab(val route: String, val label: String, val color: Color)
+// One tab of the bottom bar: its route, its label, its color when active,
+// and its name for the tour shown after an update
+private data class Tab(
+    val route: String,
+    val label: String,
+    val color: Color,
+    val target: TutorialTarget,
+)
 
 private val tabs = listOf(
-    Tab(Routes.DISCOVER, "DISCOVER", Butter),
-    Tab(Routes.DROP, "DROP", Mint),
-    Tab(Routes.PROFILE, "PROFIL", Rose),
+    Tab(Routes.DISCOVER, "DISCOVER", Butter, TutorialTarget.TAB_DISCOVER),
+    Tab(Routes.DROP, "DROP", Mint, TutorialTarget.TAB_DROP),
+    Tab(Routes.PROFILE, "PROFIL", Rose, TutorialTarget.TAB_PROFILE),
 )
 
 @Composable
@@ -54,7 +62,7 @@ fun BottomBar(currentRoute: String?, onTabClick: (String) -> Unit) {
     ) {
         Row {
 
-            tabs.forEach { (route, label, accent) ->
+            tabs.forEach { (route, label, accent, target) ->
                 val selected = route == currentRoute
                 val color = if (selected) accent
                 else MaterialTheme.colorScheme.onSurfaceVariant
@@ -62,6 +70,7 @@ fun BottomBar(currentRoute: String?, onTabClick: (String) -> Unit) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
+                        .tutorialTarget(target)
                         .clip(RoundedCornerShape(percent = 50))
                         .clickable { onTabClick(route) }
                         .padding(vertical = 12.dp),

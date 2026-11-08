@@ -35,6 +35,7 @@ import com.app.melodrop.ui.skips.SkipsScreen
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.follows.FollowListScreen
 import com.app.melodrop.ui.follows.FollowTab
+import com.app.melodrop.ui.tutorial.TutorialOverlay
 
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
@@ -219,6 +220,9 @@ fun MainScreen(onLogout: () -> Unit) {
                 }
             }
         }
+
+        // Over everything, bottom bar included: the tour shown after an update
+        TutorialOverlay()
     }
 }
 

@@ -13,6 +13,7 @@ import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DiscoverRepository
 import com.app.melodrop.data.WhatsNewStore
 import com.app.melodrop.network.dto.FeedItem
+import com.app.melodrop.ui.tutorial.TutorialSteps
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -46,6 +47,10 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     // True while the "Nouveautés" sheet is open. Kept apart from uiState:
     // loadFeed() builds a new uiState, and that must not close the sheet
     var showWhatsNew by mutableStateOf(false)
+        private set
+
+    // True while a tour waits to start: the screen starts it once the feed is shown
+    var tutorialPending by mutableStateOf(false)
         private set
 
     // True: the drops of the followed users come first. Kept apart from uiState,
@@ -82,10 +87,15 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
             loadFeed()
         }
 
-        // First launch after an update: the "Nouveautés" sheet opens by itself
+        // First launch after an update: the tour if this version has one,
+        // otherwise the "Nouveautés" sheet opens by itself
         viewModelScope.launch {
             if (WhatsNewStore.checkNewVersion(application)) {
-                showWhatsNew = true
+                if (TutorialSteps.isNotEmpty()) {
+                    tutorialPending = true
+                } else {
+                    showWhatsNew = true
+                }
             }
         }
     }
@@ -98,6 +108,17 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     // Sheet closed: OK, swipe down, tap outside or back button
     fun closeWhatsNew() {
         showWhatsNew = false
+    }
+
+    // "Revoir le tuto" in the sheet: the sheet closes and the tour starts again
+    fun replayTutorial() {
+        showWhatsNew = false
+        tutorialPending = true
+    }
+
+    // The tour is on screen: nothing waits any more
+    fun onTutorialStarted() {
+        tutorialPending = false
     }
 
     fun loadFeed() {

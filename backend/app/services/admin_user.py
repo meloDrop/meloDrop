@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.exceptions import UserNotFoundError
 from app.models.report import Report
 from app.models.user import User
+from app.services.feed import SKIPPED_DAYS
 from app.services.likes import get_likes
 from app.services.profile import get_profile
 from app.services.reports import build_report
@@ -141,9 +142,10 @@ def get_current_drop_swipes(db: Session, drop_id: int) -> list[dict]:
 
 
 def get_feed(db: Session, user_id: int, now: datetime) -> list[dict]:
-    """Every drop Discover can still show the user.
+    """Every drop Discover can still show the user, one row per drop.
 
     Same filters as get_feed in services/feed.py, without the random pick of 10.
+    The app shows the drops of the same song on one card (ADR-0021).
     """
     return fetch(db, """
         SELECT d.id AS drop_id, s.id AS song_id, s.title, s.artist_name AS artist, s.cover_url, s.genre,
@@ -156,8 +158,15 @@ def get_feed(db: Session, user_id: int, now: datetime) -> list[dict]:
           AND d.user_id <> :id
           AND d.id NOT IN (SELECT drop_id FROM saves WHERE user_id = :id)
           AND d.id NOT IN (SELECT drop_id FROM skips WHERE user_id = :id)
+          -- Songs hidden: in "Mes likes", skipped lately, or dropped by the user and still online
+          AND d.song_id NOT IN (SELECT song_id FROM liked_songs WHERE user_id = :id)
+          AND d.song_id NOT IN (
+              SELECT d2.song_id FROM skips AS sk2 JOIN drops AS d2 ON d2.id = sk2.drop_id
+              WHERE sk2.user_id = :id AND sk2.created_at >= :skipped_since
+          )
+          AND d.song_id NOT IN (SELECT song_id FROM drops WHERE user_id = :id AND expires_at > :now)
         ORDER BY d.expires_at
-    """, {"id": user_id, "now": now})
+    """, {"id": user_id, "now": now, "skipped_since": now - timedelta(days=SKIPPED_DAYS)})
 
 
 def get_swipes(db: Session, user_id: int, table: str) -> list[dict]:

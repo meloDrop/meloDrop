@@ -1,5 +1,10 @@
-"""Functions that save or skip a drop from the Discover feed."""
+"""Functions that save or skip a song card from the Discover feed.
 
+A card shows a song once, even when several users dropped it (ADR-0021):
+the swipe counts for every drop of the song online now.
+"""
+
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.exceptions import DropAlreadySeenError, DropNotFoundError, OwnDropError
@@ -31,13 +36,35 @@ def check_drop(db: Session, user_id: int, drop_id: int) -> Drop:
     return drop
 
 
+def song_drops(db: Session, user_id: int, drop: Drop) -> list[Drop]:
+    """Return the drops of the same song the swipe counts for, the drop itself included.
+
+    Only the drops online now, of the other users, and not swiped yet by the user.
+    """
+    saved = select(Save.drop_id).where(Save.user_id == user_id)
+    skipped = select(Skip.drop_id).where(Skip.user_id == user_id)
+    return (
+        db.query(Drop)
+        .filter(
+            Drop.song_id == drop.song_id,
+            Drop.expires_at > utc_now(),
+            Drop.user_id != user_id,
+            Drop.id.not_in(saved),
+            Drop.id.not_in(skipped),
+        )
+        .all()
+    )
+
+
 def save_drop(db: Session, user_id: int, drop_id: int, is_pick: bool = False) -> None:
-    """Like a drop: one row in saves and one row in liked_songs (ADR-0013)."""
+    """Like the song of a drop: one row in saves per dropper, one row in liked_songs (ADR-0013)."""
     # Check the rules: the drop exists, is not mine, and is not seen yet
     drop = check_drop(db, user_id, drop_id)
 
-    # Remember that the user liked this drop, and if it was a pick
-    db.add(Save(user_id=user_id, drop_id=drop.id, is_pick=is_pick))
+    # Every user who dropped the song gets the like, and the pick if it is one
+    drops = song_drops(db, user_id, drop)
+    for song_drop in drops:
+        db.add(Save(user_id=user_id, drop_id=song_drop.id, is_pick=is_pick))
 
     # Add the song to "Mes likes", unless it is already there
     liked = (
@@ -54,24 +81,28 @@ def save_drop(db: Session, user_id: int, drop_id: int, is_pick: bool = False) ->
         if is_pick:
             liked.is_pick = True
 
-    # Save both rows together
+    # Save all the rows together
     db.commit()
 
-    # The author of the drop can reach an automatic badge: likes, picks, like rate
-    check_auto_badges(db, drop.user_id, SWIPE_RULES)
+    # Each dropper can reach an automatic badge: likes, picks, like rate
+    for song_drop in drops:
+        check_auto_badges(db, song_drop.user_id, SWIPE_RULES)
 
 def pick_drop(db: Session, user_id: int, drop_id: int) -> None:
     """Pick a drop (up swipe): a like that also marks the song as a pick."""
     save_drop(db, user_id, drop_id, is_pick=True)
 
 def skip_drop(db: Session, user_id: int, drop_id: int) -> None:
-    """Skip a drop: one row in skips."""
+    """Skip the song of a drop: one row in skips per dropper."""
     # Check the rules: the drop exists, is not mine, and is not seen yet
     drop = check_drop(db, user_id, drop_id)
 
-    # Remember that the user skipped this drop
-    db.add(Skip(user_id=user_id, drop_id=drop_id))
+    # Remember that the user skipped the song, on every drop of it
+    drops = song_drops(db, user_id, drop)
+    for song_drop in drops:
+        db.add(Skip(user_id=user_id, drop_id=song_drop.id))
     db.commit()
 
-    # A skip is a view too: the author can reach the 30 views of a like rate badge
-    check_auto_badges(db, drop.user_id, ("like_rate",))
+    # A skip is a view too: each dropper can reach the 30 views of a like rate badge
+    for song_drop in drops:
+        check_auto_badges(db, song_drop.user_id, ("like_rate",))

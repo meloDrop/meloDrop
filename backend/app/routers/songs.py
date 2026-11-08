@@ -7,6 +7,7 @@ from app.database import get_db
 from app.dependencies import current_user
 from app.exceptions import DeezerError, SongNotFoundError, TrackNotFoundError
 from app.schemas import songs as schemas
+from app.schemas.users import UserBriefOut
 from app.services import songs as services
 
 router = APIRouter(
@@ -38,6 +39,25 @@ def get_preview(
         raise HTTPException(status_code=404, detail=str(e))
     except DeezerError as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get(
+    "/{song_id}/likers",
+    response_model=list[UserBriefOut],
+    responses={
+        200: {"description": "Users who liked the song on its drops online now, the most recent first, or an empty list"},
+        404: {"description": "Song not found in meloDrop"},
+    },
+)
+def get_song_likers(
+    song_id: int = Path(description="meloDrop song id (song_id in GET /feed), not the Deezer id"),
+    db: Session = Depends(get_db),
+):
+    """Who liked the song today, for the Discover card. Picks count as likes: they stay private."""
+    try:
+        return services.get_song_likers(db, song_id)
+    except SongNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get(

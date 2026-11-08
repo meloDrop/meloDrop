@@ -48,6 +48,8 @@ import com.app.melodrop.ui.likes.LikesSort
 import com.app.melodrop.ui.likes.LikesToolbar
 import com.app.melodrop.ui.likes.groupLikes
 import com.app.melodrop.ui.likes.shownCountLabel
+import com.app.melodrop.ui.people.DroppedByText
+import com.app.melodrop.ui.people.droppersOrAuthor
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
 
@@ -273,29 +275,23 @@ internal fun PickThumbnail(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            // Same line as in "Mes likes": rescued from the skips, or the author of the drop
-            val origin = when {
-                pick.likedLate -> "Récupéré dans les skips"
-                pick.authorUsername != null -> "drop par @${pick.authorUsername}"
-                // Author's account deleted: nothing to show (ADR-0013)
-                else -> null
-            }
-            // Local copy: Kotlin can then treat the id as not null inside the click
-            val authorId = pick.authorId
-            if (origin != null) {
+            // Same line as in "Mes likes": rescued from the skips, or who dropped the song
+            if (pick.likedLate) {
                 Text(
-                    text = origin,
+                    text = "Récupéré dans les skips",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (pick.likedLate) MaterialTheme.colorScheme.tertiary
-                    else MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.tertiary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    // Tap on the author: opens their profile, like in "Mes likes"
-                    modifier = if (!pick.likedLate && authorId != null) {
-                        Modifier.clickable(onClickLabel = "Voir le profil de @${pick.authorUsername}") { onAuthorClick(authorId) }
-                    } else {
-                        Modifier
-                    },
+                )
+            } else {
+                // "drop par @elliot" or "drop par 3 personnes" (ADR-0021), nothing when
+                // the accounts were deleted (ADR-0013). Tap: the profile, or the list
+                DroppedByText(
+                    droppers = droppersOrAuthor(pick.droppers, pick.authorId, pick.authorUsername),
+                    onUserClick = onAuthorClick,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
                 )
             }
         }

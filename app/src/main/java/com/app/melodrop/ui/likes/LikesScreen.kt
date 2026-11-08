@@ -48,6 +48,8 @@ import com.app.melodrop.network.dto.LikedSongOut
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.people.DroppedByText
+import com.app.melodrop.ui.people.droppersOrAuthor
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
 
@@ -312,10 +314,8 @@ private fun LikedSongRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            // Who made the user discover the song; nothing if the author's
-            // account was deleted (ADR-0013). Local copy: Kotlin can then
-            // treat the id as not null inside the click
-            val authorId = song.authorId
+            // Who made the user discover the song; nothing if the droppers'
+            // accounts were deleted (ADR-0013)
             if (song.likedLate) {
                 // Rescued from "Mes skips" after the drop expired: no author shown
                 Text(
@@ -325,15 +325,14 @@ private fun LikedSongRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-            } else if (song.authorUsername != null && authorId != null) {
-                Text(
-                    text = "drop par @${song.authorUsername}",
+            } else {
+                // "drop par @elliot", or "drop par 3 personnes" when several users
+                // dropped the song (ADR-0021). Tap: the profile, or the list of droppers
+                DroppedByText(
+                    droppers = droppersOrAuthor(song.droppers, song.authorId, song.authorUsername),
+                    onUserClick = onAuthorClick,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    // Tap: opens the profile of the author
-                    modifier = Modifier.clickable { onAuthorClick(authorId) },
                 )
             }
         }

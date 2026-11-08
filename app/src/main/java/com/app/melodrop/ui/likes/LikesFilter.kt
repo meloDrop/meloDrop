@@ -67,7 +67,9 @@ fun LikedSongOut.matches(query: String): Boolean {
     // "@elliot" is searched as "elliot": the @ is not in the username
     val words = simplify(query).split(" ").map { it.removePrefix("@") }.filter { it.isNotBlank() }
     if (words.isEmpty()) return true
-    val text = simplify(listOfNotNull(title, artist, genre, authorUsername).joinToString(" "))
+    // Every dropper counts: the song can have been dropped by several users (ADR-0021)
+    val droppersNames = droppers.orEmpty().map { it.username }
+    val text = simplify((listOfNotNull(title, artist, genre, authorUsername) + droppersNames).joinToString(" "))
     // Every word typed must be found somewhere
     return words.all { text.contains(it) }
 }

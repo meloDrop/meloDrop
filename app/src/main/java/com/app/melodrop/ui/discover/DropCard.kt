@@ -35,7 +35,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 // Below this side, the cover is small (short screens): smaller play button, no chips over it
 private val SMALL_COVER = 180.dp
 
-// A drop in the feed: cover, song, genre, author and likes
+// A song in the feed: cover, song, genre, who dropped it and its likes.
+// Several users can have dropped the same song: it shows once (ADR-0021)
 @Composable
 fun DropCard(
     drop: FeedItem,
@@ -45,6 +46,9 @@ fun DropCard(
     onPlayPause: (() -> Unit)? = null,
     // null: the @username cannot be tapped (for the card waiting behind)
     onAuthorClick: (() -> Unit)? = null,
+    // Opens who dropped the song (false) or who liked it (true).
+    // null: nothing can be tapped (for the card waiting behind)
+    onPeopleClick: ((Boolean) -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -133,6 +137,9 @@ fun DropCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
+            // Everyone who dropped the song; the author alone for the feeds before ADR-0021
+            val droppersCount = drop.droppers.orEmpty().size
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -141,35 +148,70 @@ fun DropCard(
                 // Little treat: the creator of meloDrop wears the logo gradient
                 val isCreator = drop.authorUsername.equals(CREATOR_USERNAME, ignoreCase = true)
 
-                // Two Text side by side: the gradient only covers the @username
-                Row(
-                    // Tap: opens the profile of the author
-                    modifier = if (onAuthorClick != null) {
+                if (droppersCount > 1) {
+                    // Several droppers: one line for all, a tap opens the list
+                    Text(
+                        text = "$droppersCount personnes ont droppé cette chanson ›",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        // Two lines at most on narrow screens, the likes keep their place
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = 8.dp)
+                            .then(
+                                if (onPeopleClick != null) {
+                                    Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable(onClickLabel = "Voir qui a droppé") { onPeopleClick(false) }
+                                        .padding(vertical = 4.dp)
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                    )
+                } else {
+                    Row(
+                        // One dropper, two Text side by side: the gradient only covers the @username.
+                        // Tap: opens the profile of the author
+                        modifier = if (onAuthorClick != null) {
+                            Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable(onClick = onAuthorClick)
+                                .padding(vertical = 4.dp)
+                        } else {
+                            Modifier
+                        },
+                    ) {
+                        Text(
+                            text = "Déposé par ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = "@${drop.authorUsername}",
+                            style = if (isCreator) MaterialTheme.typography.bodyMedium.merge(TextStyle(brush = PastelGradient))
+                            else MaterialTheme.typography.bodyMedium,
+                            // Unspecified: the letters take the gradient of the style instead
+                            color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                // With likes, a tap opens who liked the song
+                val canOpenLikes = onPeopleClick != null && drop.savesCount > 0
+                Text(
+                    text = if (canOpenLikes) "${likesLabel(drop.savesCount)} ›" else likesLabel(drop.savesCount),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = if (canOpenLikes && onPeopleClick != null) {
                         Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable(onClick = onAuthorClick)
-                            .padding(vertical = 4.dp)
+                            .clickable(onClickLabel = "Voir qui a liké") { onPeopleClick(true) }
+                            .padding(4.dp)
                     } else {
                         Modifier
                     },
-                ) {
-                    Text(
-                        text = "Déposé par ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "@${drop.authorUsername}",
-                        style = if (isCreator) MaterialTheme.typography.bodyMedium.merge(TextStyle(brush = PastelGradient))
-                        else MaterialTheme.typography.bodyMedium,
-                        // Unspecified: the letters take the gradient of the style instead
-                        color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Text(
-                    text = likesLabel(drop.savesCount),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.secondary,
                 )
             }
         }

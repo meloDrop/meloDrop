@@ -30,6 +30,9 @@ class ProfileRepository {
         return api.getUserDrops(me.id)
     }
 
+    // All the drops of another user, for "Ses drops", opened from their profile
+    suspend fun getUserDrops(userId: Int): List<ProfileDropOut> = api.getUserDrops(userId)
+
     // The logged-in user's picks, for the "Mes picks" tab (private: only on their own profile)
     suspend fun getMyPicks(): List<LikedSongOut> = api.getPicks()
 

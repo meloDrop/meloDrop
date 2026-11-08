@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -35,8 +36,15 @@ import com.app.melodrop.ui.theme.MeloDropTheme
 @Composable
 fun MyDropsScreen(
     onBack: () -> Unit,
+    // null: the user's own drops ("Mes drops"). An id: the drops of another user ("Ses drops")
+    userId: Int? = null,
     viewModel: MyDropsViewModel = viewModel(),
 ) {
+    // Loads the drops when the screen opens (and again if the id changes)
+    LaunchedEffect(userId) {
+        viewModel.load(userId)
+    }
+
     // Leaving the screen: the music stops
     DisposableEffect(Unit) {
         onDispose { viewModel.pausePreview() }
@@ -51,7 +59,8 @@ fun MyDropsScreen(
         uiState = viewModel.uiState,
         onBack = onBack,
         onPlayClick = viewModel::togglePreview,
-        onRetry = viewModel::load,
+        onRetry = { viewModel.load(userId) },
+        isMine = userId == null,
     )
 }
 
@@ -63,6 +72,8 @@ private fun MyDropsContent(
     // Tap on a cover: plays or pauses its preview
     onPlayClick: (ProfileDropOut) -> Unit,
     onRetry: () -> Unit,
+    // True: the user's own drops. False: the drops of another user, without their stats
+    isMine: Boolean = true,
 ) {
     Column(
         modifier = Modifier
@@ -82,7 +93,7 @@ private fun MyDropsContent(
                 )
             }
             Text(
-                text = "Mes drops",
+                text = if (isMine) "Mes drops" else "Ses drops",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
@@ -127,7 +138,11 @@ private fun MyDropsContent(
             }
 
             uiState.drops.isEmpty() -> Text(
-                text = "Tu n'as encore déposé aucun titre. Ton premier drop apparaîtra ici.",
+                text = if (isMine) {
+                    "Tu n'as encore déposé aucun titre. Ton premier drop apparaîtra ici."
+                } else {
+                    "Aucun titre déposé pour l'instant."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
@@ -152,8 +167,8 @@ private fun MyDropsContent(
                     isPlaying = uiState.isPlaying,
                     onPlayClick = onPlayClick,
                     onlineDropId = uiState.onlineDropId,
-                    // Views and like rate under each cover
-                    showStats = true,
+                    // Views and like rate under each cover, on the user's own drops only
+                    showStats = isMine,
                 )
             }
         }

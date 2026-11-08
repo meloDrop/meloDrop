@@ -11,20 +11,34 @@ from app.schemas.likes import LikedSongOut
 from app.models.drop import Drop
 from app.models.save import Save
 from app.models.user import User
+from app.schemas.users import UserBriefOut
 
 
+def find_droppers(db: Session, user_id: int, song_id: int) -> list[UserBriefOut]:
+    """Return the users whose drop of this song the user liked: they got the like.
 
-def find_author(db: Session, user_id: int, song_id: int) -> User | None:
-    """Return the author of the drop the user liked for this song, or None."""
-    # liked_songs has no drop: the like is found in saves, on a drop of this song
-    return (
+    Several users when they dropped the same song (ADR-0021), the first drop first.
+    An empty list when their accounts were deleted (ADR-0013).
+    """
+    # liked_songs has no drop: the likes are found in saves, on the drops of this song
+    users = (
         db.query(User)
         .join(Drop, Drop.user_id == User.id)
         .join(Save, Save.drop_id == Drop.id)
         .filter(Save.user_id == user_id, Drop.song_id == song_id)
-        .order_by(Save.created_at.desc())
-        .first()
+        .order_by(Drop.created_at, Drop.id)
+        .all()
     )
+
+    # A user who dropped the song twice (two days) is shown once
+    droppers = []
+    seen = set()
+    for user in users:
+        if user.id in seen:
+            continue
+        seen.add(user.id)
+        droppers.append(UserBriefOut.model_validate(user))
+    return droppers
 
 
 def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
@@ -41,13 +55,15 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
     # Turn each line into a LikedSongOut
     likes = []
     for liked, song in rows:
-        # Rescued from "Mes skips" after the drop expired: no author shown,
+        # Rescued from "Mes skips" after the drop expired: no dropper shown,
         # the app writes "Récupéré dans les skips" instead
         if liked.liked_late:
-            author = None
+            droppers = []
         else:
-            # None when the author deleted their account: the song stays (ADR-0013)
-            author = find_author(db, user_id, song.id)
+            # Empty when the droppers deleted their account: the song stays (ADR-0013)
+            droppers = find_droppers(db, user_id, song.id)
+        # The first dropper, for the versions of the app before ADR-0021
+        author = droppers[0] if droppers else None
         likes.append(
             LikedSongOut(
                 song_id=song.id,
@@ -60,6 +76,7 @@ def get_likes(db: Session, user_id: int) -> list[LikedSongOut]:
                 author_username=author.username if author else None,
                 liked_late=liked.liked_late,
                 is_pick=liked.is_pick,
+                droppers=droppers,
             )
         )
     return likes

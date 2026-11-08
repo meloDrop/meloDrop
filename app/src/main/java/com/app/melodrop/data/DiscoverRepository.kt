@@ -2,6 +2,7 @@ package com.app.melodrop.data
 
 import com.app.melodrop.network.RetrofitClient
 import com.app.melodrop.network.dto.FeedItem
+import com.app.melodrop.network.dto.UserBriefOut
 
 // Talks to the backend routes used by the Discover screen
 class DiscoverRepository {
@@ -20,6 +21,9 @@ class DiscoverRepository {
 
     // Up swipe or Pick button: like the drop and mark its song as a pick
     suspend fun pick(dropId: Int) = api.pickDrop(dropId)
+
+    // Who liked the song of a card on its drops online, for the list opened from the card
+    suspend fun getSongLikers(songId: Int): List<UserBriefOut> = api.getSongLikers(songId)
 
     // Fresh preview link: Deezer links expire after about 15 minutes
     suspend fun getPreviewUrl(songId: Int): String? = api.getPreview(songId).previewUrl

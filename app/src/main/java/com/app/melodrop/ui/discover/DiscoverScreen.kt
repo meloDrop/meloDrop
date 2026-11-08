@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.R
 import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.MeloDropTitle
+import com.app.melodrop.ui.people.SongPeopleSheet
 import com.app.melodrop.ui.theme.Butter
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
@@ -114,6 +115,10 @@ fun DiscoverScreen(
         viewModel.pausePreview()
     }
 
+    // Card whose list of droppers and likes is open, with the tab to show
+    // (true = likes), or null when the list is closed
+    var peopleOf by remember { mutableStateOf<Pair<FeedItem, Boolean>?>(null) }
+
     DiscoverContent(
         uiState = viewModel.uiState,
         onRefresh = viewModel::loadFeed,
@@ -125,7 +130,22 @@ fun DiscoverScreen(
         onInfoClick = viewModel::openWhatsNew,
         followsFirst = viewModel.followsFirst,
         onFollowsFirstClick = viewModel::toggleFollowsFirst,
+        onPeopleClick = { drop, showLikers -> peopleOf = drop to showLikers },
     )
+
+    // Who dropped the song of the card and who liked it (ADR-0021)
+    val people = peopleOf
+    if (people != null) {
+        val (drop, showLikers) = people
+        SongPeopleSheet(
+            songId = drop.songId,
+            songTitle = drop.title,
+            droppers = drop.droppers.orEmpty(),
+            startOnLikers = showLikers,
+            onUserClick = onAuthorClick,
+            onDismiss = { peopleOf = null },
+        )
+    }
 
     // "Nouveautés" sheet, over the screen: by itself after an update, or with the "i" button
     if (viewModel.showWhatsNew) {
@@ -163,6 +183,8 @@ private fun DiscoverContent(
     followsFirst: Boolean = true,
     // Tap on the "Abonnements d'abord" chip
     onFollowsFirstClick: () -> Unit = {},
+    // Tap on the droppers or the likes of the card: the card, and true for the likes
+    onPeopleClick: (FeedItem, Boolean) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -244,6 +266,7 @@ private fun DiscoverContent(
                     onPicked = onPicked,
                     onPlayPause = onPlayPause,
                     onAuthorClick = onAuthorClick,
+                    onPeopleClick = onPeopleClick,
                 )
             }
         }
@@ -258,6 +281,7 @@ private fun DropDeck(
     onPicked: (FeedItem) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: (Int) -> Unit,
+    onPeopleClick: (FeedItem, Boolean) -> Unit = { _, _ -> },
 ) {
     val drops = uiState.drops
     val top = drops.first()
@@ -352,6 +376,7 @@ private fun DropDeck(
                         onFlyOut = flyOut,
                         onPlayPause = onPlayPause,
                         onAuthorClick = { onAuthorClick(top.authorId) },
+                        onPeopleClick = { showLikers -> onPeopleClick(top, showLikers) },
                     )
                 }
             }
@@ -423,6 +448,8 @@ private fun SwipeableDropCard(
     onFlyOut: (Choice) -> Unit,
     onPlayPause: () -> Unit,
     onAuthorClick: () -> Unit,
+    // Tap on the droppers (false) or on the likes (true) of the card
+    onPeopleClick: (Boolean) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
 
@@ -481,6 +508,7 @@ private fun SwipeableDropCard(
             isPlaying = isPlaying,
             onPlayPause = onPlayPause,
             onAuthorClick = onAuthorClick,
+            onPeopleClick = onPeopleClick,
         )
 
         // 0 at rest, 1 (or -1) at the threshold, to the right (or to the left)

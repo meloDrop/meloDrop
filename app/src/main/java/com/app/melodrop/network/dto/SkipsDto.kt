@@ -15,8 +15,11 @@ data class SkippedSongOut(
     @SerializedName("skipped_at") val skippedAt: String,
     @SerializedName("author_id") val authorId: Int,
     @SerializedName("author_username") val authorUsername: String,
-    // True while the drop is online: a rescue then gives a like to the author
-    @SerializedName("drop_active") val dropActive: Boolean
+    // True while a drop of the song is online: a rescue then gives a like to its author
+    @SerializedName("drop_active") val dropActive: Boolean,
+    // Everyone whose drop of the song was skipped (ADR-0021).
+    // Nullable: Gson leaves a missing list to null, whatever the default value
+    val droppers: List<UserBriefOut>? = null
 )
 
 // Result of a rescue from "Mes skips"
@@ -24,5 +27,7 @@ data class RescueOut(
     @SerializedName("song_id") val songId: Int,
     // False: the drop was online, the author got a like.
     // True: the drop had expired, no like: "Récupéré dans les skips"
-    @SerializedName("liked_late") val likedLate: Boolean
+    @SerializedName("liked_late") val likedLate: Boolean,
+    // Number of droppers who got a like: their drop was still online
+    @SerializedName("credited_count") val creditedCount: Int = 0
 )

@@ -20,6 +20,9 @@ data class LikedSongOut(
     // True when the song is a pick: the star is full
     @SerializedName("is_pick") val isPick: Boolean = false,
     // Genre of the song's Deezer album, null when Deezer has none: the lists sort by it
-    val genre: String? = null
+    val genre: String? = null,
+    // Users whose drop of the song was liked: they all got the like (ADR-0021).
+    // Nullable: Gson leaves a missing list to null, whatever the default value
+    val droppers: List<UserBriefOut>? = null
 )
 

@@ -132,11 +132,20 @@ class SkipsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val result = repository.rescue(song.dropId)
-                // The backend checks the drop again: it may have expired in the meantime
-                val message = if (result.likedLate) {
-                    "« ${song.title} » est dans tes likes. Le drop de @${song.authorUsername} avait expiré : pas de like pour lui."
-                } else {
-                    "« ${song.title} » est dans tes likes. @${song.authorUsername} gagne un like."
+                // The backend checks the drops again: they may have expired in the meantime.
+                // Several droppers when several users dropped the song (ADR-0021)
+                val isMany = song.droppers.orEmpty().size > 1
+                val message = when {
+                    result.likedLate && isMany ->
+                        "« ${song.title} » est dans tes likes. Les drops avaient expiré : pas de like."
+                    result.likedLate ->
+                        "« ${song.title} » est dans tes likes. Le drop de @${song.authorUsername} avait expiré : pas de like pour lui."
+                    isMany && result.creditedCount == 1 ->
+                        "« ${song.title} » est dans tes likes. 1 droppeur gagne un like."
+                    isMany ->
+                        "« ${song.title} » est dans tes likes. ${result.creditedCount} droppeurs gagnent un like."
+                    else ->
+                        "« ${song.title} » est dans tes likes. @${song.authorUsername} gagne un like."
                 }
                 uiState = uiState.copy(message = message, isErrorMessage = false)
             } catch (e: HttpException) {

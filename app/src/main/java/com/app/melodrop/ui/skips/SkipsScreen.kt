@@ -45,6 +45,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.app.melodrop.ui.people.DroppedByText
+import com.app.melodrop.ui.people.droppersOrAuthor
 import com.app.melodrop.ui.song.PosterSong
 import com.app.melodrop.ui.song.SongPosterDialog
 
@@ -228,14 +230,13 @@ private fun SkippedSongRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = "drop par @${song.authorUsername}",
+            // "drop par @elliot", or "drop par 3 personnes" when several users
+            // dropped the song (ADR-0021). Tap: the profile, or the list of droppers
+            DroppedByText(
+                droppers = droppersOrAuthor(song.droppers, song.authorId, song.authorUsername),
+                onUserClick = onAuthorClick,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                // Tap: opens the profile of the author
-                modifier = Modifier.clickable { onAuthorClick(song.authorId) },
             )
             // Tells before the rescue whether the author will get a like
             Text(

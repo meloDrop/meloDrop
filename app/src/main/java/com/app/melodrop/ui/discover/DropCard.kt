@@ -1,12 +1,16 @@
 package com.app.melodrop.ui.discover
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -36,6 +41,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 
 // Below this side, the cover is small (short screens): smaller play button, no chips over it
 private val SMALL_COVER = 180.dp
+
+// Blur of the cover that fills the sides of the card on short screens
+private val BACKDROP_BLUR = 24.dp
 
 // A song in the feed: cover, song, genre, who dropped it and its likes.
 // Several users can have dropped the same song: it shows once (ADR-0021)
@@ -67,60 +75,79 @@ fun DropCard(
             BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f, fill = false)
-                    .align(Alignment.CenterHorizontally),
+                    .fillMaxWidth(),
             ) {
                 // The cover is a square as big as the room left: its side is the smaller one
-                val isSmall = minOf(maxWidth, maxHeight) < SMALL_COVER
+                val side = minOf(maxWidth, maxHeight)
+                val isSmall = side < SMALL_COVER
+                // Short screen: the square is narrower than the card, its sides would stay empty
+                val hasSides = maxWidth - side > 1.dp
 
-                // Downloads the image from its URL, grey square while it loads
-                CoverImage(
-                    url = drop.coverUrl,
-                    contentDescription = "Pochette de ${drop.title}",
+                // The whole width of the card, as high as the cover
+                Box(
                     modifier = Modifier
-                        // Square, sized from the height left first, then from the width
-                        .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                        .fillMaxWidth()
+                        .height(side)
                         .clip(RoundedCornerShape(20.dp)),
-                )
-
-                // Genre of the album, hidden when Deezer has none or when the cover is small
-                if (drop.genre != null && !isSmall) {
-                    GenreChip(
-                        genre = drop.genre,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp),
-                    )
-                }
-
-                // The user follows the author: marked in the other corner, if there is room
-                if (drop.isFollowed && !isSmall) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(12.dp),
-                        shape = CircleShape,
-                        // Same dark background as the genre: readable on any cover
-                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
-                    ) {
-                        Text(
-                            text = "Abonné",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    // The sides: the same cover, enlarged, blurred and darkened
+                    if (hasSides && drop.coverUrl != null) {
+                        CoverBackdrop(url = drop.coverUrl)
                     }
-                }
 
-                if (onPlayPause != null) {
-                    PlayPauseButton(
-                        isPlaying = isPlaying,
-                        onClick = onPlayPause,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(if (isSmall) 8.dp else 12.dp),
-                        // Smaller on a small cover, so it does not hide it
-                        buttonSize = if (isSmall) 40.dp else 52.dp,
-                    )
+                    // The cover itself, whole, with its chips and its play button
+                    Box(modifier = Modifier.size(side)) {
+                        // Downloads the image from its URL, grey square while it loads
+                        CoverImage(
+                            url = drop.coverUrl,
+                            contentDescription = "Pochette de ${drop.title}",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(20.dp)),
+                        )
+
+                        // Genre of the album, hidden when Deezer has none or when the cover is small
+                        if (drop.genre != null && !isSmall) {
+                            GenreChip(
+                                genre = drop.genre,
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(12.dp),
+                            )
+                        }
+
+                        // The user follows the author: marked in the other corner, if there is room
+                        if (drop.isFollowed && !isSmall) {
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(12.dp),
+                                shape = CircleShape,
+                                // Same dark background as the genre: readable on any cover
+                                color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+                            ) {
+                                Text(
+                                    text = "Abonné",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                )
+                            }
+                        }
+
+                        if (onPlayPause != null) {
+                            PlayPauseButton(
+                                isPlaying = isPlaying,
+                                onClick = onPlayPause,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(if (isSmall) 8.dp else 12.dp),
+                                // Smaller on a small cover, so it does not hide it
+                                buttonSize = if (isSmall) 40.dp else 52.dp,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -223,6 +250,30 @@ fun DropCard(
     }
 }
 
+// The same cover, enlarged to fill the card, blurred and darkened: it fills the sides
+// of the card when the square cover is narrower than it (short screens).
+// The blur needs Android 12: before, the cover is only darkened, a bit more
+@Composable
+private fun BoxScope.CoverBackdrop(url: String) {
+    CoverImage(
+        url = url,
+        // Only a decoration: TalkBack reads the real cover
+        contentDescription = null,
+        modifier = Modifier
+            .matchParentSize()
+            .blur(BACKDROP_BLUR),
+    )
+    Box(
+        modifier = Modifier
+            .matchParentSize()
+            .background(Color.Black.copy(alpha = backdropDim())),
+    )
+}
+
+// How dark the backdrop is: more without the blur, so the real cover still stands out
+private fun backdropDim(): Float =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.35f else 0.6f
+
 private fun likesLabel(count: Int): String = when (count) {
     0 -> "Aucun like"
     1 -> "1 like"
@@ -233,6 +284,31 @@ private fun likesLabel(count: Int): String = when (count) {
 @Preview(heightDp = 640)
 @Composable
 private fun DropCardPreview() {
+    MeloDropTheme {
+        DropCard(
+            drop = FeedItem(
+                id = 1,
+                songId = 1,
+                title = "Numb",
+                artist = "Linkin Park",
+                // No network in the preview: the grey square shows instead
+                coverUrl = "",
+                genre = "Rock",
+                authorId = 2,
+                authorUsername = "elliot",
+                savesCount = 3,
+                isFollowed = true,
+            ),
+            isPlaying = false,
+            onPlayPause = {},
+        )
+    }
+}
+
+// Short screen: the cover is narrower than the card, the blurred cover fills its sides
+@Preview(heightDp = 400)
+@Composable
+private fun DropCardShortPreview() {
     MeloDropTheme {
         DropCard(
             drop = FeedItem(

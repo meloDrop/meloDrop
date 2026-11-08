@@ -3,6 +3,27 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.9.0] - 2026-11-08
+
+### Added
+- One card per song in Discover (ADR-0021): when several members drop the same song, it shows once with "X personnes ont droppé cette chanson", and a like or a pick counts for every dropper. A tap on this line, or on the likes, opens who dropped the song and who liked it (a pick shows as a like there).
+- Who liked and who picked my drop: from the likes and picks tiles of the Drop screen, and from the stats under the user's drops (profile and "Mes drops"), in two tabs.
+- "Voir plus" and a drops counter that can be tapped on the profile of the others: "Ses drops" lists all their drops.
+- "drop par X personnes" in "Mes likes", "Mes picks" and "Mes skips", which opens the list of the droppers. The search of "Mes likes" and "Mes picks" looks in every dropper.
+- Tutorials on example screens the first time Discover, Drop and Profil open on a phone, and after a new account: the swipes are shown on an example card. "Revoir le tuto" in the "Nouveautés" sheet shows the three in a row.
+- Automatic badges: a badge can have a rule and a threshold, and is given by itself when a member reaches it (admin dashboard).
+- Backend: `GET /drops/{drop_id}/likers` and `GET /songs/{song_id}/likers` routes; `droppers` in `GET /feed`, `GET /me/likes`, `GET /me/picks` and `GET /me/skips`; `credited_count` in the rescue of a skip; `rule` and `threshold` columns in `badges` (Alembic migration).
+
+### Changed
+- The feed draws the songs, not the drops: a song dropped by many members does not come first. Songs already in "Mes likes", skipped in the last 7 days, or dropped by the user and still online are not shown.
+- A swipe, and a rescue from "Mes skips", count for every drop of the song still online. "Mes skips" shows a song once.
+- The "Nouveautés" sheet waits for the end of a tutorial. Its texts present version 0.9.0.
+- The feed view of the admin dashboard follows the same rules as the app.
+
+### Fixed
+- Short screens: the one-line hint of Discover follows the order of the buttons (Passer, Pick, Liker).
+
+
 ## [0.8.0] - 2026-11-05
 
 ### Added

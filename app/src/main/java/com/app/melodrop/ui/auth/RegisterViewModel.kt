@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.melodrop.data.AuthRepository
+import com.app.melodrop.data.TutorialStore
 import com.app.melodrop.network.detail
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -42,6 +43,8 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             uiState = try {
                 repository.register(email.trim(), username.trim(), password)
+                // New account: the tutorials of Discover, Drop and Profil open again
+                TutorialStore.reset(getApplication())
                 RegisterUiState(isRegistered = true, email = email.trim())
             } catch (e: HttpException) {
                 RegisterUiState(error = errorMessage(e))

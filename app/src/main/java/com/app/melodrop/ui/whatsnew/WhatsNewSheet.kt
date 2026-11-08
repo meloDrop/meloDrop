@@ -46,7 +46,7 @@ private val BulletColors = listOf(Lavender, Peach, Butter, Mint, Rose)
 @Composable
 fun WhatsNewSheet(
     onDismiss: () -> Unit,
-    // "Revoir le tuto" button. null: this version has no tour, the button is hidden
+    // "Revoir le tuto" button: the tutorials of Discover, Drop and Profil. null: the button is hidden
     onReplayTutorial: (() -> Unit)? = null,
 ) {
     // skipPartiallyExpanded: the sheet opens fully at once, not half-way

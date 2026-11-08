@@ -13,7 +13,6 @@ import com.app.melodrop.audio.buildPreviewPlayer
 import com.app.melodrop.data.DiscoverRepository
 import com.app.melodrop.data.WhatsNewStore
 import com.app.melodrop.network.dto.FeedItem
-import com.app.melodrop.ui.tutorial.TutorialSteps
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -47,10 +46,6 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
     // True while the "Nouveautés" sheet is open. Kept apart from uiState:
     // loadFeed() builds a new uiState, and that must not close the sheet
     var showWhatsNew by mutableStateOf(false)
-        private set
-
-    // True while a tour waits to start: the screen starts it once the feed is shown
-    var tutorialPending by mutableStateOf(false)
         private set
 
     // True: the drops of the followed users come first. Kept apart from uiState,
@@ -87,15 +82,11 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
             loadFeed()
         }
 
-        // First launch after an update: the tour if this version has one,
-        // otherwise the "Nouveautés" sheet opens by itself
+        // First launch after an update: the "Nouveautés" sheet opens by itself
+        // (the screen waits for the end of a tutorial to show it)
         viewModelScope.launch {
             if (WhatsNewStore.checkNewVersion(application)) {
-                if (TutorialSteps.isNotEmpty()) {
-                    tutorialPending = true
-                } else {
-                    showWhatsNew = true
-                }
+                showWhatsNew = true
             }
         }
     }
@@ -110,15 +101,19 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
         showWhatsNew = false
     }
 
-    // "Revoir le tuto" in the sheet: the sheet closes and the tour starts again
-    fun replayTutorial() {
-        showWhatsNew = false
-        tutorialPending = true
-    }
+    // True while a tutorial covers the screen: the previews must not play
+    private var isTutorialOpen = false
 
-    // The tour is on screen: nothing waits any more
-    fun onTutorialStarted() {
-        tutorialPending = false
+    // Tutorial opened or closed: the music stops, then starts again on the card on top.
+    // Also called when the tab opens: nothing starts again if no tutorial was open
+    fun setTutorialOpen(open: Boolean) {
+        val wasOpen = isTutorialOpen
+        isTutorialOpen = open
+        if (open) {
+            player.pause()
+        } else if (wasOpen && player.mediaItemCount > 0) {
+            player.play()
+        }
     }
 
     fun loadFeed() {
@@ -231,8 +226,9 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
 
             player.setMediaItem(MediaItem.fromUri(url))
             player.prepare()
-            // Starts on its own: remove this line to wait for a tap on the button
-            player.play()
+            // Starts on its own, unless a tutorial covers the screen:
+            // remove this line to wait for a tap on the button
+            if (!isTutorialOpen) player.play()
         }
     }
 

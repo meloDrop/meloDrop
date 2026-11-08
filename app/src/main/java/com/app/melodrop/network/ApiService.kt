@@ -2,6 +2,7 @@ package com.app.melodrop.network
 
 import com.app.melodrop.network.dto.MeOut
 import com.app.melodrop.network.dto.MyDropOut
+import com.app.melodrop.network.dto.DropLikerOut
 import com.app.melodrop.network.dto.Token
 import com.app.melodrop.network.dto.UserLogin
 import com.app.melodrop.network.dto.UserOut
@@ -109,6 +110,10 @@ interface ApiService {
     // Response<...>: lets us read a null body (no drop today) without an error
     @GET("drops/me")
     suspend fun getMyDrop(): Response<MyDropOut>
+
+    // Who liked and who picked one of my drops, the most recent first. 404 on the drop of another user
+    @GET("drops/{drop_id}/likers")
+    suspend fun getDropLikers(@Path("drop_id") dropId: Int): List<DropLikerOut>
 
     // A user's profile: counters, drop of the day and last drops (ADR-0018)
     @GET("users/{user_id}/profile")

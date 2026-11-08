@@ -1,21 +1,14 @@
 package com.app.melodrop.ui.follows
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
@@ -29,20 +22,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.network.dto.FollowUserOut
-import com.app.melodrop.ui.components.Avatar
+import com.app.melodrop.ui.components.TabPill
+import com.app.melodrop.ui.components.UserRow
 import com.app.melodrop.ui.theme.MeloDropTheme
 
 // Connects the screen to its ViewModel
@@ -163,81 +152,15 @@ private fun FollowListContent(
             ) {
                 // The key lets Compose follow each row when the list changes
                 items(users, key = { it.id }) { user ->
-                    FollowUserRow(user = user, onClick = { onUserClick(user.id) })
+                    UserRow(
+                        username = user.username,
+                        displayName = user.displayName,
+                        avatarColor = user.avatarColor,
+                        avatarStyle = user.avatarStyle,
+                        onClick = { onUserClick(user.id) },
+                    )
                 }
             }
-        }
-    }
-}
-
-// One tab: lavender border and text when selected, grey otherwise
-@Composable
-private fun TabPill(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(percent = 50)
-    Box(
-        modifier = modifier
-            // 44 dp: enough room for a finger
-            .height(44.dp)
-            .clip(shape)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent)
-            .border(
-                border = BorderStroke(
-                    1.dp,
-                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                ),
-                shape = shape,
-            )
-            // TalkBack reads it as a tab, selected or not
-            .selectable(selected = isSelected, onClick = onClick, role = Role.Tab),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-// One user: avatar, display name and @username, like in the user search
-@Composable
-private fun FollowUserRow(user: FollowUserOut, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            // Rounded ripple when the row is tapped
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Avatar(color = user.avatarColor, style = user.avatarStyle, avatarSize = 48.dp)
-
-        // Takes the width left, so long names are cut with "…"
-        Column(modifier = Modifier.weight(1f)) {
-            // The display name, or the username when none was chosen (ADR-0019)
-            Text(
-                text = user.displayName ?: user.username,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = "@${user.username}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }

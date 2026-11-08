@@ -113,7 +113,10 @@ fun MainScreen(onLogout: () -> Unit) {
                         onSearchClick = { navController.navigate(Routes.SEARCH_USERS) { launchSingleTop = true } },
                     )
                 }
-                composable(Routes.DROP) { DropScreen() }
+                composable(Routes.DROP) {
+                    // Tap on a user in the list of likes of the drop: opens their profile
+                    DropScreen(onUserClick = ::openUserProfile)
+                }
                 composable(Routes.PROFILE) {
                     ProfileScreen(
                         onLogout = onLogout,
@@ -146,6 +149,7 @@ fun MainScreen(onLogout: () -> Unit) {
                     MyDropsScreen(
                         // Back to the Profile tab, even after a double tap
                         onBack = { navController.popBackStack(Routes.PROFILE, inclusive = false) },
+                        onUserClick = ::openUserProfile,
                     )
                 }
                 composable(Routes.MY_PICKS) {

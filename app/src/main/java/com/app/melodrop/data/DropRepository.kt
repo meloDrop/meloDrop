@@ -2,6 +2,7 @@ package com.app.melodrop.data
 
 import com.app.melodrop.network.RetrofitClient
 import com.app.melodrop.network.dto.DropCreate
+import com.app.melodrop.network.dto.DropLikerOut
 import com.app.melodrop.network.dto.DropOut
 import com.app.melodrop.network.dto.MyDropOut
 import com.app.melodrop.network.dto.TrackResult
@@ -26,6 +27,9 @@ class DropRepository {
         if (!response.isSuccessful) throw HttpException(response)
         return response.body()
     }
+
+    // Who liked and who picked one of my drops, the most recent first
+    suspend fun getLikers(dropId: Int): List<DropLikerOut> = api.getDropLikers(dropId)
 
     // Fresh preview link of my drop: Deezer links expire after about 15 minutes
     suspend fun getPreviewUrl(songId: Int): String? = api.getPreview(songId).previewUrl

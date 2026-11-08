@@ -1,11 +1,11 @@
 """Routes of the drops module."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import current_user
-from app.exceptions import DeezerError, DropAlreadyActiveError, TrackNotFoundError
+from app.exceptions import DeezerError, DropAlreadyActiveError, DropNotFoundError, TrackNotFoundError
 from app.models.user import User
 from app.schemas import drops as schemas
 from app.services import drops as services
@@ -44,3 +44,23 @@ def create_drop(body: schemas.DropCreate, user: User = Depends(current_user), db
 def get_my_drop(user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Get the logged-in user's current drop, or null if there is none."""
     return services.get_my_drop(db, user.id)
+
+
+@router.get(
+    "/{drop_id}/likers",
+    response_model=list[schemas.DropLikerOut],
+    responses={
+        200: {"description": "The users who liked or picked the drop, the most recent first, or an empty list"},
+        404: {"description": "No drop has this id, or it is the drop of another user"},
+    },
+)
+def get_drop_likers(
+    drop_id: int = Path(description="Id of one of my drops (id in GET /drops/me or in my profile)"),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    """Get who liked and who picked one of my drops. Only the author of the drop can see it."""
+    try:
+        return services.get_drop_likers(db, user.id, drop_id)
+    except DropNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))

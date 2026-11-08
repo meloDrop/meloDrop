@@ -32,3 +32,17 @@ class MyDropOut(DropOut):
     picks_count: int
     # Users who swiped the drop: likes, picks and skips
     views_count: int
+
+
+class DropLikerOut(BaseModel):
+    """A user who liked one of my drops, as shown in the list of likes and picks."""
+
+    # Used to open the profile (GET /users/{id}/profile)
+    id: int
+    username: str
+    # Public name, or null: the app then shows the username
+    display_name: str | None = None
+    avatar_color: str
+    avatar_style: str
+    # True: the like was a pick (up swipe or star button)
+    is_pick: bool

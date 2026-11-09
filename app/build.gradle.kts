@@ -28,6 +28,11 @@ android {
         debug {
             buildConfigField("String", "BASE_URL", "\"http://localhost:8000/\"")
         }
+        // Debug build that talks to the production backend
+        create("prodDebug") {
+            initWith(getByName("debug"))
+            buildConfigField("String", "BASE_URL", "\"https://api.melodrop-app.com/\"")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

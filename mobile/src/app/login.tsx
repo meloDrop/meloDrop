@@ -1,32 +1,55 @@
-import {useState} from 'react';
-import {KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {MeloDropTitle} from '@/components/MeloDropTitle';
-import {PrimaryButton} from '@/components/PrimaryButton';
-import {colors} from '@/theme/colors';
+import { login } from '@/api/auth';
+import { ApiError } from '@/api/client';
+import { MeloDropTitle } from '@/components/MeloDropTitle';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { colors } from '@/theme/colors';
+
+// Turns an API error into a sentence for the user
+function loginErrorMessage(error: unknown): string {
+    if (error instanceof ApiError) {
+        if (error.detail === 'invalid_credentials') return 'Identifiant ou mot de passe incorrect.';
+        if (error.detail === 'email_not_verified') return "Confirme d'abord ton e-mail avec le code reçu.";
+        if (error.status === 0) return 'Pas de connexion au serveur.';
+    }
+    return 'Une erreur est survenue, réessaie.';
+}
 
 export default function LoginScreen() {
-    // Like "var identifier by remember { mutableStateOf("") }" in Compose
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Computed again at each render, like a val inside a Composable
     const canSubmit = identifier.trim() !== '' && password !== '';
 
-    function handleLogin() {
-        console.log('Connexion avec', identifier);
+    // async: like a suspend fun launched from a coroutine
+    async function handleLogin() {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await login(identifier.trim(), password);
+            console.log('JWT reçu :', token.access_token.slice(0, 20) + '...');
+        } catch (e) {
+            setError(loginErrorMessage(e));
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
         <SafeAreaView style={styles.safe}>
             {/* iPhone: pushes the form up when the keyboard opens (Android does it by itself) */}
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.screen}>
-                <MeloDropTitle size={40}/>
+                <MeloDropTitle size={40} />
                 <Text style={styles.subtitle}>
                     Une chanson par jour, choisie par quelqu'un, pas par un algorithme.
                 </Text>
+
                 <View style={styles.form}>
                     <TextInput
                         style={styles.input}
@@ -37,6 +60,7 @@ export default function LoginScreen() {
                         autoCapitalize="none"
                         autoCorrect={false}
                     />
+
                     <View style={styles.passwordRow}>
                         <TextInput
                             style={[styles.input, styles.passwordInput]}
@@ -51,7 +75,16 @@ export default function LoginScreen() {
                             <Text style={styles.showLabel}>{showPassword ? 'Masquer' : 'Afficher'}</Text>
                         </Pressable>
                     </View>
-                    <PrimaryButton label="Se connecter" onPress={handleLogin} disabled={!canSubmit} />
+
+                    {/* A ternary, not "error && ...": never leave a bare string outside <Text> */}
+                    {error ? <Text style={styles.error}>{error}</Text> : null}
+
+                    <PrimaryButton
+                        label="Se connecter"
+                        onPress={handleLogin}
+                        disabled={!canSubmit}
+                        loading={isLoading}
+                    />
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -102,5 +135,8 @@ const styles = StyleSheet.create({
     showLabel: {
         color: colors.lavender,
         fontWeight: '600',
+    },
+    error: {
+        color: colors.danger,
     },
 });

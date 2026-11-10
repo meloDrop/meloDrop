@@ -1,37 +1,36 @@
-import {Text, View, StyleSheet} from "react-native";
-import {useEffect, useState} from 'react';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GenreChip } from '@/components/GenreChip';
+import { MeloDropTitle } from '@/components/MeloDropTitle';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { colors } from '@/theme/colors';
+
+// Test screen: shows the first components
 export default function Index() {
-    const [apiStatus, setApiStatus] = useState('Vérification...');
-    // Runs once when the screen appears: calls GET /health on the API
-    useEffect(() => {
-        fetch(`${process.env.EXPO_PUBLIC_API_URL}/health`)
-            .then((response) => setApiStatus(response.ok ? 'API joignable' : `Erreur ${response.status}`))
-            .catch(() => setApiStatus('API injoignable'));
-    }, []);
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>meloDrop</Text>
-            <Text style={styles.subtitle}>API : {process.env.EXPO_PUBLIC_API_URL}</Text>
-            <Text style={styles.subtitle}>{apiStatus}</Text>
-        </View>
+        <SafeAreaView style={styles.screen}>
+            <MeloDropTitle size={40} />
+            <View style={styles.row}>
+                <GenreChip genre="Rock" />
+                <GenreChip genre="Pop" />
+                <GenreChip genre="Electro" />
+            </View>
+            <PrimaryButton label="Bouton de test" onPress={() => console.log('Appui !')} />
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    screen: {
         flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#0C0C10",
+        backgroundColor: colors.night,
+        padding: 24,
+        gap: 24,
+        justifyContent: 'center',
     },
-    title: {
-        color: '#F2F2F5',
-        fontSize: 32,
-        fontWeight: "700",
+    row: {
+        flexDirection: 'row',
+        gap: 8,
     },
-    subtitle: {
-        color: '#8E8E9A',
-        marginTop: 8,
-    }
 });

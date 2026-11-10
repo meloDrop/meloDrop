@@ -14,18 +14,34 @@ export class ApiError extends Error {
     }
 }
 
+// The JWT of the session, added to every request (like AuthInterceptor.kt)
+let authToken: string | null = null;
+// Called when the backend refuses the token (like AuthEvents.sessionExpired)
+let onUnauthorized: (() => void) | null = null;
+
+export function setAuthToken(token: string | null) {
+    authToken = token;
+}
+
+export function setOnUnauthorized(callback: (() => void) | null) {
+    onUnauthorized = callback;
+}
+
 // <T>: the type of the JSON we expect, like the return type of a Retrofit method
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
     let response: Response;
     try {
-        response = await fetch(`${API_URL}${path}`, {
-            ...options,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        response = await fetch(`${API_URL}${path}`, { ...options, headers });
     } catch {
         // No answer at all: no network, or wrong address in .env
         throw new ApiError(0, 'network_error');
     }
+
+    // The saved token was refused: the session is over (ADR-0007)
+    if (response.status === 401 && authToken) onUnauthorized?.();
 
     // 4xx or 5xx: read the "detail" field sent by FastAPI
     if (!response.ok) {

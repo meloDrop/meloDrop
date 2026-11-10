@@ -1,9 +1,11 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { login } from '@/api/auth';
 import { ApiError } from '@/api/client';
+import { useSession } from '@/auth/SessionContext';
 import { MeloDropTitle } from '@/components/MeloDropTitle';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { colors } from '@/theme/colors';
@@ -19,6 +21,7 @@ function loginErrorMessage(error: unknown): string {
 }
 
 export default function LoginScreen() {
+    const { signIn } = useSession();
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +36,9 @@ export default function LoginScreen() {
         setError(null);
         try {
             const token = await login(identifier.trim(), password);
-            console.log('JWT reçu :', token.access_token.slice(0, 20) + '...');
+            // Saves the JWT on the phone, then goes back to the test screen
+            await signIn(token.access_token);
+            router.back();
         } catch (e) {
             setError(loginErrorMessage(e));
         } finally {

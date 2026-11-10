@@ -1,31 +1,31 @@
-import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
 import { Link } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GenreChip } from '@/components/GenreChip';
+import { useSession } from '@/auth/SessionContext';
 import { MeloDropTitle } from '@/components/MeloDropTitle';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { colors } from '@/theme/colors';
 
-
-
-// Test screen: shows the first components
+// Test screen: shows if a token is saved, until the navigation of module 6
 export default function Index() {
-    const [count, setCount] = useState(0);
+    const { token, isLoading, signOut } = useSession();
+
     return (
         <SafeAreaView style={styles.screen}>
-            <MeloDropTitle size={40} />
-            <View style={styles.row}>
-                <GenreChip genre="Rock" />
-                <GenreChip genre="Pop" />
-                <GenreChip genre="Electro" />
+            <View style={{ alignItems: 'center' }}>
+                <MeloDropTitle size={50} />
             </View>
-            <PrimaryButton label="Bouton de test" onPress={() => console.log('Appui !')} />
-            <Link href="/login" style={styles.link}>
-                Aller à l'écran de connexion
-            </Link>
-            <PrimaryButton label={`Appuyé ${count} fois`} onPress={() => setCount((c) => c + 1)} />
+            <Text style={styles.status}>
+                {isLoading ? 'Lecture du jeton...' : token ? 'Connecté' : 'Pas connecté'}
+            </Text>
+            {token ? (
+                <PrimaryButton label="Se déconnecter" onPress={signOut} />
+            ) : (
+                <Link href="/login" style={styles.link}>
+                    Aller à l'écran de connexion
+                </Link>
+            )}
         </SafeAreaView>
     );
 }
@@ -38,13 +38,15 @@ const styles = StyleSheet.create({
         gap: 24,
         justifyContent: 'center',
     },
-    row: {
-        flexDirection: 'row',
-        gap: 8,
+    status: {
+        color: colors.textPrimary,
+        fontSize: 18,
+        textAlign: 'center',
     },
     link: {
         color: colors.lavender,
         fontSize: 16,
         textAlign: 'center',
     },
+
 });

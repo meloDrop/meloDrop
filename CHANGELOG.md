@@ -3,6 +3,18 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.10.1] - 2026-11-11
+
+### Changed
+- The app stays in portrait: it no longer turns sideways on a phone. Android 16 and later still turn it on big screens (tablets, unfolded foldables).
+- The texts of the "Nouveautés" sheet present version 0.10.1.
+
+### Fixed
+- Discover: with a long @username, the line "Déposé par" took the whole width of the card. The likes had no room left and grew very tall, one letter per line, which pushed the cover and the play button out of the card. The likes now get their width first, and the @username shows under "Déposé par", always in full (on two lines for the longest ones on a narrow phone).
+- Short screens: since the avatar of the dropper, the cover of the Discover card got very small. The avatar is smaller (24 dp), the song and its artist are closer, and on a short card (small phone) the padding and the spacing are smaller and the song stays on one line, cut with "…". The cover gets back at least the room it had before 0.10.0. The play button and the chips now go in the corners of the whole cover area: on a short screen they sit on the blurred sides and no longer hide the cover. A small cover gets smaller round corners, so it stays a square instead of a circle.
+- Profiles: a long name was cut with "…". It now shows in full: on one line, a bit smaller when needed (down to 16 sp), then on several lines, a long word cut between two syllables with a "-".
+
+
 ## [0.10.0] - 2026-11-11
 
 ### Added

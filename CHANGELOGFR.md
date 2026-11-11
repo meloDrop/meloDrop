@@ -2,6 +2,18 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.10.1] - 11-11-2026
+
+### Modifié
+- L'appli reste en mode portrait : elle ne se tourne plus à l'horizontale sur un téléphone. Android 16 et plus la tournent quand même sur les grands écrans (tablettes, pliables ouverts).
+- Les textes de la feuille « Nouveautés » présentent la version 0.10.1.
+
+### Corrigé
+- Discover : avec un @ long, la ligne « Déposé par » prenait toute la largeur de la carte. Les likes n'avaient plus de place et devenaient très hauts, une lettre par ligne, ce qui sortait la pochette et le bouton de lecture de la carte. Les likes prennent maintenant leur place en premier, et le @ s'affiche sous « Déposé par », toujours en entier (sur deux lignes pour les plus longs sur un téléphone étroit).
+- Petits écrans : depuis l'avatar du droppeur, la pochette de la carte Discover devenait toute petite. L'avatar est plus petit (24 dp), le titre et l'artiste sont plus proches, et sur une carte courte (petit téléphone) les marges sont plus petites et le titre tient sur une ligne, coupé avec « … ». La pochette retrouve au moins la place qu'elle avait avant la 0.10.0. Le bouton de lecture et les étiquettes se placent maintenant dans les coins de toute la zone de la pochette : sur un petit écran, ils vont sur les côtés floutés et ne cachent plus la pochette. Une petite pochette a des coins moins arrondis : elle reste un carré au lieu de devenir un rond.
+- Profils : un nom long était coupé avec « … ». Il s'affiche maintenant en entier : sur une ligne, un peu plus petit si besoin (jusqu'à 16 sp), puis sur plusieurs lignes, un mot trop long coupé entre deux syllabes avec un « - ».
+
+
 ## [0.10.0] - 11-11-2026
 
 ### Ajouté

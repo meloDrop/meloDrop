@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,8 +49,16 @@ private val SMALL_COVER = 180.dp
 // Blur of the cover that fills the sides of the card on short screens
 private val BACKDROP_BLUR = 24.dp
 
-// Avatar of the dropper, next to "Déposé par"
-private val CARD_AVATAR_SIZE = 30.dp
+// Below this height, the card is short (small phones): see DropCard
+private val COMPACT_CARD = 320.dp
+
+// Round corners of the cover. A small cover gets smaller corners (an eighth of its side),
+// so it stays a square and is never cut into a circle
+private val COVER_CORNER = 20.dp
+
+// Avatar of the dropper, next to "Déposé par" and the @username. Small: with the room
+// of its aura, it is as high as these two lines, and the cover keeps its room on short screens
+private val CARD_AVATAR_SIZE = 24.dp
 
 // Several droppers: up to 3 small avatars, each one shifted by 16 dp
 private const val STACK_AVATARS = 3
@@ -78,47 +85,56 @@ fun DropCard(
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // The cover, with the genre in its top left corner
-            // and the play button in its bottom right corner.
-            // Shrinks on short screens, so the lines below are never cut
-            BoxWithConstraints(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .fillMaxWidth(),
+        // Height given to the card: a short card (small phone) gets less padding and
+        // spacing, and the song on one line, so the cover keeps its room
+        BoxWithConstraints {
+            val isCompact = maxHeight < COMPACT_CARD
+
+            Column(
+                modifier = Modifier.padding(if (isCompact) 12.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 12.dp),
             ) {
-                // The cover is a square as big as the room left: its side is the smaller one
-                val side = minOf(maxWidth, maxHeight)
-                val isSmall = side < SMALL_COVER
-                // Short screen: the square is narrower than the card, its sides would stay empty
-                val hasSides = maxWidth - side > 1.dp
-
-                // The whole width of the card, as high as the cover
-                Box(
+                // The cover, with the genre in its top left corner
+                // and the play button in its bottom right corner.
+                // Shrinks on short screens, so the lines below are never cut
+                BoxWithConstraints(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(side)
-                        .clip(RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center,
+                        .weight(1f, fill = false)
+                        .fillMaxWidth(),
                 ) {
-                    // The sides: the same cover, enlarged, blurred and darkened
-                    if (hasSides && drop.coverUrl != null) {
-                        CoverBackdrop(url = drop.coverUrl)
-                    }
+                    // The cover is a square as big as the room left: its side is the smaller one
+                    val side = minOf(maxWidth, maxHeight)
+                    val isSmall = side < SMALL_COVER
+                    // Short screen: the square is narrower than the card, its sides would stay empty
+                    val hasSides = maxWidth - side > 1.dp
+                    val corner = minOf(COVER_CORNER, side / 8)
 
-                    // The cover itself, whole, with its chips and its play button
-                    Box(modifier = Modifier.size(side)) {
+                    // The whole width of the card, as high as the cover
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(side)
+                            .clip(RoundedCornerShape(corner)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        // The sides: the same cover, enlarged, blurred and darkened
+                        if (hasSides && drop.coverUrl != null) {
+                            CoverBackdrop(url = drop.coverUrl)
+                        }
+
+                        // The cover itself, whole.
                         // Downloads the image from its URL, grey square while it loads
                         CoverImage(
                             url = drop.coverUrl,
                             contentDescription = "Pochette de ${drop.title}",
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(20.dp)),
+                                .size(side)
+                                .clip(RoundedCornerShape(corner)),
                         )
+
+                        // The chips and the play button go in the corners of the whole width.
+                        // Tall screen: these are the corners of the cover, like before.
+                        // Short screen: they sit on the blurred sides, and the cover stays in sight
 
                         // Genre of the album, hidden when Deezer has none or when the cover is small
                         if (drop.genre != null && !isSmall) {
@@ -176,136 +192,155 @@ fun DropCard(
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
                                     .padding(if (isSmall) 8.dp else 12.dp),
-                                // Smaller on a small cover, so it does not hide it
+                                // Smaller on a small cover, so it fits in the corner
                                 buttonSize = if (isSmall) 40.dp else 52.dp,
                             )
                         }
                     }
                 }
-            }
 
-            Text(
-                text = drop.title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+                // The song and its artist, close together: the room saved goes to the cover
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = drop.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        // Short card: one line, cut with "…", so the cover stays big enough
+                        maxLines = if (isCompact) 1 else 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
 
-            Text(
-                text = drop.artist,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+                    Text(
+                        text = drop.artist,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
 
-            // Everyone who dropped the song; the author alone for the feeds before ADR-0021
-            val droppersCount = drop.droppers.orEmpty().size
+                // Everyone who dropped the song; the author alone for the feeds before ADR-0021
+                val droppersCount = drop.droppers.orEmpty().size
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // Only on the card on top: the one waiting behind cannot be tapped
-                    .then(if (onPeopleClick != null) Modifier.tutorialTarget(TutorialTarget.CARD_PEOPLE) else Modifier),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // Little treat: the creator of meloDrop wears the logo gradient
-                val isCreator = drop.authorUsername.equals(CREATOR_USERNAME, ignoreCase = true)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // Only on the card on top: the one waiting behind cannot be tapped
+                        .then(if (onPeopleClick != null) Modifier.tutorialTarget(TutorialTarget.CARD_PEOPLE) else Modifier),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Little treat: the creator of meloDrop wears the logo gradient
+                    val isCreator = drop.authorUsername.equals(CREATOR_USERNAME, ignoreCase = true)
 
-                if (droppersCount > 1) {
-                    // Several droppers: their avatars, then one line for all. A tap opens the list
-                    Row(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(end = 8.dp)
-                            .then(
-                                if (onPeopleClick != null) {
-                                    Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable(onClickLabel = "Voir qui a droppé") { onPeopleClick(false) }
-                                        .padding(vertical = 4.dp)
-                                } else {
-                                    Modifier
-                                },
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        DroppersAvatars(droppers = drop.droppers.orEmpty())
-                        Text(
-                            text = "$droppersCount personnes ont droppé cette chanson ›",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            // Two lines at most on narrow screens, the likes keep their place
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    if (droppersCount > 1) {
+                        // Several droppers: their avatars, then one line for all. A tap opens the list
+                        Row(
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .padding(end = 8.dp)
+                                .then(
+                                    if (onPeopleClick != null) {
+                                        Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable(onClickLabel = "Voir qui a droppé") { onPeopleClick(false) }
+                                            .padding(vertical = 4.dp)
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            DroppersAvatars(droppers = drop.droppers.orEmpty())
+                            Text(
+                                text = "$droppersCount personnes ont droppé cette chanson ›",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                // Two lines at most on narrow screens, the likes keep their place
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    } else {
+                        // The dropper and the cosmetics of the avatar.
+                        // null for the feeds before ADR-0021: only the @username shows
+                        val author = drop.droppers.orEmpty().firstOrNull()
+
+                        Row(
+                            // One dropper: the avatar, then "Déposé par" over the @username.
+                            // weight: the likes get their width first, this block takes what is left.
+                            // Tap: opens the profile of the author
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .padding(end = 8.dp)
+                                .then(
+                                    if (onAuthorClick != null) {
+                                        Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable(onClick = onAuthorClick)
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            if (author != null) {
+                                Avatar(
+                                    color = author.avatarColor,
+                                    style = author.avatarStyle,
+                                    avatarSize = CARD_AVATAR_SIZE,
+                                    drop = author.avatarDrop,
+                                    deco = author.avatarDeco,
+                                    face = author.avatarFace,
+                                    aura = author.avatarAura,
+                                    showAura = true,
+                                    // Moves on the card on top only: the one waiting behind stays still
+                                    animateAura = onPeopleClick != null,
+                                    // Same height on every card, with or without an aura
+                                    reserveAuraRoom = true,
+                                )
+                            }
+                            // "Déposé par" over the @username: the @username gets almost the whole
+                            // width, so it always shows in full. The longest ones (30 letters) go
+                            // on a second line on a narrow phone
+                            Column {
+                                Text(
+                                    text = "Déposé par",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    text = "@${drop.authorUsername}",
+                                    style = if (isCreator) MaterialTheme.typography.bodyMedium.merge(TextStyle(brush = PastelGradient))
+                                    else MaterialTheme.typography.bodyMedium,
+                                    // Unspecified: the letters take the gradient of the style instead
+                                    color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
                     }
-                } else {
-                    // The dropper and the cosmetics of the avatar.
-                    // null for the feeds before ADR-0021: only the @username shows
-                    val author = drop.droppers.orEmpty().firstOrNull()
-
-                    Row(
-                        // One dropper, two Text side by side: the gradient only covers the @username.
-                        // Tap: opens the profile of the author
-                        modifier = if (onAuthorClick != null) {
+                    // With likes, a tap opens who liked the song
+                    val canOpenLikes = onPeopleClick != null && drop.savesCount > 0
+                    Text(
+                        text = if (canOpenLikes) "${likesLabel(drop.savesCount)} ›" else likesLabel(drop.savesCount),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.secondary,
+                        // Always one line: a Text squeezed to no width goes one letter per line,
+                        // grows very tall and pushes the cover out of the card
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = if (canOpenLikes && onPeopleClick != null) {
                             Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .clickable(onClick = onAuthorClick)
-                                .padding(vertical = 4.dp)
+                                .clickable(onClickLabel = "Voir qui a liké") { onPeopleClick(true) }
+                                .padding(4.dp)
                         } else {
                             Modifier
                         },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (author != null) {
-                            Avatar(
-                                color = author.avatarColor,
-                                style = author.avatarStyle,
-                                avatarSize = CARD_AVATAR_SIZE,
-                                drop = author.avatarDrop,
-                                deco = author.avatarDeco,
-                                face = author.avatarFace,
-                                aura = author.avatarAura,
-                                showAura = true,
-                                // Moves on the card on top only: the one waiting behind stays still
-                                animateAura = onPeopleClick != null,
-                                // Same height on every card, with or without an aura
-                                reserveAuraRoom = true,
-                                modifier = Modifier.padding(end = 4.dp),
-                            )
-                        }
-                        Text(
-                            text = "Déposé par ",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "@${drop.authorUsername}",
-                            style = if (isCreator) MaterialTheme.typography.bodyMedium.merge(TextStyle(brush = PastelGradient))
-                            else MaterialTheme.typography.bodyMedium,
-                            // Unspecified: the letters take the gradient of the style instead
-                            color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    )
                 }
-                // With likes, a tap opens who liked the song
-                val canOpenLikes = onPeopleClick != null && drop.savesCount > 0
-                Text(
-                    text = if (canOpenLikes) "${likesLabel(drop.savesCount)} ›" else likesLabel(drop.savesCount),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = if (canOpenLikes && onPeopleClick != null) {
-                        Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable(onClickLabel = "Voir qui a liké") { onPeopleClick(true) }
-                            .padding(4.dp)
-                    } else {
-                        Modifier
-                    },
-                )
             }
         }
     }

@@ -2,6 +2,12 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.10.2] - 11-11-2026
+
+### Corrigé
+- Google Play : le mode portrait de la 0.10.1 rendait l'appli incompatible avec 25 appareils, ceux qui n'ont pas d'écran en portrait. L'écran en portrait est maintenant déclaré comme facultatif (`uses-feature` avec `required="false"`), et ces appareils gardent l'appli. Les téléphones restent en portrait.
+
+
 ## [0.10.1] - 11-11-2026
 
 ### Modifié

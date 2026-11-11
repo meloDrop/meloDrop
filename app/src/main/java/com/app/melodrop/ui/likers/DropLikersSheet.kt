@@ -186,6 +186,10 @@ private fun DropLikersContent(
                         displayName = user.displayName,
                         avatarColor = user.avatarColor,
                         avatarStyle = user.avatarStyle,
+                        avatarDrop = user.avatarDrop,
+                        avatarDeco = user.avatarDeco,
+                        avatarFace = user.avatarFace,
+                        avatarAura = user.avatarAura,
                         onClick = { onUserClick(user.id) },
                         // A small butter star on the picks, like the Pick button of Discover
                         trailing = {

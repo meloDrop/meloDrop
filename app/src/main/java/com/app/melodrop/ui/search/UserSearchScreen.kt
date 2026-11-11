@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.melodrop.network.dto.UserSearchOut
 import com.app.melodrop.ui.components.Avatar
+import com.app.melodrop.ui.components.LIST_AVATAR_SIZE
 import com.app.melodrop.ui.theme.MeloDropTheme
 
 // Connects the screen to its ViewModel
@@ -166,7 +167,7 @@ private fun InfoText(text: String, isError: Boolean = false) {
     )
 }
 
-// One user found: avatar, display name and @username
+// One user found: avatar with its aura, display name and @username
 @Composable
 private fun UserRow(user: UserSearchOut, onClick: () -> Unit) {
     Row(
@@ -175,11 +176,23 @@ private fun UserRow(user: UserSearchOut, onClick: () -> Unit) {
             // Rounded ripple when the row is tapped
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
+            // Less padding than before: the room of the aura already gives air around the avatar
+            .padding(vertical = 4.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Avatar(color = user.avatarColor, style = user.avatarStyle, avatarSize = 48.dp)
+        Avatar(
+            color = user.avatarColor,
+            style = user.avatarStyle,
+            avatarSize = LIST_AVATAR_SIZE,
+            drop = user.avatarDrop,
+            deco = user.avatarDeco,
+            face = user.avatarFace,
+            aura = user.avatarAura,
+            showAura = true,
+            // Same room with or without an aura: the names of the list stay aligned
+            reserveAuraRoom = true,
+        )
 
         // Takes the width left, so long names are cut with "…"
         Column(modifier = Modifier.weight(1f)) {

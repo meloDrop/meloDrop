@@ -37,8 +37,7 @@ class ProfileRepository {
     suspend fun getMyPicks(): List<LikedSongOut> = api.getPicks()
 
     // Saves the display name and the avatar, and gives back the updated profile
-    suspend fun updateProfile(displayName: String, avatarColor: String, avatarStyle: String): ProfileOut =
-        api.updateProfile(ProfileUpdate(displayName, avatarColor, avatarStyle))
+    suspend fun updateProfile(update: ProfileUpdate): ProfileOut = api.updateProfile(update)
 
     // Saves the whole podium of the Mixtape, the first id at the 1st place, and gives back the new podium
     suspend fun updatePodium(deezerTrackIds: List<Long>): List<PodiumSongOut> =

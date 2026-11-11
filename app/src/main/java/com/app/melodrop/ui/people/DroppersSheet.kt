@@ -153,6 +153,10 @@ internal fun UserList(users: List<UserBriefOut>, onUserClick: (Int) -> Unit) {
                 displayName = user.displayName,
                 avatarColor = user.avatarColor,
                 avatarStyle = user.avatarStyle,
+                avatarDrop = user.avatarDrop,
+                avatarDeco = user.avatarDeco,
+                avatarFace = user.avatarFace,
+                avatarAura = user.avatarAura,
                 onClick = { onUserClick(user.id) },
             )
         }

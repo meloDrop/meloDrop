@@ -87,6 +87,12 @@ data class ProfileOut(
     @SerializedName("avatar_color") val avatarColor: String,
     // Name of the drop style, like "simple"
     @SerializedName("avatar_style") val avatarStyle: String,
+    // Cosmetics of the avatar, like "gold", "waves", "smile" or "rain".
+    // Nullable: Gson leaves a missing field to null, whatever the default value
+    @SerializedName("avatar_drop") val avatarDrop: String? = null,
+    @SerializedName("avatar_deco") val avatarDeco: String? = null,
+    @SerializedName("avatar_face") val avatarFace: String? = null,
+    @SerializedName("avatar_aura") val avatarAura: String? = null,
     val stats: StatsOut,
     // The drop online today, null if there is none
     @SerializedName("current_drop") val currentDrop: ProfileDropOut? = null,
@@ -118,8 +124,13 @@ data class ProfileUpdate(
     @SerializedName("display_name") val displayName: String,
     // Name of one of the 5 background colors, like "mint" (AVATAR_COLORS)
     @SerializedName("avatar_color") val avatarColor: String,
-    // Name of one of the 7 drop styles, like "rock" (AVATAR_STYLES)
-    @SerializedName("avatar_style") val avatarStyle: String
+    // Name of one of the 9 drop styles, like "rock" (AVATAR_STYLES)
+    @SerializedName("avatar_style") val avatarStyle: String,
+    // Color of the drop, background decoration, face and aura (AVATAR_DROPS, AVATAR_DECOS...)
+    @SerializedName("avatar_drop") val avatarDrop: String,
+    @SerializedName("avatar_deco") val avatarDeco: String,
+    @SerializedName("avatar_face") val avatarFace: String,
+    @SerializedName("avatar_aura") val avatarAura: String
 )
 
 // Data sent to replace the whole podium: the first id goes to the 1st place

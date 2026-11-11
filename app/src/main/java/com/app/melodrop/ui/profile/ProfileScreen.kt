@@ -608,7 +608,16 @@ internal fun ProfileHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Avatar(color = profile.avatarColor, style = profile.avatarStyle)
+        // On a profile, the aura shows around the avatar and moves
+        Avatar(
+            color = profile.avatarColor,
+            style = profile.avatarStyle,
+            drop = profile.avatarDrop,
+            deco = profile.avatarDeco,
+            face = profile.avatarFace,
+            aura = profile.avatarAura,
+            showAura = true,
+        )
 
         // Takes all the space left, so the menu stays on the right
         Column(modifier = Modifier.weight(1f)) {

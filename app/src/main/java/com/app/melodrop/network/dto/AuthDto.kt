@@ -20,7 +20,12 @@ data class MeOut(
     val username: String,
     @SerializedName("created_at") val createdAt: String,
     // New email waiting for its code, null the rest of the time
-    @SerializedName("pending_email") val pendingEmail: String? = null
+    @SerializedName("pending_email") val pendingEmail: String? = null,
+    // True when the account has the subscription (given from the dashboard)
+    @SerializedName("is_subscriber") val isSubscriber: Boolean = false,
+    // False when the premium drops and the auras are locked for this account.
+    // Nullable: an older backend does not send it, and then nothing is locked
+    @SerializedName("premium_unlocked") val premiumUnlocked: Boolean? = null
 )
 
 data class UserRegister(

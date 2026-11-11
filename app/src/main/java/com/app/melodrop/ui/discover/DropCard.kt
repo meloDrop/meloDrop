@@ -2,6 +2,7 @@ package com.app.melodrop.ui.discover
 
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import com.app.melodrop.ui.components.CREATOR_USERNAME
 import com.app.melodrop.ui.components.CoverImage
 import com.app.melodrop.network.dto.FeedItem
+import com.app.melodrop.network.dto.UserBriefOut
+import com.app.melodrop.ui.components.Avatar
 import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.PlayPauseButton
@@ -45,6 +49,14 @@ private val SMALL_COVER = 180.dp
 
 // Blur of the cover that fills the sides of the card on short screens
 private val BACKDROP_BLUR = 24.dp
+
+// Avatar of the dropper, next to "Déposé par"
+private val CARD_AVATAR_SIZE = 30.dp
+
+// Several droppers: up to 3 small avatars, each one shifted by 16 dp
+private const val STACK_AVATARS = 3
+private val STACK_AVATAR_SIZE = 24.dp
+private val STACK_AVATAR_STEP = 16.dp
 
 // A song in the feed: cover, song, genre, who dropped it and its likes.
 // Several users can have dropped the same song: it shows once (ADR-0021)
@@ -202,14 +214,8 @@ fun DropCard(
                 val isCreator = drop.authorUsername.equals(CREATOR_USERNAME, ignoreCase = true)
 
                 if (droppersCount > 1) {
-                    // Several droppers: one line for all, a tap opens the list
-                    Text(
-                        text = "$droppersCount personnes ont droppé cette chanson ›",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        // Two lines at most on narrow screens, the likes keep their place
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                    // Several droppers: their avatars, then one line for all. A tap opens the list
+                    Row(
                         modifier = Modifier
                             .weight(1f, fill = false)
                             .padding(end = 8.dp)
@@ -223,8 +229,24 @@ fun DropCard(
                                     Modifier
                                 },
                             ),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        DroppersAvatars(droppers = drop.droppers.orEmpty())
+                        Text(
+                            text = "$droppersCount personnes ont droppé cette chanson ›",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            // Two lines at most on narrow screens, the likes keep their place
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 } else {
+                    // The dropper and the cosmetics of the avatar.
+                    // null for the feeds before ADR-0021: only the @username shows
+                    val author = drop.droppers.orEmpty().firstOrNull()
+
                     Row(
                         // One dropper, two Text side by side: the gradient only covers the @username.
                         // Tap: opens the profile of the author
@@ -236,7 +258,25 @@ fun DropCard(
                         } else {
                             Modifier
                         },
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        if (author != null) {
+                            Avatar(
+                                color = author.avatarColor,
+                                style = author.avatarStyle,
+                                avatarSize = CARD_AVATAR_SIZE,
+                                drop = author.avatarDrop,
+                                deco = author.avatarDeco,
+                                face = author.avatarFace,
+                                aura = author.avatarAura,
+                                showAura = true,
+                                // Moves on the card on top only: the one waiting behind stays still
+                                animateAura = onPeopleClick != null,
+                                // Same height on every card, with or without an aura
+                                reserveAuraRoom = true,
+                                modifier = Modifier.padding(end = 4.dp),
+                            )
+                        }
                         Text(
                             text = "Déposé par ",
                             style = MaterialTheme.typography.bodyMedium,
@@ -267,6 +307,34 @@ fun DropCard(
                     },
                 )
             }
+        }
+    }
+}
+
+// Up to 3 small avatars of the droppers, one over the other, without their aura:
+// several auras side by side would mix. The first dropper (a followed user first) is on top
+@Composable
+private fun DroppersAvatars(droppers: List<UserBriefOut>) {
+    val shown = droppers.take(STACK_AVATARS)
+
+    // Only a decoration: TalkBack reads the line next to it
+    Box(modifier = Modifier.clearAndSetSemantics { }) {
+        // Drawn from the last one, so the first dropper ends on top of the others
+        shown.indices.reversed().forEach { index ->
+            val user = shown[index]
+            Avatar(
+                color = user.avatarColor,
+                style = user.avatarStyle,
+                avatarSize = STACK_AVATAR_SIZE,
+                drop = user.avatarDrop,
+                deco = user.avatarDeco,
+                face = user.avatarFace,
+                modifier = Modifier
+                    // Each avatar covers a third of the next one
+                    .padding(start = STACK_AVATAR_STEP * index)
+                    // Ring in the color of the card, so the avatars stay apart
+                    .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
+            )
         }
     }
 }

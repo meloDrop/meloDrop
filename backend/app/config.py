@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     EMAIL_CODE_EXPIRE_MINUTES: int = 15
     EMAIL_CODE_MAX_ATTEMPTS: int = 5
 
+    # False during the test phase: every cosmetic is free.
+    # True at the release: the premium drops and the auras need the subscription
+    PREMIUM_LOCKED: bool = False
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

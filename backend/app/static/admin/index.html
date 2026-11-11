@@ -1892,6 +1892,19 @@ function openManage(userId) {
   }
   parts.push(dropPart);
 
+  // Subscription: unlocks the premium cosmetics (drops Or, Spectre, Océan, Prune and the auras)
+  parts.push(el("div", { className: "dialog-part" }, [
+    el("h3", { text: "Abonnement" }),
+    el("p", { text: user.is_subscriber
+      ? "Abonné : les gouttes Or, Spectre, Océan et Prune et les auras sont débloquées."
+      : "Pas abonné. Le statut débloque les gouttes Or, Spectre, Océan et Prune et les auras, quand elles sont verrouillées (PREMIUM_LOCKED)." }),
+    actionButton(user.is_subscriber ? "Retirer le statut abonné" : "Donner le statut abonné", user.is_subscriber ? "ghost small" : "small",
+      () => runAction("PATCH", `/admin/users/${user.id}/subscriber`, { is_subscriber: !user.is_subscriber },
+        (account) => (account.is_subscriber
+          ? `@${user.username} est abonné : cosmétiques payants débloqués.`
+          : `@${user.username} n'est plus abonné.`))),
+  ]));
+
   // Special avatar: on the admin account only
   if (false && user.username === currentAdmin) {
     const isOn = user.avatar_style === "admin";
@@ -2054,7 +2067,12 @@ async function refresh() {
 // Pastel colors of the avatars (avatar_color, same names as Avatar.kt)
 const AVATAR_COLORS = { lavender: "#b4a7f5", peach: "#ffb38a", butter: "#ffe08a", mint: "#9ee0b8", rose: "#f5a8c8" };
 const AVATAR_COLOR_LABELS = { lavender: "Lavande", peach: "Pêche", butter: "Jaune", mint: "Menthe", rose: "Rose" };
-const AVATAR_STYLES = { admin: "spéciale admin", simple: "Simple", rock: "Rock", rap: "Rap", pop: "Pop", classical: "Classique", reggae: "Reggae", electro: "Électro" };
+const AVATAR_STYLES = { admin: "spéciale admin", simple: "Simple", rock: "Rock", rap: "Rap", pop: "Pop", classical: "Classique", reggae: "Reggae", electro: "Électro", jazz: "Jazz", lofi: "Lo-fi" };
+// Cosmetics of the avatar (same names as Avatar.kt). The premium ones need the subscription
+const AVATAR_DROP_LABELS = { night: "Nuit", cream: "Crème", lavender: "Lavande", peach: "Pêche", butter: "Jaune", mint: "Menthe", rose: "Rose", ocean: "Océan", plum: "Prune", gold: "Or", spectre: "Spectre" };
+const AVATAR_DECO_LABELS = { plain: "fond uni", gradient: "dégradé", waves: "ondes", notes: "notes" };
+const AVATAR_FACE_LABELS = { none: "sans expression", smile: "sourire", wink: "clin d'œil", shades: "lunettes", closed: "yeux fermés", stars: "yeux étoiles" };
+const AVATAR_AURA_LABELS = { none: "sans aura", halo: "aura halo", bolts: "aura éclairs", chain: "aura chaîne en or", sparkles: "aura paillettes", staff: "aura portée", rasta: "aura rasta", equalizer: "aura égaliseur", smoke: "aura volutes", rain: "aura pluie" };
 const CODE_PURPOSES = { verify_email: "Validation de l'e-mail", reset_password: "Mot de passe oublié", change_email: "Changement d'e-mail" };
 // Series of the user's chart (validated order)
 const USER_SERIES = [
@@ -2126,6 +2144,17 @@ const AVATAR_ACCESSORIES = {
     svgEl("path", { d: "M22.75 51C22.75 8 77.25 8 77.25 51", fill: "none", stroke: NIGHT, "stroke-width": 4, "stroke-linecap": "round" }),
     svgEl("rect", { x: 18, y: 48, width: 9.5, height: 19, rx: 3.5, fill: NIGHT }),
     svgEl("rect", { x: 72.5, y: 48, width: 9.5, height: 19, rx: 3.5, fill: NIGHT }),
+  ],
+  // Simple versions of the detailed accessories of the app
+  jazz: () => [
+    svgEl("path", { d: "M24 66L24 92M17 92.6L31 92.6", fill: "none", stroke: NIGHT, "stroke-width": 3, "stroke-linecap": "round" }),
+    svgEl("rect", { x: 17.4, y: 40, width: 13.2, height: 19, rx: 6.6, fill: "#c9c9d6", stroke: NIGHT, "stroke-width": 1.1 }),
+    svgEl("rect", { x: 17.4, y: 48.6, width: 13.2, height: 2.6, fill: "#ffe08a" }),
+  ],
+  lofi: () => [
+    svgEl("path", { d: "M34 38C34 21 66 21 66 38Z", fill: "#ffb38a", stroke: NIGHT, "stroke-width": 1.1 }),
+    svgEl("rect", { x: 32.5, y: 34.5, width: 35, height: 7, rx: 3.2, fill: "#f6a27a", stroke: NIGHT, "stroke-width": 1.1 }),
+    svgEl("circle", { cx: 50, cy: 20.6, r: 4.8, fill: "#ffcdb0", stroke: NIGHT, "stroke-width": 1 }),
   ],
 };
 
@@ -2271,6 +2300,7 @@ function renderUserList() {
     ]);
     if (online.has(user.id)) link.querySelector(".who b").append(" ", dot("--likes"));
     if (user.open_reports) link.querySelector(".who b").append(" ", reportDot(user));
+    if (user.is_subscriber) link.querySelector(".who b").append(" ", el("span", { className: "badge", text: "abonné" }));
     if (user.id === selectedUserId) link.setAttribute("aria-current", "true");
     return el("li", {}, [link]);
   }));
@@ -2457,7 +2487,10 @@ function accountCard(data) {
     ["Inscrit le", longDate(a.created_at)],
     ["Modifié le", longDate(a.updated_at)],
     ["Dernière activité", listed ? `${relativeTime(listed.last_activity)} · ${longDate(listed.last_activity)}` : "—"],
-    ["Avatar", `${AVATAR_COLOR_LABELS[a.avatar_color] || a.avatar_color} · goutte ${AVATAR_STYLES[a.avatar_style] || a.avatar_style}`],
+    ["Avatar", `${AVATAR_COLOR_LABELS[a.avatar_color] || a.avatar_color} · goutte ${AVATAR_STYLES[a.avatar_style] || a.avatar_style}`
+      + ` · ${AVATAR_DROP_LABELS[a.avatar_drop] || a.avatar_drop} · ${AVATAR_DECO_LABELS[a.avatar_deco] || a.avatar_deco}`
+      + ` · ${AVATAR_FACE_LABELS[a.avatar_face] || a.avatar_face} · ${AVATAR_AURA_LABELS[a.avatar_aura] || a.avatar_aura}`],
+    ["Abonnement", el("span", { className: a.is_subscriber ? "badge" : "badge no", text: a.is_subscriber ? "Abonné" : "Non abonné" })],
   ];
   // Codes sent by email, still waiting (without the code itself)
   const codes = a.email_codes.length

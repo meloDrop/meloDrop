@@ -99,3 +99,8 @@ class UserBadgeNotFoundError(Exception):
 class ReportNotFoundError(Exception):
     """Raised when no report has this id."""
 
+# Cosmetics of the avatar
+
+class PremiumRequiredError(Exception):
+    """Raised when a user without the subscription picks a premium cosmetic."""
+

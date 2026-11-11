@@ -48,6 +48,11 @@ class MeOut(BaseModel):
     username: str
     created_at: datetime
     pending_email: str | None = None
+    # True when the user has the subscription (given from the dashboard)
+    is_subscriber: bool = False
+    # True when the premium drops and the auras can be picked:
+    # always during the test phase, then only with the subscription
+    premium_unlocked: bool = True
 
 
 class EmailUpdate(BaseModel):

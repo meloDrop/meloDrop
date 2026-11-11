@@ -14,7 +14,24 @@ from app.schemas.podium import PodiumSongOut
 AvatarColor = Literal["lavender", "peach", "butter", "mint", "rose"]
 
 # Drop styles an avatar can have (same names in Avatar.kt)
-AvatarStyle = Literal["simple", "rock", "rap", "pop", "classical", "reggae", "electro"]
+AvatarStyle = Literal["simple", "rock", "rap", "pop", "classical", "reggae", "electro", "jazz", "lofi"]
+
+# Colors of the drop. The last 4 are premium (PREMIUM_DROPS in services/profile.py)
+AvatarDrop = Literal[
+    "night", "cream", "lavender", "peach", "butter", "mint", "rose",
+    "ocean", "plum", "gold", "spectre",
+]
+
+# What is drawn on the background, behind the drop
+AvatarDeco = Literal["plain", "gradient", "waves", "notes"]
+
+# Face drawn on the drop
+AvatarFace = Literal["none", "smile", "wink", "shades", "closed", "stars"]
+
+# Animated aura around the avatar, on the profiles. Every aura but "none" is premium
+AvatarAura = Literal[
+    "none", "halo", "bolts", "chain", "sparkles", "staff", "rasta", "equalizer", "smoke", "rain",
+]
 
 
 class ProfileDropOut(BaseModel):
@@ -48,6 +65,10 @@ class ProfileOut(BaseModel):
     created_at: datetime
     avatar_color: str
     avatar_style: str
+    avatar_drop: str
+    avatar_deco: str
+    avatar_face: str
+    avatar_aura: str
     stats: StatsOut
     # The drop online today, or null
     current_drop: ProfileDropOut | None = None
@@ -77,5 +98,10 @@ class ProfileUpdate(BaseModel):
     display_name: str | None = Field(default=None, max_length=30)
     # One of the 5 background colors
     avatar_color: AvatarColor | None = None
-    # One of the 7 drop styles
+    # One of the 9 drop styles
     avatar_style: AvatarStyle | None = None
+    # Color of the drop, background decoration, face and aura
+    avatar_drop: AvatarDrop | None = None
+    avatar_deco: AvatarDeco | None = None
+    avatar_face: AvatarFace | None = None
+    avatar_aura: AvatarAura | None = None

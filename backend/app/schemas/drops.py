@@ -44,5 +44,10 @@ class DropLikerOut(BaseModel):
     display_name: str | None = None
     avatar_color: str
     avatar_style: str
+    # Cosmetics: color of the drop, background decoration, face and aura
+    avatar_drop: str = "night"
+    avatar_deco: str = "plain"
+    avatar_face: str = "none"
+    avatar_aura: str = "none"
     # True: the like was a pick (up swipe or star button)
     is_pick: bool

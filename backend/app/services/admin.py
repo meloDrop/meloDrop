@@ -54,7 +54,17 @@ def set_email(db: Session, user_id: int, new_email: str) -> User:
 def update_user_profile(db: Session, user_id: int, changes: ProfileUpdate) -> ProfileOut:
     """Change the display name or the avatar of a user, with the rules of PATCH /me/profile."""
     user = find_user(db, user_id)
-    return update_profile(db, user, changes)
+    # The admin can set any cosmetic, even a premium one
+    return update_profile(db, user, changes, check_lock=False)
+
+
+def set_subscriber(db: Session, user_id: int, is_subscriber: bool) -> User:
+    """Give or take back the subscription: it unlocks the premium cosmetics."""
+    user = find_user(db, user_id)
+    user.is_subscriber = is_subscriber
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def verify_email(db: Session, user_id: int) -> User:

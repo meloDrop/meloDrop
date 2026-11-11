@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import current_user
-from app.exceptions import UserNotFoundError
+from app.exceptions import PremiumRequiredError, UserNotFoundError
 from app.schemas import profile as schemas
 from app.services import profile as services
 from app.models.user import User
@@ -64,7 +64,8 @@ me_router = APIRouter(prefix="/me/profile", tags=["profile"])
     response_model=schemas.ProfileOut,
     responses={
         200: {"description": "Profile updated, sent back with the changes"},
-        422: {"description": "Display name longer than 30 characters, or unknown avatar color or style"},
+        403: {"description": "Premium drop or aura, and the user has no subscription"},
+        422: {"description": "Display name longer than 30 characters, or unknown avatar choice"},
     },
 )
 def update_profile(
@@ -73,4 +74,7 @@ def update_profile(
     db: Session = Depends(get_db),
 ):
     """Change the logged-in user's display name and avatar. A field left out stays the same."""
-    return services.update_profile(db, user, body)
+    try:
+        return services.update_profile(db, user, body)
+    except PremiumRequiredError as e:
+        raise HTTPException(status_code=403, detail=str(e))

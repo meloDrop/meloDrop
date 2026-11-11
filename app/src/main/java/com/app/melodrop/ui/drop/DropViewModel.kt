@@ -40,6 +40,8 @@ data class DropUiState(
     val myDrop: MyDropOut? = null,
     // True right after posting: the screen says "C'est en ligne !"
     val justDropped: Boolean = false,
+    // True right after a drop, until the screen starts the rain of drops: it plays once
+    val playRain: Boolean = false,
     // Step 1: search
     val query: String = "",
     val isSearching: Boolean = false,
@@ -153,6 +155,11 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
         uiState = uiState.copy(selectedTrack = track, submitError = null)
     }
 
+    // The screen started the rain: it must not start again
+    fun rainPlayed() {
+        uiState = uiState.copy(playRain = false)
+    }
+
     // "Changer de titre" or back button: back to the results
     fun clearSelection() {
         uiState = uiState.copy(selectedTrack = null, submitError = null)
@@ -178,6 +185,7 @@ class DropViewModel(application: Application) : AndroidViewModel(application) {
                     results = emptyList(),
                     myDrop = myDrop,
                     justDropped = true,
+                    playRain = true,
                 )
             } catch (e: HttpException) {
                 // 409: a drop is already online, the screen will show it

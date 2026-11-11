@@ -6,6 +6,9 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
@@ -120,6 +124,8 @@ fun DropScreen(
     // Right after a drop: ask for notifications, so the user gets the reminder
     // 15 min before it expires. Only Android 13+ needs to ask
     LaunchedEffect(viewModel.uiState.justDropped) {
+        // After the rain of drops: the Android window must not cover it
+        if (viewModel.uiState.justDropped) delay(RAIN_MS.toLong())
         if (viewModel.uiState.justDropped &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
@@ -144,6 +150,7 @@ fun DropScreen(
         onRefresh = viewModel::loadMyDrop,
         onMyDropPlayClick = viewModel::toggleMyDropPreview,
         onLikersClick = { showPicks -> likersTab = showPicks },
+        onRainPlayed = viewModel::rainPlayed,
     )
 
     // Who liked and who picked the drop of the day, opened from its counters
@@ -209,10 +216,17 @@ private fun DropContent(
     onMyDropPlayClick: () -> Unit,
     // Tap on the likes or picks counter: false = Likes tab, true = Picks tab
     onLikersClick: (Boolean) -> Unit = {},
+    // The rain of drops has started: the ViewModel forgets it, so it plays once
+    onRainPlayed: () -> Unit = {},
 ) {
+    // Rain of pastel drops, right after a drop
+    val rain = rememberDropRain(play = uiState.playRain, onStart = onRainPlayed)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Before the padding: the rain uses the whole screen
+            .dropRain(rain)
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -234,6 +248,8 @@ private fun DropContent(
             myDrop != null -> MyDropView(
                 drop = myDrop,
                 justDropped = uiState.justDropped,
+                // Shown after the big drop of the rain, with a small bounce
+                appearAfterRain = uiState.playRain,
                 isPlaying = uiState.isPlaying && uiState.playingSongId == myDrop.songId,
                 previewError = uiState.previewError,
                 onPlayClick = onMyDropPlayClick,
@@ -417,6 +433,8 @@ private fun ConfirmStep(
 private fun MyDropView(
     drop: MyDropOut,
     justDropped: Boolean,
+    // True right after a drop: the view waits for the big drop of the rain, then pops in
+    appearAfterRain: Boolean,
     isPlaying: Boolean,
     previewError: String?,
     onPlayClick: () -> Unit,
@@ -434,9 +452,25 @@ private fun MyDropView(
     val expiresAt = OffsetDateTime.parse(drop.expiresAt).toInstant()
     val minutesLeft = Duration.between(now, expiresAt).toMinutes()
 
+    // 0 = hidden, 1 = shown. remember keeps the first value: only a new drop starts at 0
+    val appear = remember { Animatable(if (appearAfterRain) 0f else 1f) }
+    LaunchedEffect(Unit) {
+        if (appear.value < 1f) {
+            delay(RAIN_LANDING_MS)
+            // A soft spring: goes a little past 1, then comes back
+            appear.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow))
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .graphicsLayer {
+                alpha = appear.value.coerceIn(0f, 1f)
+                // Grows from 86 % of its size
+                scaleX = 0.86f + 0.14f * appear.value
+                scaleY = 0.86f + 0.14f * appear.value
+            }
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),

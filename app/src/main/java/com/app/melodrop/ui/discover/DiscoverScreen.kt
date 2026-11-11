@@ -3,10 +3,16 @@ package com.app.melodrop.ui.discover
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -40,9 +46,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,6 +67,7 @@ import com.app.melodrop.network.dto.FeedItem
 import com.app.melodrop.ui.components.MeloDropTitle
 import com.app.melodrop.ui.people.SongPeopleSheet
 import com.app.melodrop.ui.theme.Butter
+import com.app.melodrop.ui.theme.Lavender
 import com.app.melodrop.ui.theme.MeloDropTheme
 import com.app.melodrop.ui.theme.Mint
 import com.app.melodrop.ui.theme.Night
@@ -70,6 +81,7 @@ import com.app.melodrop.ui.whatsnew.WhatsNewSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.pow
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.BoxWithConstraints
 
@@ -81,6 +93,17 @@ private const val MAX_TILT = 12f
 
 // Time for the card to fly off the screen (ms)
 private const val FLY_OUT_MS = 250
+
+// Size of the card waiting behind the one on top. A new card on top starts from this size
+private const val NEXT_CARD_SCALE = 0.95f
+
+// The new card on top grows past its size, then settles (ms)
+private const val CARD_IN_MS = 420
+private const val CARD_IN_PEAK_MS = 250
+
+// Empty feed: size of the slow waves, and the time for one wave to open (ms)
+private val EMPTY_WAVES_SIZE = 140.dp
+private const val EMPTY_WAVE_MS = 2700
 
 // Size of the three round buttons under the card
 private val CHOICE_BUTTON_SIZE = 64.dp
@@ -109,8 +132,8 @@ private val TOUCH_POINT_SIZE = 44.dp
 private const val SHORT_HINT = "← Passer    ↑ Pick    Liker →"
 
 // The three choices on a card. Each one sends the card a different way:
-// skip to the left, like to the right, pick to the top
-private enum class Choice { SKIP, LIKE, PICK }
+// skip to the left, like to the right, pick to the top. Also used by ChoiceEffects
+internal enum class Choice { SKIP, LIKE, PICK }
 
 // Connects the screen to its ViewModel
 @Composable
@@ -225,9 +248,14 @@ private fun DiscoverContent(
     // Tutorial only: the card shows the three swipes by itself
     demoSwipes: Boolean = false,
 ) {
+    // Waves, hearts and stars of the choices, drawn over the whole screen
+    val effects = rememberChoiceEffects()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Before the padding: the effects can use the whole screen
+            .choiceEffects(effects)
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -297,10 +325,12 @@ private fun DiscoverContent(
                     text = "Tu as fait le tour. Reviens plus tard, de nouveaux titres sont déposés chaque jour.",
                     buttonLabel = "ACTUALISER",
                     onClick = onRefresh,
+                    showWaves = true,
                 )
 
                 else -> DropDeck(
                     uiState = uiState,
+                    effects = effects,
                     onSwiped = onSwiped,
                     onPicked = onPicked,
                     onPlayPause = onPlayPause,
@@ -317,6 +347,8 @@ private fun DiscoverContent(
 @Composable
 private fun DropDeck(
     uiState: DiscoverUiState,
+    // Plays the effect of each choice
+    effects: ChoiceEffectsState,
     onSwiped: (FeedItem, Boolean) -> Unit,
     onPicked: (FeedItem) -> Unit,
     onPlayPause: () -> Unit,
@@ -328,18 +360,24 @@ private fun DropDeck(
     val drops = uiState.drops
     val top = drops.first()
     // First message found wins: swipe problem, then preview problem,
-    // then the pick confirmation, then the hint
+    // then the confirmation of the last choice, then the hint
     val message = uiState.swipeError ?: uiState.previewError
+    val notice = uiState.notice
     val hint = when {
         message != null -> message
-        uiState.justPicked -> "Ajouté à Mes picks"
+        notice != null -> notice.text
         else -> "Glisse à droite pour Liker, à gauche pour Passer\nVers le haut pour un Pick : une découverte qui te plaît"
     }
     val hintColor = when {
         message != null -> MaterialTheme.colorScheme.error
-        uiState.justPicked -> Butter
+        // Same color as the button of the choice
+        notice == ChoiceNotice.PICKED -> Butter
+        notice == ChoiceNotice.LIKED || notice == ChoiceNotice.LIKED_AGAIN -> Mint
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
+
+    // Pixels in one dp: the effects are placed with it
+    val density = LocalDensity.current.density
 
     val scope = rememberCoroutineScope()
     // Shift of the card on top in pixels (0 = centered): across, and up or down.
@@ -381,6 +419,8 @@ private fun DropDeck(
     val flyOut: (Choice) -> Unit = { choice ->
         if (!isLeaving) {
             isLeaving = true
+            // The waves start with the card: they go on over the next one
+            effects.play(choice, density)
             scope.launch {
                 try {
                     // Far enough to leave the screen: left, right or up
@@ -410,7 +450,10 @@ private fun DropDeck(
             verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp),
         ) {
             Box(
-                modifier = Modifier.weight(1f, fill = false),
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    // Middle of the card at rest: the effects of a pick start there
+                    .onGloballyPositioned { effects.card = it.boundsInRoot().center },
                 contentAlignment = Alignment.Center,
             ) {
                 // Next card: a bit smaller, seen when the top one moves away
@@ -418,8 +461,8 @@ private fun DropDeck(
                     DropCard(
                         drop = next,
                         modifier = Modifier.graphicsLayer {
-                            scaleX = 0.95f
-                            scaleY = 0.95f
+                            scaleX = NEXT_CARD_SCALE
+                            scaleY = NEXT_CARD_SCALE
                         },
                     )
                 }
@@ -459,6 +502,8 @@ private fun DropDeck(
                     enabled = !isLeaving,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     onClick = { flyOut(Choice.SKIP) },
+                    // Middle of the button: the wave of a skip starts there
+                    modifier = Modifier.onGloballyPositioned { effects.skipButton = it.boundsInRoot().center },
                 )
                 ChoiceButton(
                     iconRes = R.drawable.ic_star,
@@ -481,12 +526,14 @@ private fun DropDeck(
                     buttonSize = CHOICE_BUTTON_SIZE,
                     enabled = !isLeaving,
                     onClick = { flyOut(Choice.LIKE) },
+                    // Middle of the button: the waves and the hearts of a like start there
+                    modifier = Modifier.onGloballyPositioned { effects.likeButton = it.boundsInRoot().center },
                 )
             }
 
             Text(
                 // Short screen: the usual hint is replaced by its one-line version
-                text = if (isCompact && message == null && !uiState.justPicked) SHORT_HINT else hint,
+                text = if (isCompact && message == null && notice == null) SHORT_HINT else hint,
                 style = MaterialTheme.typography.bodySmall,
                 color = hintColor,
                 textAlign = TextAlign.Center,
@@ -517,6 +564,18 @@ private fun SwipeableDropCard(
     showTouchPoint: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
+
+    // A new card on top comes forward from the stack, with a small bounce
+    val enterScale = remember { Animatable(NEXT_CARD_SCALE) }
+    LaunchedEffect(Unit) {
+        enterScale.animateTo(
+            targetValue = 1f,
+            animationSpec = keyframes {
+                durationMillis = CARD_IN_MS
+                1.04f at CARD_IN_PEAK_MS
+            },
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -568,6 +627,8 @@ private fun SwipeableDropCard(
                 translationY = offsetY.value
                 // Tilts toward a side swipe, like a card held by its bottom
                 rotationZ = MAX_TILT * offsetX.value / (width * SWIPE_THRESHOLD)
+                scaleX = enterScale.value
+                scaleY = enterScale.value
             },
     ) {
         DropCard(
@@ -700,11 +761,16 @@ private fun FeedMessage(
     text: String,
     buttonLabel: String,
     onClick: () -> Unit,
+    // Empty feed: slow waves above the title
+    showWaves: Boolean = false,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (showWaves) {
+            EmptyFeedWaves()
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
@@ -719,6 +785,36 @@ private fun FeedMessage(
         Button(onClick = onClick) {
             Text(buttonLabel)
         }
+    }
+}
+
+// Empty feed: lavender waves that open slowly around a dot, again and again
+@Composable
+private fun EmptyFeedWaves() {
+    // Goes from 0 to 1, then starts again, forever
+    val transition = rememberInfiniteTransition(label = "empty feed waves")
+    val turn by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(EMPTY_WAVE_MS, easing = LinearEasing)),
+        label = "wave",
+    )
+
+    Canvas(modifier = Modifier.size(EMPTY_WAVES_SIZE)) {
+        val maxRadius = size.minDimension / 2f
+        // Three waves, a third of a turn apart
+        for (index in 0 until 3) {
+            val progress = (turn + index / 3f) % 1f
+            // Fast at first, then slower, thinner and paler as it grows
+            val eased = 1f - (1f - progress).pow(3)
+            drawCircle(
+                color = Lavender.copy(alpha = 1f - progress),
+                radius = maxRadius * eased,
+                style = Stroke(width = (2.5f * (1f - progress) + 0.5f) * density),
+            )
+        }
+        // The dot in the middle
+        drawCircle(color = Lavender, radius = 7.dp.toPx())
     }
 }
 

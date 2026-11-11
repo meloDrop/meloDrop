@@ -34,6 +34,7 @@ import com.app.melodrop.ui.components.GenreChip
 import com.app.melodrop.ui.components.PastelGradient
 import com.app.melodrop.ui.components.PlayPauseButton
 import com.app.melodrop.ui.theme.MeloDropTheme
+import com.app.melodrop.ui.theme.Mint
 import com.app.melodrop.ui.tutorial.TutorialTarget
 import com.app.melodrop.ui.tutorial.tutorialTarget
 import androidx.compose.foundation.shape.CircleShape
@@ -130,6 +131,26 @@ fun DropCard(
                                 Text(
                                     text = "Abonné",
                                     color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                )
+                            }
+                        }
+
+                        // Song already in "Mes likes", dropped again: marked in the bottom left corner
+                        if (drop.alreadyLiked) {
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(if (isSmall) 8.dp else 12.dp),
+                                shape = CircleShape,
+                                // Same dark background as the genre: readable on any cover
+                                color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+                            ) {
+                                Text(
+                                    // Shorter on a small cover, so it fits next to the play button
+                                    text = if (isSmall) "Déjà liké" else "Déjà dans tes likes",
+                                    color = Mint,
                                     style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 )
@@ -298,6 +319,7 @@ private fun DropCardPreview() {
                 authorUsername = "elliot",
                 savesCount = 3,
                 isFollowed = true,
+                alreadyLiked = true,
             ),
             isPlaying = false,
             onPlayPause = {},

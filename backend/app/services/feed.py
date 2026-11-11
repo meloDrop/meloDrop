@@ -25,15 +25,22 @@ SKIPPED_DAYS = 7
 
 
 def hidden_song_ids(db: Session, user_id: int) -> set[int]:
-    """Songs the feed never shows to the user.
+    """Songs the feed does not show to the user right now.
 
-    - already in "Mes likes": the user knows them, the card would come back for nothing;
+    - liked or picked on a drop still online: the card comes back once these drops expire,
+      if someone drops the song again (it then shows "Déjà dans tes likes");
     - skipped in the last 7 days: they stay in "Mes skips", where a mistake can be fixed;
     - dropped by the user and still online: the user is one of the droppers.
     """
     now = utc_now()
 
-    liked = db.scalars(select(LikedSong.song_id).where(LikedSong.user_id == user_id))
+    # Songs liked on a drop still online. A song in "Mes likes" is not hidden for good:
+    # a new drop of it gets the same chance as the others
+    liked = db.scalars(
+        select(Drop.song_id)
+        .join(Save, Save.drop_id == Drop.id)
+        .where(Save.user_id == user_id, Drop.expires_at > now)
+    )
 
     skipped = db.scalars(
         select(Drop.song_id)
@@ -48,6 +55,11 @@ def hidden_song_ids(db: Session, user_id: int) -> set[int]:
     return set(liked) | set(skipped) | set(my_drops)
 
 
+def liked_song_ids(db: Session, user_id: int) -> set[int]:
+    """Songs in the user's "Mes likes": their card shows "Déjà dans tes likes"."""
+    return set(db.scalars(select(LikedSong.song_id).where(LikedSong.user_id == user_id)))
+
+
 def count_likers(db: Session, drop_ids: list[int]) -> int:
     """Number of users who liked at least one of these drops, picks included."""
     return (
@@ -57,10 +69,11 @@ def count_likers(db: Session, drop_ids: list[int]) -> int:
     )
 
 
-def build_item(db: Session, drops: list[Drop], followed: set[int]) -> FeedItem:
+def build_item(db: Session, drops: list[Drop], followed: set[int], liked: set[int]) -> FeedItem:
     """Build the card of a song from its drops not seen yet, the oldest drop first.
 
     followed: ids of the users followed by the logged-in user.
+    liked: ids of the songs in the user's "Mes likes".
     """
     song = db.get(Song, drops[0].song_id)
 
@@ -87,6 +100,7 @@ def build_item(db: Session, drops: list[Drop], followed: set[int]) -> FeedItem:
         saves_count=count_likers(db, [drop.id for drop in drops]),
         is_followed=first.user_id in followed,
         droppers=droppers,
+        already_liked=song.id in liked,
     )
 
 
@@ -133,8 +147,11 @@ def get_feed(db: Session, user_id: int, follows_first: bool = True) -> list[Feed
         # sort keeps the random order inside each part
         songs.sort(key=lambda song_drops: not any(drop.user_id in followed for drop in song_drops))
 
+    # Songs already in "Mes likes": a new drop of them comes back, with "Déjà dans tes likes"
+    liked = liked_song_ids(db, user_id)
+
     # Turn each song into a feed card
     items = []
     for song_drops in songs[:FEED_SIZE]:
-        items.append(build_item(db, song_drops, followed))
+        items.append(build_item(db, song_drops, followed, liked))
     return items

@@ -158,8 +158,11 @@ def get_feed(db: Session, user_id: int, now: datetime) -> list[dict]:
           AND d.user_id <> :id
           AND d.id NOT IN (SELECT drop_id FROM saves WHERE user_id = :id)
           AND d.id NOT IN (SELECT drop_id FROM skips WHERE user_id = :id)
-          -- Songs hidden: in "Mes likes", skipped lately, or dropped by the user and still online
-          AND d.song_id NOT IN (SELECT song_id FROM liked_songs WHERE user_id = :id)
+          -- Songs hidden: liked on a drop still online, skipped lately, or dropped by the user and still online
+          AND d.song_id NOT IN (
+              SELECT d3.song_id FROM saves AS sv3 JOIN drops AS d3 ON d3.id = sv3.drop_id
+              WHERE sv3.user_id = :id AND d3.expires_at > :now
+          )
           AND d.song_id NOT IN (
               SELECT d2.song_id FROM skips AS sk2 JOIN drops AS d2 ON d2.id = sk2.drop_id
               WHERE sk2.user_id = :id AND sk2.created_at >= :skipped_since

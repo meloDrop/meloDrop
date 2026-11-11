@@ -29,3 +29,6 @@ class FeedItem(BaseModel):
     # Everyone who dropped the song and is online now: the followed users first,
     # then from the first drop to the last one
     droppers: list[UserBriefOut] = []
+    # True when the song is already in the user's "Mes likes": someone dropped it again.
+    # A like still counts for the new droppers, and the song is not added twice
+    already_liked: bool = False

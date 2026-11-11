@@ -3,6 +3,27 @@
 All notable changes to Melodrop are documented in this file.
 
 
+## [0.10.0] - 2026-11-11
+
+### Added
+- Animations in Discover. A pick sends big waves from the card, a star, stars, the word "PICK" and a yellow flash. A like sends two waves from its button, a heart and hearts. A skip sends a grey wave and streaks to the left. The next card comes forward with a small bounce, and the empty feed shows slow waves.
+- A rain of pastel drops on the Drop screen right after a drop. A big drop with the stripes of the logo falls last, and the drop of the day appears with its waves.
+- "Déjà dans tes likes" on a Discover card when the song is already in "Mes likes".
+- A short message under the buttons of Discover after each choice: "Ajouté à Mes likes", "Ajouté à Mes picks", "Passé, à retrouver dans Mes skips", or "Déjà dans tes likes : like compté".
+- Avatar cosmetics: 11 drop colors (Nuit, Crème, the 5 pastels, and the premium Océan, Prune, Or and Spectre), 4 background decorations, 6 faces, two new styles (Jazz with a vintage microphone, Lo-fi with a beanie), and 9 animated auras shown around the avatar on the profiles, in the user lists (search, followers, likes, droppers) and on the Discover cards. The edit screen shows each choice on the user's own avatar, with a lock on the premium ones when they are locked.
+- The avatar of the dropper on the Discover card, with its aura, next to "Déposé par". With several droppers, up to 3 small avatars show next to the line.
+- Subscriber status: given or taken back from the dashboard ("Abonnement" in the account dialog, "abonné" in the user list). A subscriber gets the premium drops and the auras.
+- Backend: `avatar_drop`, `avatar_deco`, `avatar_face` and `avatar_aura` in the profile, the user lists and `PATCH /me/profile`; `is_subscriber` and `premium_unlocked` in `GET /me`; `PATCH /admin/users/{user_id}/subscriber`; `PREMIUM_LOCKED` setting (false during the test phase); 5 columns in `users` (Alembic migration). A new premium choice gets a 403 when the cosmetics are locked and the user has no subscription; a premium choice already saved is kept.
+
+### Changed
+- The avatar is more detailed: the drop has volume, reflections and a soft shadow, the light drops have an outline, and every accessory has more details and a dark outline.
+- New edit profile screen: a bigger avatar at the top with its aura, the name edited with a pencil, and the choices in 5 tabs (Style, Couleur, Fond, Visage, Aura). Only the choices of the open tab scroll, and the save button stays at the bottom.
+- A song in "Mes likes" comes back in Discover when someone drops it again, with the same chance as the other cards. It stays hidden while one of the drops the user liked it on is still online. A new like counts only for the drops not liked yet, and the song is not added twice to "Mes likes".
+- After a first drop, the notification window of Android waits for the end of the rain.
+- The texts of the "Nouveautés" sheet present version 0.10.0.
+- The feed view of the admin dashboard follows the new rule.
+
+
 ## [0.9.1] - 2026-11-08
 
 ### Changed

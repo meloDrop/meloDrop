@@ -2,6 +2,27 @@
 
 Toutes les modifications notables apportées à Melodrop sont documentées dans ce fichier.
 
+## [0.10.0] - 11-11-2026
+
+### Ajouté
+- Animations dans Discover. Un pick envoie de grandes ondes depuis la carte, une étoile, des étoiles, le mot « PICK » et un flash jaune. Un like envoie deux ondes depuis son bouton, un cœur et des cœurs. Un skip envoie une onde grise et des traînées vers la gauche. La carte suivante avance avec un petit rebond, et le fil vide affiche des ondes lentes.
+- Une pluie de gouttes pastel sur l'écran Drop juste après un drop. Une grande goutte aux bandes du logo tombe en dernier, et le drop du jour apparaît avec ses ondes.
+- « Déjà dans tes likes » sur une carte Discover quand le titre est déjà dans « Mes likes ».
+- Un petit message sous les boutons de Discover après chaque choix : « Ajouté à Mes likes », « Ajouté à Mes picks », « Passé, à retrouver dans Mes skips », ou « Déjà dans tes likes : like compté ».
+- Cosmétiques de l'avatar : 11 couleurs de goutte (Nuit, Crème, les 5 pastels, et les payantes Océan, Prune, Or et Spectre), 4 décors du fond, 6 expressions, deux nouveaux styles (Jazz avec un micro vintage, Lo-fi avec un bonnet), et 9 auras animées autour de l'avatar sur les profils, dans les listes d'utilisateurs (recherche, abonnés, likes, droppers) et sur les cartes Discover. L'écran de modification montre chaque choix sur l'avatar de l'utilisateur, avec un cadenas sur les options payantes quand elles sont verrouillées.
+- L'avatar du droppeur sur la carte Discover, avec son aura, à côté de « Déposé par ». Avec plusieurs droppeurs, jusqu'à 3 petits avatars s'affichent à côté de la ligne.
+- Statut abonné : donné ou retiré depuis le dashboard (« Abonnement » dans la fenêtre du compte, « abonné » dans la liste des utilisateurs). Un abonné accède aux gouttes payantes et aux auras.
+- Backend : `avatar_drop`, `avatar_deco`, `avatar_face` et `avatar_aura` dans le profil, les listes d'utilisateurs et `PATCH /me/profile` ; `is_subscriber` et `premium_unlocked` dans `GET /me` ; `PATCH /admin/users/{user_id}/subscriber` ; réglage `PREMIUM_LOCKED` (false pendant la phase de test) ; 5 colonnes dans `users` (migration Alembic). Un nouveau choix payant reçoit un 403 quand les cosmétiques sont verrouillés et que l'utilisateur n'est pas abonné ; un choix payant déjà enregistré est gardé.
+
+### Modifié
+- L'avatar est plus détaillé : la goutte a du volume, des reflets et une ombre douce, les gouttes claires ont un contour, et chaque accessoire a plus de détails et un contour sombre.
+- Nouvel écran de modification du profil : un avatar plus grand en haut avec son aura, le nom modifié avec un crayon, et les choix rangés dans 5 onglets (Style, Couleur, Fond, Visage, Aura). Seuls les choix de l'onglet ouvert défilent, et le bouton Enregistrer reste en bas.
+- Un titre de « Mes likes » revient dans Discover quand quelqu'un le redroppe, avec la même chance que les autres cartes. Il reste caché tant qu'un des drops sur lesquels l'utilisateur l'a liké est encore en ligne. Un nouveau like ne compte que pour les drops pas encore likés, et le titre n'est pas ajouté deux fois à « Mes likes ».
+- Après un premier drop, la fenêtre de notification d'Android attend la fin de la pluie.
+- Les textes de la feuille « Nouveautés » présentent la version 0.10.0.
+- La vue du fil dans le dashboard admin suit la nouvelle règle.
+
+
 ## [0.9.1] - 08-11-2026
 
 ### Modifié

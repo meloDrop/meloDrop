@@ -16,9 +16,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MeloDrop">
+        <!-- screenOrientation: the app stays in portrait, it does not turn sideways.
+             Android 16 and later ignore it on big screens (tablets, unfolded foldables) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.MeloDrop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

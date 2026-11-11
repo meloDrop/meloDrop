@@ -196,6 +196,7 @@ def get_users(db: Session) -> list[dict]:
     """Each user with their counters, the most recently active first."""
     rows = db.execute(text("""
         SELECT u.id, u.username, u.display_name, u.avatar_color, u.avatar_style, u.email, u.email_verified, u.created_at,
+               u.is_subscriber,
                (SELECT COUNT(*) FROM drops AS d WHERE d.user_id = u.id)       AS drops,
                (SELECT COUNT(*) FROM saves AS sv WHERE sv.user_id = u.id)     AS saves,
                (SELECT COUNT(*) FROM saves AS sv
@@ -233,6 +234,7 @@ def get_users(db: Session) -> list[dict]:
             "avatar_style": row["avatar_style"],
             "email": row["email"],
             "verified": bool(row["email_verified"]),
+            "is_subscriber": bool(row["is_subscriber"]),
             "created_at": iso(row["created_at"]),
             "drops": row["drops"],
             "saves": row["saves"],

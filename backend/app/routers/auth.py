@@ -15,6 +15,7 @@ from app.exceptions import (
 from app.models.user import User
 from app.schemas import auth as schemas
 from app.services import auth as services
+from app.services.profile import premium_unlocked
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -124,8 +125,10 @@ def reset_password(body: schemas.PasswordReset, db: Session = Depends(get_db)):
 
 @me_router.get("", response_model=schemas.MeOut)
 def get_me(user: User = Depends(current_user)):
-    """Return the logged-in account."""
-    return user
+    """Return the logged-in account, and whether its premium cosmetics are unlocked."""
+    me = schemas.MeOut.model_validate(user)
+    me.premium_unlocked = premium_unlocked(user)
+    return me
 
 
 @me_router.patch(

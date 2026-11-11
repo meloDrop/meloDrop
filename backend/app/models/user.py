@@ -19,6 +19,15 @@ class User(Base):
     # Avatar: a pastel background and a drop style, from closed lists
     avatar_color = Column(String(20), nullable=False, server_default="lavender")
     avatar_style = Column(String(20), nullable=False, server_default="simple")
+    # Cosmetics added later, also from closed lists. The defaults draw the first avatar:
+    # dark drop, plain background, no face, no aura
+    avatar_drop = Column(String(20), nullable=False, server_default="night")
+    avatar_deco = Column(String(20), nullable=False, server_default="plain")
+    avatar_face = Column(String(20), nullable=False, server_default="none")
+    avatar_aura = Column(String(20), nullable=False, server_default="none")
+    # True when the user has the subscription: the premium cosmetics are unlocked.
+    # Given from the dashboard for now
+    is_subscriber = Column(Boolean, nullable=False, server_default=text("0"))
     # "user" for everyone, "admin" for the app owner
     role = Column(String(20), nullable=False, server_default="user")
     created_at = Column(DateTime, server_default=func.now())

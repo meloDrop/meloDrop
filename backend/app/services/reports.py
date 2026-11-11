@@ -68,6 +68,10 @@ def public_user(user: User | None) -> ReportUserOut | None:
         display_name=user.display_name,
         avatar_color=user.avatar_color,
         avatar_style=user.avatar_style,
+        avatar_drop=user.avatar_drop,
+        avatar_deco=user.avatar_deco,
+        avatar_face=user.avatar_face,
+        avatar_aura=user.avatar_aura,
     )
 
 

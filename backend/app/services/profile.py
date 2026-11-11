@@ -4,7 +4,8 @@ from datetime import timezone
 
 from sqlalchemy.orm import Session
 
-from app.exceptions import UserNotFoundError
+from app.config import settings
+from app.exceptions import PremiumRequiredError, UserNotFoundError
 from app.models.drop import Drop
 from app.models.song import Song
 from app.models.user import User
@@ -19,6 +20,9 @@ from app.services.podium import get_podium
 
 # Number of past drops shown on a profile
 RECENT_DROPS_SIZE = 5
+
+# Drop colors that need the subscription once PREMIUM_LOCKED is true
+PREMIUM_DROPS = {"ocean", "plum", "gold", "spectre"}
 
 
 def build_drop(db: Session, drop: Drop) -> ProfileDropOut:
@@ -74,6 +78,10 @@ def get_profile(db: Session, user_id: int, viewer_id: int | None = None) -> Prof
         created_at=user.created_at.replace(tzinfo=timezone.utc),
         avatar_color=user.avatar_color,
         avatar_style=user.avatar_style,
+        avatar_drop=user.avatar_drop,
+        avatar_deco=user.avatar_deco,
+        avatar_face=user.avatar_face,
+        avatar_aura=user.avatar_aura,
         stats=get_stats(db, user.id),
         current_drop=current_drop,
         recent_drops=recent_drops,
@@ -109,8 +117,41 @@ def get_drops(db: Session, user_id: int) -> list[ProfileDropOut]:
     return all_drops
 
 
-def update_profile(db: Session, user: User, changes: ProfileUpdate) -> ProfileOut:
-    """Change the editable part of the user's own profile, then return the profile."""
+def premium_unlocked(user: User) -> bool:
+    """True when the user can pick the premium cosmetics.
+
+    Everything is free while PREMIUM_LOCKED is false (test phase),
+    then only the subscribers get the premium drops and the auras.
+    """
+    return not settings.PREMIUM_LOCKED or user.is_subscriber
+
+
+def check_premium(user: User, changes: ProfileUpdate) -> None:
+    """Refuse a new premium drop or aura when the user cannot pick them.
+
+    A premium choice the user already has is kept: a tester who chose it
+    before the lock can still save the rest of the profile.
+    """
+    if premium_unlocked(user):
+        return
+
+    new_drop = changes.avatar_drop
+    if new_drop in PREMIUM_DROPS and new_drop != user.avatar_drop:
+        raise PremiumRequiredError("premium_required")
+
+    new_aura = changes.avatar_aura
+    if new_aura is not None and new_aura != "none" and new_aura != user.avatar_aura:
+        raise PremiumRequiredError("premium_required")
+
+
+def update_profile(db: Session, user: User, changes: ProfileUpdate, check_lock: bool = True) -> ProfileOut:
+    """Change the editable part of the user's own profile, then return the profile.
+
+    check_lock: False for the dashboard, where the admin can set any cosmetic.
+    """
+    if check_lock:
+        check_premium(user, changes)
+
     # Only the fields sent are changed: None means "not sent"
     if changes.display_name is not None:
         # Spaces around the name are removed; an empty name gives back the username
@@ -126,6 +167,19 @@ def update_profile(db: Session, user: User, changes: ProfileUpdate) -> ProfileOu
 
     if changes.avatar_style is not None:
         user.avatar_style = changes.avatar_style
+
+    # The schema checked these lists too
+    if changes.avatar_drop is not None:
+        user.avatar_drop = changes.avatar_drop
+
+    if changes.avatar_deco is not None:
+        user.avatar_deco = changes.avatar_deco
+
+    if changes.avatar_face is not None:
+        user.avatar_face = changes.avatar_face
+
+    if changes.avatar_aura is not None:
+        user.avatar_aura = changes.avatar_aura
 
     db.commit()
     return get_profile(db, user.id, user.id)

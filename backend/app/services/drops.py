@@ -170,6 +170,10 @@ def get_drop_likers(db: Session, user_id: int, drop_id: int) -> list[DropLikerOu
                 display_name=user.display_name,
                 avatar_color=user.avatar_color,
                 avatar_style=user.avatar_style,
+                avatar_drop=user.avatar_drop,
+                avatar_deco=user.avatar_deco,
+                avatar_face=user.avatar_face,
+                avatar_aura=user.avatar_aura,
                 is_pick=is_pick,
             )
         )

@@ -15,7 +15,15 @@ class AdminUserOut(BaseModel):
     email: str
     email_verified: bool
     role: str
+    # True when the user has the subscription: premium cosmetics unlocked
+    is_subscriber: bool = False
     created_at: datetime
+
+
+class AdminSubscriberUpdate(BaseModel):
+    """Subscriber status given or taken back from the dashboard."""
+
+    is_subscriber: bool
 
 
 class AdminEmailUpdate(BaseModel):

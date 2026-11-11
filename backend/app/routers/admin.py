@@ -144,6 +144,26 @@ def set_email(
         raise HTTPException(status_code=409, detail=str(e))
 
 
+@router.patch(
+    "/users/{user_id}/subscriber",
+    response_model=schemas.AdminUserOut,
+    responses={
+        200: {"description": "Subscriber status changed"},
+        404: {"description": "No user with this id"},
+    },
+)
+def set_subscriber(
+    body: schemas.AdminSubscriberUpdate,
+    user_id: int = Path(description="meloDrop user id (id in GET /admin/users)"),
+    db: Session = Depends(get_db),
+):
+    """Give or take back the subscriber status: it unlocks the premium cosmetics."""
+    try:
+        return services.set_subscriber(db, user_id, body.is_subscriber)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.post(
     "/users/{user_id}/verify-email",
     response_model=schemas.AdminUserOut,

@@ -31,9 +31,18 @@ data class DiscoverUiState(
     val isPlaying: Boolean = false,
     // Short message when the preview of the card cannot be played
     val previewError: String? = null,
-    // True right after a pick: the hint under the buttons says "Ajouté à Mes picks"
-    val justPicked: Boolean = false
+    // Short confirmation under the buttons right after a choice, until the next one
+    val notice: ChoiceNotice? = null
 )
+
+// Confirmations shown under the buttons, after a like, a pick or a skip
+enum class ChoiceNotice(val text: String) {
+    LIKED("Ajouté à Mes likes"),
+    // The song was already in "Mes likes": the like counts for the new drop, no duplicate
+    LIKED_AGAIN("Déjà dans tes likes : like compté"),
+    PICKED("Ajouté à Mes picks"),
+    SKIPPED("Passé, à retrouver dans Mes skips"),
+}
 
 
 class DiscoverViewModel(application: Application) : AndroidViewModel(application) {
@@ -149,13 +158,22 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
         sendChoice(drop) {
             if (liked) repository.save(drop.id) else repository.skip(drop.id)
         }
+        // The hint under the buttons confirms it, until the next choice
+        val notice = when {
+            liked && drop.alreadyLiked -> ChoiceNotice.LIKED_AGAIN
+            liked -> ChoiceNotice.LIKED
+            // A song already in "Mes likes" does not show in "Mes skips"
+            drop.alreadyLiked -> null
+            else -> ChoiceNotice.SKIPPED
+        }
+        uiState = uiState.copy(notice = notice)
     }
 
     // Up swipe or Pick button: a like that also goes to "Mes picks"
     fun onPicked(drop: FeedItem) {
         sendChoice(drop) { repository.pick(drop.id) }
         // The hint under the buttons confirms it, until the next choice
-        uiState = uiState.copy(justPicked = true)
+        uiState = uiState.copy(notice = ChoiceNotice.PICKED)
     }
 
     // The card leaves at once, then the choice is sent to the backend.
@@ -166,7 +184,7 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
             drops = uiState.drops - drop,
             swipeError = null,
             previewError = null,
-            justPicked = false,
+            notice = null,
         )
         // The next card's preview takes over
         playTop()
@@ -179,7 +197,7 @@ class DiscoverViewModel(application: Application) : AndroidViewModel(application
             } catch (e: IOException) {
                 uiState = uiState.copy(
                     swipeError = "Pas de connexion : ce choix n'a pas été enregistré.",
-                    justPicked = false,
+                    notice = null,
                 )
             }
 

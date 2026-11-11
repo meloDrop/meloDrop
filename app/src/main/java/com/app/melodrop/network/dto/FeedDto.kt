@@ -24,5 +24,8 @@ data class FeedItem(
     @SerializedName("is_followed") val isFollowed: Boolean = false,
     // Everyone who dropped the song and is online: the followed users first.
     // Nullable: Gson leaves a missing list to null, whatever the default value
-    val droppers: List<UserBriefOut>? = null
+    val droppers: List<UserBriefOut>? = null,
+    // True when the song is already in "Mes likes": someone dropped it again.
+    // The card shows "Déjà dans tes likes", and a like counts for the new drop
+    @SerializedName("already_liked") val alreadyLiked: Boolean = false
 )

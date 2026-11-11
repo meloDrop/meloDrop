@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>meloDrop · Une chanson par jour</title>
-  <meta name="description" content="Une chanson par jour, choisie par quelqu'un, pas par un algorithme. meloDrop est en bêta test ouverte sur Android.">
+  <meta name="description" content="Une chanson par jour, choisie par quelqu'un, pas par un algorithme. meloDrop est une appli Android de découverte musicale, en bêta ouverte sur Google Play.">
   <meta name="theme-color" content="#0c0c10">
   <meta property="og:type" content="website">
   <meta property="og:title" content="meloDrop">
@@ -20,609 +20,1917 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- The page hides some elements until they appear on screen: only when JavaScript runs -->
+  <script>document.documentElement.classList.add("js");</script>
 
   <style>
+    /* ---------- Tokens: the colors of the app (ui/theme/Color.kt) ---------- */
     :root {
-      --bg: #0c0c10;
-      --text: #f4f2f8;
-      --muted: #a9a6b4;
-      --lavande: #b9a6ff;
-      --peche: #ffb48c;
-      --beurre: #ffe28f;
-      --menthe: #92e6c4;
-      --rose: #ffa3c8;
+      --night: #0c0c10;
+      --card: #18181f;
+      --card-2: #131319;
+      --line: #2a2a33;
+      --text: #f2f2f5;
+      --muted: #a3a1ae;
+      --lav: #b4a7f5;
+      --peach: #ffb38a;
+      --butter: #ffe08a;
+      --mint: #9ee0b8;
+      --rose: #f5a8c8;
+      --ink: #17142a;
+      --spectrum: linear-gradient(90deg, var(--rose), var(--peach) 30%, var(--butter) 52%, var(--mint) 74%, var(--lav));
+      --display: "Unbounded", system-ui, sans-serif;
+      --body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --wrap: 1140px;
+      --bounce: cubic-bezier(.34, 1.56, .64, 1);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { color-scheme: dark; }
-
+    html { color-scheme: dark; scroll-behavior: smooth; scroll-padding-top: 84px; overflow-x: clip; }
     body {
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
+      background: var(--night);
       color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.55;
-      overflow-x: hidden;
+      font-family: var(--body);
+      font-size: 1.0625rem;
+      line-height: 1.6;
+      overflow-x: clip;
       -webkit-font-smoothing: antialiased;
     }
+    img, video, svg { display: block; max-width: 100%; }
+    .pond, .ripples { max-width: none; }
+    a { color: inherit; }
+    button { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--lav); outline-offset: 3px; border-radius: 6px; }
 
-    /* Halos pastel en arrière-plan */
-    .aurora {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
+    .wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+    section { position: relative; z-index: 1; }
+    .section { padding: 120px 0; }
+
+    h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.02em; line-height: 1.08; }
+    h2 { font-size: clamp(1.85rem, 4.2vw, 2.9rem); max-width: 20ch; }
+    h3 { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+    .intro { margin-top: 18px; max-width: 54ch; color: var(--muted); font-size: 1.12rem; }
+    .muted { color: var(--muted); }
+
+    .wordmark { font-family: var(--display); font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+    .wordmark b {
+      font-weight: 700;
+      background: var(--spectrum);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
     }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 48px; padding: 12px 22px;
+      border-radius: 999px; border: 1px solid transparent;
+      font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer;
+      transition: transform .25s var(--bounce), background .2s, border-color .2s, box-shadow .25s;
+    }
+    .btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .btn-main { background: var(--lav); color: var(--ink); box-shadow: 0 10px 30px -10px rgba(180, 167, 245, .7); }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -12px rgba(180, 167, 245, .85); }
+    .btn-ghost { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .14); color: var(--text); }
+    .btn-ghost:hover { background: rgba(255, 255, 255, .1); transform: translateY(-2px); }
+    .btn:active { transform: translateY(0) scale(.97); }
+
+    /* ---------- Moving pastel halos (like the tabs of the app) ---------- */
+    .aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
     .aurora span {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(90px);
-      animation: drift 24s ease-in-out infinite alternate;
+      position: absolute; border-radius: 50%; filter: blur(100px);
+      transition: transform 2.4s cubic-bezier(.45, 0, .2, 1), opacity 2.4s;
+      will-change: transform;
     }
-    .aurora .a1 { width: 46vmax; height: 46vmax; top: -18vmax; left: -14vmax; background: var(--lavande); opacity: 0.30; }
-    .aurora .a2 { width: 38vmax; height: 38vmax; top: -12vmax; right: -16vmax; background: var(--rose); opacity: 0.22; animation-delay: -6s; }
-    .aurora .a3 { width: 40vmax; height: 40vmax; bottom: -24vmax; left: 18%; background: var(--peche); opacity: 0.18; animation-delay: -12s; }
-    .aurora .a4 { width: 30vmax; height: 30vmax; bottom: -12vmax; right: -8vmax; background: var(--menthe); opacity: 0.14; animation-delay: -18s; }
+    .aurora .h1 { width: 46vmax; height: 46vmax; left: -16vmax; top: -18vmax; background: var(--lav); opacity: .26; }
+    .aurora .h2 { width: 36vmax; height: 36vmax; right: -14vmax; top: -10vmax; background: var(--rose); opacity: .18; }
+    .aurora .h3 { width: 40vmax; height: 40vmax; left: 22%; bottom: -26vmax; background: var(--peach); opacity: .14; }
+    .aurora .h4 { width: 30vmax; height: 30vmax; right: -10vmax; bottom: -12vmax; background: var(--mint); opacity: .12; }
+    .aurora[data-scene="1"] .h1 { transform: translate(58vw, 8vh) scale(.8); }
+    .aurora[data-scene="1"] .h2 { transform: translate(-62vw, 30vh) scale(1.1); }
+    .aurora[data-scene="1"] .h3 { transform: translate(30vw, -14vh); }
+    .aurora[data-scene="1"] .h4 { transform: translate(-40vw, -50vh) scale(1.2); }
+    .aurora[data-scene="2"] .h1 { transform: translate(18vw, 52vh) scale(1.1); }
+    .aurora[data-scene="2"] .h2 { transform: translate(-10vw, 44vh) scale(.8); }
+    .aurora[data-scene="2"] .h3 { transform: translate(-36vw, -60vh) scale(1.1); }
+    .aurora[data-scene="2"] .h4 { transform: translate(-60vw, 4vh); }
+    .aurora[data-scene="3"] .h1 { transform: translate(64vw, 60vh) scale(.9); }
+    .aurora[data-scene="3"] .h2 { transform: translate(-30vw, 6vh) scale(1.2); }
+    .aurora[data-scene="3"] .h3 { transform: translate(-30vw, -20vh) scale(.9); }
+    .aurora[data-scene="3"] .h4 { transform: translate(-16vw, -64vh) scale(1.1); }
+    .aurora[data-scene="4"] .h1 { transform: translate(6vw, 30vh) scale(1.2); }
+    .aurora[data-scene="4"] .h2 { transform: translate(-48vw, 60vh); }
+    .aurora[data-scene="4"] .h3 { transform: translate(40vw, -46vh) scale(.8); }
+    .aurora[data-scene="4"] .h4 { transform: translate(-70vw, -30vh) scale(1.3); }
 
-    @keyframes drift {
-      from { transform: translate(0, 0) scale(1); }
-      to   { transform: translate(4vmax, 3vmax) scale(1.08); }
+    /* ---------- Navigation ---------- */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      transition: background .3s, border-color .3s, backdrop-filter .3s;
+      border-bottom: 1px solid transparent;
+    }
+    .nav.scrolled {
+      background: rgba(12, 12, 16, .72);
+      -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+      border-bottom-color: rgba(255, 255, 255, .07);
+    }
+    .nav-inner { display: flex; align-items: center; gap: 28px; height: 68px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 1.1rem; }
+    .brand svg { width: 26px; height: 29px; }
+    .nav-links { display: flex; gap: 4px; margin-left: auto; list-style: none; }
+    .nav-links a {
+      display: block; padding: 8px 12px; border-radius: 999px;
+      color: var(--muted); text-decoration: none; font-weight: 600; font-size: .95rem;
+      transition: color .2s, background .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--text); background: rgba(255, 255, 255, .07); }
+    .nav .btn { min-height: 40px; padding: 8px 18px; font-size: .92rem; }
+
+    /* ---------- Hero ---------- */
+    .hero { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 110px 0 70px; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); align-items: center; gap: 40px; }
+    .hero h1 { font-size: clamp(2.35rem, 5.4vw, 4.35rem); line-height: 1.04; }
+    .hero h1 .line { display: block; }
+    .hero h1 .soft { color: rgba(242, 242, 245, .5); }
+    .hero .lead { margin-top: 26px; max-width: 44ch; font-size: 1.18rem; color: var(--muted); }
+    .hero .lead strong { color: var(--text); font-weight: 600; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .facts { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 34px; list-style: none; color: var(--muted); font-size: .95rem; }
+    .facts li { display: flex; align-items: center; gap: 9px; }
+    .facts svg { width: 16px; height: 18px; flex-shrink: 0; }
+    .facts strong { color: var(--text); font-weight: 700; }
+
+    .hero-visual { position: relative; display: flex; flex-direction: column; align-items: center; }
+    .stage { position: relative; padding-bottom: 34px; }
+    .try { margin-top: 16px; color: var(--muted); font-size: .9rem; text-align: center; }
+
+    /* Rings under the phone, like the waves of the logo */
+    .pond { position: absolute; left: 50%; bottom: 0; width: 150%; height: 120px; transform: translateX(-50%); pointer-events: none; z-index: 0; }
+    .pond ellipse { fill: none; stroke: url(#pond-grad); stroke-linecap: round; transform-origin: 50% 50%; transform-box: fill-box; }
+    .pond .r1 { stroke-width: 2.5; opacity: .85; animation: ring 5s ease-in-out infinite; }
+    .pond .r2 { stroke-width: 2; opacity: .5; animation: ring 5s ease-in-out -1.6s infinite; }
+    .pond .r3 { stroke-width: 1.5; opacity: .28; animation: ring 5s ease-in-out -3.2s infinite; }
+    @keyframes ring { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+    .intro-drop { position: absolute; left: 50%; top: 0; width: 64px; margin-left: -32px; z-index: 3; opacity: 0; pointer-events: none; }
+    .splash { position: absolute; left: 50%; bottom: 40px; width: 40px; height: 12px; margin-left: -20px; border-radius: 50%; border: 2px solid var(--lav); opacity: 0; pointer-events: none; z-index: 0; }
+
+    /* ---------- Phone: Discover screen (sizes in em: the phone scales with its font-size) ---------- */
+    .phone {
+      --pfs: 16px;
+      position: relative; z-index: 1;
+      font-size: var(--pfs);
+      width: 18.75em; height: 39.5em; padding: .5em;
+      border-radius: 2.8em;
+      background: linear-gradient(160deg, #2b2a33, #15141a 40%, #1c1b22);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .09), 0 40px 80px -30px rgba(0, 0, 0, .9), 0 0 120px -40px rgba(180, 167, 245, .45);
+      user-select: none; -webkit-user-select: none;
+    }
+    .screen {
+      position: relative; width: 100%; height: 100%; overflow: hidden;
+      border-radius: 2.3em; background: var(--night);
+      display: flex; flex-direction: column;
+    }
+    .screen::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(60% 30% at 0% 0%, rgba(180, 167, 245, .22), transparent 70%),
+        radial-gradient(50% 30% at 100% 30%, rgba(245, 168, 200, .14), transparent 70%),
+        radial-gradient(60% 30% at 30% 100%, rgba(158, 224, 184, .12), transparent 70%);
+    }
+    .status { position: relative; display: flex; justify-content: space-between; align-items: center; height: 1.8em; padding: .25em 1.4em 0; font-size: .62em; font-weight: 600; color: #ddd; }
+    .status .cam { position: absolute; left: 50%; top: .55em; width: 1.4em; height: 1.4em; margin-left: -.7em; border-radius: 50%; background: #050507; }
+    .status-icons { display: flex; gap: .35em; align-items: center; }
+    .status-icons i { display: block; width: 1.1em; height: .7em; border-radius: .15em; background: #ddd; }
+    .status-icons i:first-child { width: .9em; clip-path: polygon(0 100%, 100% 0, 100% 100%); border-radius: 0; }
+    .app-head { position: relative; display: flex; align-items: center; justify-content: space-between; height: 2.6em; padding: 0 1em; }
+    .app-head .wordmark { font-size: 1.12em; }
+    .head-icons { display: flex; gap: .7em; color: var(--text); }
+    .head-icons svg { width: 1.15em; height: 1.15em; }
+    .chip-row { position: relative; height: 1.9em; padding: 0 1em; }
+    .chip { display: inline-flex; align-items: center; gap: .35em; padding: .22em .7em; border-radius: 999px; border: 1px solid rgba(180, 167, 245, .5); color: var(--lav); font-size: .62em; font-weight: 700; }
+    .chip::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: var(--lav); }
+
+    .deck { position: relative; height: 22em; margin: 0 .75em; }
+    .card {
+      position: absolute; inset: 0 0 auto 0;
+      padding: .7em; border-radius: 1.4em;
+      background: var(--card); border: 1px solid rgba(255, 255, 255, .06);
+      box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .8);
+      touch-action: none; cursor: grab; will-change: transform;
+      transform-origin: 50% 90%; z-index: 2;
+    }
+    @media (pointer: coarse) { .card { touch-action: pan-y; } }
+    .card.dragging { cursor: grabbing; }
+    .card.back { z-index: 1; transform: translateY(.7em) scale(.94); opacity: .55; pointer-events: none; }
+    .cover { position: relative; aspect-ratio: 1; border-radius: 1em; overflow: hidden; }
+    .cover .art { position: absolute; inset: 0; }
+    .cover .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, .25)); }
+    .genre { position: absolute; left: .6em; top: .6em; padding: .25em .65em; border-radius: 999px; background: rgba(12, 12, 16, .7); font-size: .58em; font-weight: 700; }
+    .play {
+      position: absolute; right: .6em; bottom: .6em; width: 2.3em; height: 2.3em;
+      display: grid; place-items: center; border: 0; border-radius: 50%;
+      background: var(--lav); color: var(--ink); cursor: pointer; font-size: 1em;
+    }
+    .play svg { width: .95em; height: .95em; }
+    .progress { position: absolute; left: 0; bottom: 0; height: .22em; width: 0; background: var(--butter); }
+    .card.playing .progress { animation: listen 30s linear forwards; }
+    @keyframes listen { to { width: 100%; } }
+    .eq { position: absolute; left: .7em; bottom: .7em; display: none; gap: .14em; align-items: flex-end; height: .9em; }
+    .card.playing .eq { display: flex; }
+    .eq i { display: block; width: .2em; background: #fff; border-radius: .1em; animation: eq .9s ease-in-out infinite; }
+    .eq i:nth-child(2) { animation-delay: -.3s; } .eq i:nth-child(3) { animation-delay: -.6s; }
+    @keyframes eq { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+    .meta { padding: .75em .25em .1em; }
+    .meta .title { font-size: 1em; font-weight: 600; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meta .artist { margin-top: .1em; font-size: .78em; color: var(--muted); }
+    .by { display: flex; align-items: center; justify-content: space-between; gap: .6em; margin-top: .7em; }
+    .by-who { display: flex; align-items: center; gap: .5em; min-width: 0; }
+    .by-who svg { width: 1.6em; height: 1.6em; flex-shrink: 0; }
+    .by-who small { display: block; font-size: .56em; color: var(--muted); line-height: 1.2; }
+    .by-who span { display: block; font-size: .7em; font-weight: 600; line-height: 1.25; }
+    .likes { font-size: .68em; font-weight: 700; color: var(--peach); white-space: nowrap; }
+    .stamp {
+      position: absolute; top: 1.5em; padding: .2em .55em; border-radius: .45em; border: .14em solid;
+      font-family: var(--display); font-weight: 700; font-size: 1.15em; opacity: 0; pointer-events: none;
+    }
+    .stamp.s-like { left: 1em; color: var(--mint); transform: rotate(-12deg); }
+    .stamp.s-skip { right: 1em; color: #c9c7d2; transform: rotate(12deg); }
+    .stamp.s-pick { left: 50%; top: 40%; color: var(--butter); transform: translateX(-50%); }
+
+    .choices { position: relative; display: flex; justify-content: center; align-items: center; gap: 1.3em; height: 4em; padding-top: .3em; }
+    .choice {
+      width: 3em; height: 3em; display: grid; place-items: center;
+      border-radius: 50%; border: 0; cursor: pointer; font-size: 1em;
+      transition: transform .2s var(--bounce);
+    }
+    .choice svg { width: 1.2em; height: 1.2em; }
+    .choice.skip { background: #24242d; color: #b9b7c4; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+    .choice.pick { background: var(--butter); color: var(--ink); transform: translateY(-.45em); }
+    .choice.like { background: var(--mint); color: var(--ink); }
+    .choice:hover { transform: scale(1.08); }
+    .choice.pick:hover { transform: translateY(-.45em) scale(1.08); }
+    .hint { position: relative; height: 2.4em; padding: 0 1.4em; text-align: center; font-size: .6em; line-height: 1.45; color: var(--muted); }
+    .hint .toast { position: absolute; inset: 0 1em; display: grid; place-items: center; font-weight: 700; font-size: 1.15em; color: var(--text); opacity: 0; }
+    .tabbar { position: relative; margin-top: auto; display: flex; justify-content: space-around; padding: .5em 1em 1.1em; border-top: 1px solid rgba(255, 255, 255, .05); }
+    .tabbar span { display: flex; flex-direction: column; align-items: center; gap: .35em; font-size: .52em; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+    .tabbar span::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: #5a5966; }
+    .tabbar .on { color: var(--butter); }
+    .tabbar .on::before { background: var(--butter); }
+    .gesture { position: absolute; left: 50%; bottom: .35em; width: 5.5em; height: .2em; margin-left: -2.75em; border-radius: 1em; background: #ddd; opacity: .85; }
+    .fx { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+    .fx > * { position: absolute; left: 0; top: 0; }
+    .finger {
+      position: absolute; z-index: 6; width: 2.4em; height: 2.4em; margin: -1.2em 0 0 -1.2em; border-radius: 50%;
+      background: rgba(255, 255, 255, .28); border: 2px solid rgba(255, 255, 255, .7);
+      box-shadow: 0 0 0 .5em rgba(255, 255, 255, .08); opacity: 0; pointer-events: none;
     }
 
-    main {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-      width: 100%;
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 48px 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
+    /* ---------- Marquee ---------- */
+    .band { position: relative; z-index: 1; padding: 22px 0; border-block: 1px solid rgba(255, 255, 255, .07); overflow: hidden; background: rgba(12, 12, 16, .4); }
+    .band-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
+    .band-track span { display: flex; align-items: center; gap: 28px; padding-right: 28px; font-family: var(--display); font-weight: 600; font-size: clamp(1.1rem, 2.4vw, 1.6rem); white-space: nowrap; }
+    .band-track svg { width: 20px; height: 22px; }
+    .band:hover .band-track { animation-play-state: paused; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
 
-    .logo {
-      width: 92px;
-      height: auto;
-      margin-bottom: 20px;
-    }
+    /* ---------- Concept: the loop against the ripple ---------- */
+    .versus { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 48px; }
+    .side { position: relative; padding: 30px; border-radius: 28px; overflow: hidden; }
+    .side.algo { background: rgba(255, 255, 255, .025); border: 1px solid rgba(255, 255, 255, .07); }
+    .side.human { background: linear-gradient(160deg, rgba(180, 167, 245, .14), rgba(245, 168, 200, .07) 50%, rgba(158, 224, 184, .08)); border: 1px solid rgba(180, 167, 245, .3); }
+    .side .where { font-weight: 700; font-size: .95rem; color: var(--muted); }
+    .side.human .where { color: var(--lav); }
+    .side h3 { margin-top: 6px; font-size: 1.45rem; }
+    .side p { margin-top: 10px; color: var(--muted); max-width: 40ch; }
+    .side svg.viz { width: 100%; height: 180px; margin-top: 22px; }
+    .loop-spin { transform-origin: 50% 50%; transform-box: view-box; animation: spin 7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .wave { transform-origin: 50% 50%; transform-box: fill-box; animation: spread 4.2s ease-out infinite; opacity: 0; }
+    .wave:nth-of-type(2) { animation-delay: 1.4s; } .wave:nth-of-type(3) { animation-delay: 2.8s; }
+    @keyframes spread { 0% { transform: scale(.15); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+    .bubble { animation: bob 4.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
-    h1 {
-      font-family: "Unbounded", system-ui, sans-serif;
-      font-weight: 700;
-      font-size: clamp(2.4rem, 8vw, 4rem);
-      line-height: 1.05;
-      letter-spacing: -0.02em;
+    /* ---------- Steps ---------- */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 56px; list-style: none; counter-reset: step; }
+    .step .ill {
+      position: relative; height: 210px; border-radius: 24px; overflow: hidden;
+      background: var(--card-2); border: 1px solid rgba(255, 255, 255, .07);
+      display: grid; place-items: center;
     }
+    .step-head { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
+    .num { position: relative; width: 34px; height: 38px; flex-shrink: 0; }
+    .num svg { width: 100%; height: 100%; }
+    .num b { position: absolute; inset: 9px 0 0; text-align: center; font-family: var(--display); font-size: .85rem; color: var(--ink); }
+    .step p { margin-top: 10px; color: var(--muted); max-width: 34ch; }
+    .note { display: flex; align-items: center; gap: 10px; margin-top: 40px; color: var(--muted); }
+    .note svg { width: 18px; height: 18px; color: var(--mint); flex-shrink: 0; }
 
-    .tagline {
-      margin-top: 14px;
-      max-width: 32ch;
-      font-size: clamp(1.05rem, 2.6vw, 1.25rem);
-      font-weight: 500;
-    }
+    /* Step 1: the 24 h ring */
+    .timer { position: relative; width: 132px; height: 132px; border-radius: 50%; display: grid; place-items: center;
+      background: conic-gradient(var(--peach) calc(var(--p, 0) * 1%), rgba(255, 255, 255, .06) 0); transition: --p 1.6s; }
+    .timer::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--card-2); }
+    .timer div { position: relative; text-align: center; }
+    .timer strong { display: block; font-family: var(--display); font-size: 1.5rem; }
+    .timer span { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .live { position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 7px; font-size: .78rem; font-weight: 700; color: var(--mint); }
+    .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--mint); animation: blink 1.6s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity: .25; } }
+    .mini-drop { position: absolute; top: 18px; right: 22px; width: 26px; animation: bob 3s ease-in-out infinite; }
 
-    .lead {
-      margin-top: 12px;
-      max-width: 46ch;
-      color: var(--muted);
+    /* Step 2: the card and its three directions */
+    .mini-card { width: 92px; height: 116px; border-radius: 14px; background: var(--card); border: 1px solid rgba(255, 255, 255, .1); padding: 8px; box-shadow: 0 12px 30px -12px #000; }
+    .mini-card i { display: block; aspect-ratio: 1; border-radius: 9px; background: linear-gradient(150deg, var(--lav), var(--rose) 60%, var(--peach)); }
+    .mini-card b { display: block; height: 6px; width: 70%; margin-top: 9px; border-radius: 3px; background: rgba(255, 255, 255, .5); }
+    .mini-card em { display: block; height: 5px; width: 45%; margin-top: 6px; border-radius: 3px; background: rgba(255, 255, 255, .22); }
+    .in .mini-card { animation: gestures 6s ease-in-out infinite; }
+    @keyframes gestures {
+      0%, 8%, 30%, 40%, 62%, 72%, 94%, 100% { transform: none; }
+      18% { transform: translateX(-44px) rotate(-10deg); }
+      51% { transform: translateY(-30px) scale(.96); }
+      84% { transform: translateX(44px) rotate(10deg); }
     }
+    .dir { position: absolute; font-size: .8rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); }
+    .dir.d-skip { left: 14px; top: 50%; translate: 0 -50%; color: #c9c7d2; }
+    .dir.d-pick { top: 14px; left: 50%; translate: -50% 0; color: var(--butter); }
+    .dir.d-like { right: 14px; top: 50%; translate: 0 -50%; color: var(--mint); }
+    .in .d-skip { animation: lit 6s infinite; } .in .d-pick { animation: lit 6s 2s infinite; } .in .d-like { animation: lit 6s 4s infinite; }
+    @keyframes lit { 0%, 33%, 100% { background: rgba(255, 255, 255, .05); } 10%, 22% { background: rgba(255, 255, 255, .16); } }
 
-    /* Bouton store */
-    .store { margin-top: 36px; }
+    /* Step 3: the list fills up */
+    .mini-list { width: 78%; display: grid; gap: 9px; }
+    .mini-tabs { display: flex; gap: 6px; margin-bottom: 4px; }
+    .mini-tabs span { padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: rgba(255, 255, 255, .06); color: var(--muted); }
+    .mini-tabs span:first-child { background: rgba(158, 224, 184, .18); color: var(--mint); }
+    .row { display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateX(24px); transition: opacity .5s, transform .6s var(--bounce); }
+    .in .row { opacity: 1; transform: none; }
+    .in .row:nth-child(3) { transition-delay: .25s; } .in .row:nth-child(4) { transition-delay: .5s; }
+    .row i { width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0; }
+    .row div { flex: 1; }
+    .row b { display: block; height: 6px; width: 80%; border-radius: 3px; background: rgba(255, 255, 255, .45); }
+    .row em { display: block; height: 5px; width: 50%; margin-top: 6px; border-radius: 3px; background: rgba(255, 255, 255, .18); }
+    .row svg { width: 16px; height: 16px; }
 
-    .store-btn {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 20px 12px 16px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: rgba(244, 242, 248, 0.45);
-      cursor: not-allowed;
-      user-select: none;
-    }
-    .store-btn svg { width: 24px; height: 24px; flex-shrink: 0; }
-    .store-btn .label {
-      display: flex;
-      flex-direction: column;
-      text-align: left;
-      line-height: 1.15;
-    }
-    .store-btn small {
-      font-size: 0.68rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    .store-btn strong {
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
+    /* ---------- And also: features + avatar editor ---------- */
+    .more { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); gap: 56px; align-items: center; margin-top: 52px; }
+    .features { list-style: none; display: grid; gap: 22px; }
+    .features li { display: grid; grid-template-columns: 22px 1fr; gap: 14px; }
+    .features svg { width: 18px; height: 21px; margin-top: 3px; }
+    .features strong { display: block; font-weight: 700; }
+    .features span { color: var(--muted); }
 
-    /* Style prévu pour le jour où le bouton devient un vrai lien */
-    a.store-btn {
-      color: var(--text);
-      background: rgba(185, 166, 255, 0.14);
-      border-color: rgba(185, 166, 255, 0.45);
-      text-decoration: none;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.2s;
-    }
-    a.store-btn:hover { background: rgba(185, 166, 255, 0.22); transform: translateY(-1px); }
+    .studio { padding: 34px 28px 28px; border-radius: 30px; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .08); text-align: center; }
+    .avatar-box { position: relative; width: 210px; height: 210px; margin: 0 auto; }
+    .avatar-box > svg { position: absolute; inset: 30px; width: 150px; height: 150px; transition: transform .45s var(--bounce); }
+    .avatar-box.pop > svg { transform: scale(1.08); }
+    .aura { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s; }
+    .aura.on { opacity: 1; }
+    .aura-halo { border-radius: 50%; background: conic-gradient(from 0deg, var(--lav), var(--rose), var(--peach), var(--butter), var(--mint), var(--lav)); filter: blur(14px); animation: spin 6s linear infinite; inset: 14px; mask: radial-gradient(circle, transparent 54%, #000 56%, #000 70%, transparent 72%); -webkit-mask: radial-gradient(circle, transparent 54%, #000 56%, #000 70%, transparent 72%); }
+    .aura-sparkles i { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; }
+    .aura-sparkles i::before { content: ""; position: absolute; inset: 0; background: currentColor; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: twinkle 1.8s ease-in-out var(--delay, 0s) infinite; }
+    .aura-sparkles { animation: spin 14s linear infinite; }
+    @keyframes twinkle { 0%, 100% { transform: scale(.4); opacity: .4; } 50% { transform: scale(1.1); opacity: 1; } }
+    .aura-rain i { position: absolute; top: 0; width: 7px; height: 9px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; animation: fall 1.6s linear infinite; opacity: 0; }
+    @keyframes fall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .9; } 85% { opacity: .9; } 100% { transform: translateY(190px); opacity: 0; } }
+    .aura-eq i { position: absolute; left: 50%; top: 50%; width: 6px; height: 20px; margin-left: -3px; border-radius: 3px; transform-origin: 50% 0; }
+    .aura-eq i::before { content: ""; position: absolute; inset: 0; border-radius: 3px; background: currentColor; transform-origin: 50% 0; animation: bar .8s ease-in-out var(--delay, 0s) infinite alternate; }
+    @keyframes bar { from { transform: scaleY(.3); } to { transform: scaleY(1.2); } }
+    .controls { display: grid; gap: 16px; margin-top: 24px; }
+    .control-label { font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+    .swatches, .pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2); transition: transform .2s var(--bounce); }
+    .swatch:hover { transform: scale(1.12); }
+    .swatch[aria-pressed="true"] { border-color: var(--text); transform: scale(1.12); }
+    .pill { padding: 6px 13px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .14); background: transparent; cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--muted); transition: background .2s, color .2s; }
+    .pill:hover { color: var(--text); }
+    .pill[aria-pressed="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
 
-    .badge {
-      margin-left: 4px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: var(--lavande);
-      color: #1a1530;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      box-shadow: 0 4px 14px rgba(185, 166, 255, 0.35);
-    }
-
-    /* Comment rejoindre la bêta */
-    .beta {
-      margin-top: 26px;
-      max-width: 34rem;
-      padding: 18px 22px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      text-align: left;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-    .beta strong { color: var(--text); }
-    .beta a {
-      color: var(--lavande);
-      font-weight: 600;
-      text-decoration: underline;
-      text-decoration-color: rgba(185, 166, 255, 0.45);
-      text-underline-offset: 3px;
-      overflow-wrap: anywhere;
-    }
-    .beta ol { margin: 10px 0 0 1.2em; }
-    .beta li + li { margin-top: 4px; }
-
-    /* Lien vers le groupe WhatsApp des testeurs */
-    .testers {
-      margin-top: 22px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-    .testers a {
-      display: inline-block;
-      color: var(--menthe);
-      font-weight: 600;
-      text-decoration: underline;
-      text-decoration-color: rgba(146, 230, 196, 0.4);
-      text-underline-offset: 3px;
-      transition: text-decoration-color 0.2s;
-    }
-    .testers a:hover { text-decoration-color: var(--menthe); }
-
-    /* Diaporama */
-    .tour {
-      width: 100%;
-      margin-top: 80px;
-    }
-    .tour-title {
-      margin-bottom: 20px;
-      font-family: "Unbounded", system-ui, sans-serif;
-      font-size: 1.15rem;
-      font-weight: 600;
-    }
-
-    /* Onglets au-dessus des diaporamas */
-    .tabs {
-      display: inline-flex;
-      gap: 6px;
-      padding: 4px;
-      margin-bottom: 22px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-    }
-    .tab {
-      position: relative;
-      padding: 9px 18px;
-      border: 0;
-      border-radius: 999px;
-      background: transparent;
-      color: var(--muted);
-      font: inherit;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-    }
+    /* ---------- Gallery ---------- */
+    .tabs { display: inline-flex; gap: 6px; padding: 4px; margin-top: 34px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); }
+    .tab { padding: 9px 18px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-weight: 700; font-size: .92rem; cursor: pointer; transition: background .2s, color .2s; }
     .tab:hover { color: var(--text); }
-    .tab[aria-selected="true"] { background: var(--lavande); color: #1a1530; }
-    .tab:focus-visible { outline: 2px solid var(--lavande); outline-offset: 3px; }
-    /* Petit point pour attirer l'oeil sur les nouveautés */
-    .tab .new {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      margin-left: 7px;
-      border-radius: 50%;
-      background: var(--menthe);
-      vertical-align: 2px;
-    }
+    .tab[aria-selected="true"] { background: var(--lav); color: var(--ink); }
     .panel[hidden] { display: none; }
+    .reel {
+      display: flex; gap: 20px; margin-top: 30px; padding: 10px 11% 26px;
+      overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+      -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+              mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    }
+    .reel::-webkit-scrollbar { display: none; }
+    .shot { flex: 0 0 78%; scroll-snap-align: center; transform: scale(calc(1 - var(--d, 0) * .1)); opacity: calc(1 - var(--d, 0) * .55); transition: transform .15s linear, opacity .15s linear; }
+    .shot button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 20px; }
+    .shot img { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 20px; border: 1px solid rgba(255, 255, 255, .09); background: #121117; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .9); }
+    .reel-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .round { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); cursor: pointer; transition: background .2s, opacity .2s; }
+    .round:hover { background: rgba(255, 255, 255, .1); }
+    .round:disabled { opacity: .3; cursor: default; }
+    .round svg { width: 18px; height: 18px; }
+    .dots { display: flex; gap: 7px; }
+    .dots i { width: 7px; height: 7px; border-radius: 999px; background: rgba(255, 255, 255, .2); transition: width .3s, background .3s; }
+    .dots i.on { width: 22px; background: var(--lav); }
 
-    /* The track scrolls sideways, one slide at a time (scroll-snap) */
-    .tour-track {
-      position: relative;
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scroll-behavior: smooth;
-      scrollbar-width: none;
-      border-radius: 18px;
-    }
-    .tour-track::-webkit-scrollbar { display: none; }
-    .tour-track:focus-visible { outline: 2px solid var(--lavande); outline-offset: 4px; }
+    dialog.lightbox { margin: 0; padding: 0; border: 0; background: transparent; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; color: var(--text); }
+    dialog.lightbox[open] { display: grid; grid-template-rows: 1fr auto; place-items: center; padding: 64px 3vw 20px; }
+    dialog.lightbox::backdrop { background: rgba(6, 6, 9, .88); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .lightbox img { width: auto; height: auto; max-width: min(1400px, 94vw); max-height: calc(100dvh - 160px); object-fit: contain; border-radius: 14px; }
+    .lightbox-bar { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; }
+    .lightbox-close { position: fixed; top: 14px; right: 14px; }
+    .lightbox[open] img { animation: zoomin .35s var(--bounce); }
+    @keyframes zoomin { from { transform: scale(.94); opacity: 0; } }
 
-    .slide {
-      flex: 0 0 100%;
-      scroll-snap-align: center;
+    /* ---------- Videos ---------- */
+    .promo { margin-top: 44px; }
+    .player { position: relative; border-radius: 26px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, .1); box-shadow: 0 40px 90px -40px rgba(180, 167, 245, .5); }
+    .player video { width: 100%; height: 100%; object-fit: cover; }
+    .player.landscape { aspect-ratio: 16 / 9; }
+    .player.portrait { aspect-ratio: 9 / 16; max-height: 82svh; margin: 0 auto; }
+    .play-big {
+      position: absolute; inset: 0; display: grid; place-items: center; border: 0; cursor: pointer;
+      background: linear-gradient(180deg, rgba(12, 12, 16, 0) 40%, rgba(12, 12, 16, .55));
     }
-    .slide a { display: block; }
-    .slide img {
-      display: block;
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16 / 9;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: #121117;
+    .play-big span {
+      display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%;
+      background: var(--lav); color: var(--ink);
+      box-shadow: 0 0 0 0 rgba(180, 167, 245, .6); animation: beat 2.4s ease-out infinite;
+      transition: transform .25s var(--bounce);
     }
+    .play-big:hover span { transform: scale(1.08); }
+    .play-big svg { width: 30px; height: 30px; margin-left: 4px; }
+    @keyframes beat { 0% { box-shadow: 0 0 0 0 rgba(180, 167, 245, .55); } 70%, 100% { box-shadow: 0 0 0 26px rgba(180, 167, 245, 0); } }
+    .play-big em { font-style: normal; font-weight: 700; font-size: 1rem; text-align: left; }
+    /* Promo: the poster already has a centered title, so the button sits in the corner */
+    .promo .play-big { display: flex; align-items: flex-end; justify-content: flex-start; gap: 16px; padding: 26px; }
+    .promo .play-big span { width: 68px; height: 68px; }
+    .promo .play-big svg { width: 26px; height: 26px; }
+    .play-big em small { display: block; font-weight: 500; color: var(--muted); }
 
-    .tour-nav {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      margin-top: 18px;
+    .talk { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 64px; }
+    .talk h3 { font-size: 1.35rem; }
+    .yt { position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, .1); }
+    .yt img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+    .yt:hover img { transform: scale(1.03); }
+    .yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .yt .play-big span { width: 72px; height: 72px; }
+    .chapters { list-style: none; margin-top: 16px; display: grid; gap: 2px; max-height: 340px; overflow: auto; scrollbar-width: thin; padding-bottom: 30px;
+      -webkit-mask: linear-gradient(#000 80%, transparent); mask: linear-gradient(#000 80%, transparent); }
+    .yt-fallback { position: absolute; inset: 0; display: none; place-items: center; align-content: center; gap: 14px; text-align: center;
+      background: radial-gradient(70% 90% at 20% 10%, rgba(180, 167, 245, .35), transparent 60%), radial-gradient(60% 80% at 90% 90%, rgba(245, 168, 200, .25), transparent 60%), #15141b; }
+    .yt-fallback svg { width: 54px; height: 78px; }
+    .yt-fallback p { font-family: var(--display); font-weight: 700; font-size: clamp(1.1rem, 2.4vw, 1.6rem); }
+    .yt.nothumb .yt-fallback { display: grid; }
+    .yt.nothumb img { display: none; }
+    .chapters button {
+      width: 100%; display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: baseline;
+      padding: 9px 12px; border: 0; border-radius: 12px; background: transparent; text-align: left; cursor: pointer;
+      transition: background .2s;
     }
-    .tour-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      font-size: 1.3rem;
-      line-height: 1;
-      cursor: pointer;
-      transition: background 0.2s, opacity 0.2s;
-    }
-    .tour-btn:hover { background: rgba(255, 255, 255, 0.1); }
-    .tour-btn:disabled { opacity: 0.3; cursor: default; }
-    .tour-count {
-      min-width: 3.5em;
-      color: var(--muted);
-      font-size: 0.9rem;
-      font-variant-numeric: tabular-nums;
-    }
+    .chapters button:hover { background: rgba(255, 255, 255, .06); }
+    .chapters time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--lav); font-size: .92rem; }
+    .chapters span { color: var(--muted); font-size: .97rem; }
+    .chapters button:hover span { color: var(--text); }
+    .yt-link { display: inline-flex; margin-top: 16px; font-weight: 600; color: var(--muted); }
+    .yt-link:hover { color: var(--text); }
 
-    /* Only useful on phones, where the slide text is small */
-    .tour-hint {
-      display: none;
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
+    /* ---------- Versions ---------- */
+    .timeline { position: relative; margin-top: 50px; }
+    .tl-track { list-style: none; display: flex; gap: 0; overflow-x: auto; padding: 8px 2px 24px; scroll-snap-type: x proximity; scrollbar-width: none; }
+    .tl-track::-webkit-scrollbar { display: none; }
+    .tl-line { position: absolute; left: 0; right: 0; top: 30px; height: 2px; background: var(--spectrum); transform-origin: 0 50%; transform: scaleX(0); transition: transform 1.6s cubic-bezier(.65, 0, .35, 1); opacity: .7; }
+    .timeline.in .tl-line { transform: scaleX(1); }
+    .version { flex: 0 0 210px; padding-right: 22px; scroll-snap-align: start; opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .6s var(--bounce); }
+    .timeline.in .version { opacity: 1; transform: none; }
+    .version .dot { width: 14px; height: 14px; margin: 16px 0 18px; border-radius: 50%; background: var(--night); border: 3px solid var(--c, var(--lav)); }
+    .version b { font-family: var(--display); font-size: 1.1rem; }
+    .version time { display: block; font-size: .85rem; color: var(--muted); margin-top: 2px; }
+    .version p { margin-top: 8px; font-size: .95rem; color: #d5d3dd; }
+    .version.latest .dot { background: var(--butter); border-color: var(--butter); box-shadow: 0 0 0 6px rgba(255, 224, 138, .18); animation: blink 2s ease-in-out infinite; }
+    .version .tag { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 224, 138, .16); color: var(--butter); font-size: .72rem; font-weight: 700; vertical-align: 3px; }
+    .tl-nav { display: flex; gap: 10px; margin-top: 4px; }
 
-    footer {
-      position: relative;
-      z-index: 1;
-      padding: 24px 16px 32px;
-      text-align: center;
-      color: rgba(169, 166, 180, 0.7);
-      font-size: 0.8rem;
-    }
+    /* ---------- Under the hood ---------- */
+    .arch { position: relative; margin-top: 52px; display: grid; grid-template-columns: 1fr 70px 1fr 70px 1fr; grid-template-areas: "phone c1 api c2 db" ". . c3 . ." ". . deezer . ."; align-items: center; }
+    .node { position: relative; padding: 22px; border-radius: 22px; background: rgba(19, 19, 25, .85); border: 1px solid rgba(255, 255, 255, .08); }
+    .node h3 { display: flex; align-items: center; gap: 10px; }
+    .node h3 svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .node p { margin-top: 8px; color: var(--muted); font-size: .95rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .tags span { padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: rgba(255, 255, 255, .06); }
+    .n-phone { grid-area: phone; } .n-api { grid-area: api; } .n-db { grid-area: db; } .n-deezer { grid-area: deezer; }
+    .n-phone h3 svg { color: var(--lav); } .n-api h3 svg { color: var(--mint); } .n-db h3 svg { color: var(--peach); } .n-deezer h3 svg { color: var(--rose); }
+    .wire { position: relative; height: 2px; background: rgba(255, 255, 255, .12); overflow: visible; }
+    .wire.c1 { grid-area: c1; } .wire.c2 { grid-area: c2; }
+    .wire.c3 { grid-area: c3; width: 2px; height: 48px; justify-self: center; }
+    .wire i { position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--lav); box-shadow: 0 0 12px var(--lav); animation: flow 2.2s linear infinite; }
+    .wire i + i { background: var(--mint); box-shadow: 0 0 12px var(--mint); animation-name: flowback; animation-delay: -1.1s; }
+    .wire.c3 i { left: -3px; top: 0; animation-name: flowdown; }
+    .wire.c3 i + i { animation-name: flowup; }
+    @keyframes flow { from { left: 0; } to { left: calc(100% - 8px); } }
+    @keyframes flowback { from { left: calc(100% - 8px); } to { left: 0; } }
+    @keyframes flowdown { from { top: 0; } to { top: calc(100% - 8px); } }
+    @keyframes flowup { from { top: calc(100% - 8px); } to { top: 0; } }
+    .host { margin-top: 26px; padding: 18px 22px; border-radius: 20px; border: 1px dashed rgba(255, 255, 255, .16); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; color: var(--muted); }
+    .host strong { color: var(--text); }
+    .soon { margin-top: 18px; display: flex; align-items: center; gap: 10px; color: var(--muted); }
+    .soon span { white-space: nowrap; padding: 3px 10px; border-radius: 999px; background: rgba(245, 168, 200, .15); color: var(--rose); font-weight: 700; font-size: .8rem; }
 
-    @media (max-width: 720px) {
-      .logo { width: 80px; }
-      .tour { margin-top: 64px; }
-      .tour-track, .slide img { border-radius: 12px; }
-      .tour-hint { display: block; }
-      .tab { padding: 8px 13px; font-size: 0.86rem; }
+    /* ---------- About me ---------- */
+    .me { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: 64px; align-items: center; margin-top: 10px; }
+    .portrait { position: relative; width: min(100%, 380px); margin: 0 auto; aspect-ratio: 4 / 5; }
+    .portrait .glow { position: absolute; inset: -8% -10% 4%; border-radius: 50%; background: conic-gradient(from 0deg, var(--lav), var(--rose), var(--peach), var(--butter), var(--mint), var(--lav)); filter: blur(46px); opacity: .55; animation: spin 12s linear infinite; }
+    .portrait .photo, .portrait .monogram {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 125'%3E%3Cpath d='M50 0C50 0 0 46 0 75a50 50 0 0 0 100 0C100 46 50 0 50 0Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+              mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 125'%3E%3Cpath d='M50 0C50 0 0 46 0 75a50 50 0 0 0 100 0C100 46 50 0 50 0Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
     }
+    .portrait .monogram { display: none; place-items: center; padding-top: 30%; background: linear-gradient(160deg, var(--lav), var(--rose) 55%, var(--peach)); font-family: var(--display); font-size: 4rem; color: var(--ink); }
+    .portrait.no-photo .monogram { display: grid; }
+    .portrait.no-photo .photo { display: none; }
+    .portrait .rim { position: absolute; inset: -2px; pointer-events: none; overflow: visible; }
+    .portrait .ripples { position: absolute; left: -12%; width: 124%; bottom: -10%; height: 70px; pointer-events: none; }
+    .me h2 { max-width: none; }
+    .me .who { margin-top: 18px; font-size: 1.2rem; }
+    .me .who strong { font-weight: 700; }
+    .me p + p { margin-top: 14px; }
+    .me p.muted { max-width: 52ch; }
+    .hire {
+      margin-top: 28px; padding: 20px 22px; border-radius: 20px;
+      background: linear-gradient(120deg, rgba(158, 224, 184, .14), rgba(180, 167, 245, .12));
+      border: 1px solid rgba(158, 224, 184, .35);
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .hire p { font-weight: 600; max-width: 34ch; }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 
-    /* Petits écrans : on resserre un peu pour que tout tienne sur un écran */
-    @media (max-height: 700px) {
-      main { padding: 28px 16px 20px; }
-      .logo { width: 68px; margin-bottom: 14px; }
-      .store { margin-top: 26px; }
-      footer { padding: 12px 16px 20px; }
+    /* ---------- Beta ---------- */
+    .beta-panel {
+      position: relative; overflow: hidden; padding: 64px 56px; border-radius: 36px;
+      background: radial-gradient(80% 120% at 0% 0%, rgba(180, 167, 245, .2), transparent 60%), radial-gradient(70% 120% at 100% 100%, rgba(158, 224, 184, .14), transparent 60%), rgba(19, 19, 25, .9);
+      border: 1px solid rgba(180, 167, 245, .25);
     }
+    .beta-panel canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .beta-grid { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+    .join { list-style: none; display: grid; gap: 18px; counter-reset: j; }
+    .join li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; }
+    .join li::before { counter-increment: j; content: counter(j); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(180, 167, 245, .18); color: var(--lav); font-family: var(--display); font-weight: 700; }
+    .join strong { display: block; }
+    .join span { color: var(--muted); }
+    .mail { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .address { display: inline-flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .12); font-weight: 600; }
+    .address button { padding: 6px 12px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .1); cursor: pointer; font-size: .85rem; font-weight: 700; }
+    .address button:hover { background: rgba(255, 255, 255, .18); }
+    .whatsapp { display: inline-flex; align-items: center; gap: 10px; margin-top: 26px; color: var(--mint); font-weight: 700; text-decoration-color: rgba(158, 224, 184, .4); text-underline-offset: 4px; }
+    .whatsapp svg { width: 20px; height: 20px; }
+    .android-only { margin-top: 16px; font-size: .92rem; }
+
+    footer { position: relative; z-index: 1; padding: 56px 0 44px; color: var(--muted); font-size: .92rem; }
+    .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid rgba(255, 255, 255, .08); padding-top: 28px; }
+    .foot nav { display: flex; flex-wrap: wrap; gap: 18px; }
+    .foot a { text-decoration: none; }
+    .foot a:hover { color: var(--text); }
+
+    /* ---------- Reveal on scroll (only with JavaScript) ---------- */
+    .js .reveal { opacity: 0; transform: translateY(26px); filter: blur(6px); transition: opacity .8s ease, transform .9s cubic-bezier(.2, .8, .2, 1), filter .8s ease; }
+    .js .reveal.in { opacity: 1; transform: none; filter: none; }
+    .js .reveal.d1 { transition-delay: .1s; } .js .reveal.d2 { transition-delay: .2s; } .js .reveal.d3 { transition-delay: .3s; }
+    .js .hero .intro-hide { opacity: 0; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 980px) {
+      .nav-links { display: none; }
+      .nav .btn { margin-left: auto; }
+      .hero { padding-top: 100px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 56px; }
+      .hero-visual { order: 2; }
+      .more, .me, .talk, .beta-grid { grid-template-columns: 1fr; }
+      .me { gap: 40px; }
+      .portrait { width: min(80%, 320px); }
+      .arch { grid-template-columns: 1fr; grid-template-areas: "phone" "c1" "api" "c2" "db" "c3" "deezer"; gap: 0; }
+      .wire.c1, .wire.c2, .wire.c3 { width: 2px; height: 40px; justify-self: center; }
+      .wire.c1 i, .wire.c2 i { left: -3px; top: 0; animation-name: flowdown; }
+      .wire.c1 i + i, .wire.c2 i + i { animation-name: flowup; }
+    }
+    @media (max-width: 760px) {
+      body { font-size: 1rem; }
+      .section { padding: 84px 0; }
+      .wrap { padding: 0 18px; }
+      .versus, .steps { grid-template-columns: 1fr; }
+      .steps { gap: 40px; }
+      .reel { padding-inline: 6%; gap: 12px; }
+      .shot { flex-basis: 88%; }
+      .shot img, .shot button { border-radius: 12px; }
+      .beta-panel { padding: 40px 22px; border-radius: 26px; }
+      .player { border-radius: 18px; }
+      .phone { --pfs: 15px; }
+      .pond { width: 125%; }
+      .promo .play-big { padding: 16px; } .promo .play-big span { width: 56px; height: 56px; }
+    }
+    @media (max-width: 360px) { .phone { --pfs: 13.5px; } }
 
     @media (prefers-reduced-motion: reduce) {
-      .aurora span { animation: none; }
-      .tour-track { scroll-behavior: auto; }
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+      .js .reveal { opacity: 1; transform: none; filter: none; }
+      .band-track { animation: none; }
     }
   </style>
 </head>
 <body>
 
-  <div class="aurora" aria-hidden="true">
-    <span class="a1"></span>
-    <span class="a2"></span>
-    <span class="a3"></span>
-    <span class="a4"></span>
+  <!-- Shared SVG pieces: the drop of the logo and its gradient -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <path id="drop-path" d="M60 6 C60 6 28 44 28 66 a32 32 0 0 0 64 0 C92 44 60 6 60 6 Z"/>
+      <clipPath id="drop-clip"><use href="#drop-path"/></clipPath>
+      <linearGradient id="pond-grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#b4a7f5"/>
+        <stop offset=".35" stop-color="#f5a8c8"/>
+        <stop offset=".65" stop-color="#ffb38a"/>
+        <stop offset="1" stop-color="#9ee0b8"/>
+      </linearGradient>
+      <!-- The striped drop of the logo -->
+      <symbol id="striped-drop" viewBox="28 6 64 92">
+        <g clip-path="url(#drop-clip)">
+          <rect x="20" y="0" width="80" height="36" fill="#f5a8c8"/>
+          <rect x="20" y="38.5" width="80" height="13.5" fill="#ffb38a"/>
+          <rect x="20" y="54.5" width="80" height="13.5" fill="#ffe08a"/>
+          <rect x="20" y="70.5" width="80" height="13.5" fill="#9ee0b8"/>
+          <rect x="20" y="86.5" width="80" height="14" fill="#b4a7f5"/>
+        </g>
+      </symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 3 5 6.6 5c2.1 0 3.6 1.2 4.4 2.5h2C13.8 6.2 15.3 5 17.4 5 21 5 23.1 8.6 21.6 11.9 19.5 16.4 12 21 12 21Z"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.5 2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5-4.9-4.6 6.6-.8z"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4.2" height="16" rx="1.5" fill="currentColor"/><rect x="13.8" y="4" width="4.2" height="16" rx="1.5" fill="currentColor"/></symbol>
+      <symbol id="i-arrow-l" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></symbol>
+      <symbol id="i-arrow-r" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></symbol>
+      <symbol id="i-drop" viewBox="0 0 24 28"><path fill="currentColor" d="M12 1S2 12.5 2 18a10 10 0 0 0 20 0C22 12.5 12 1 12 1Z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="aurora" id="aurora" data-scene="0" aria-hidden="true">
+    <span class="h1"></span><span class="h2"></span><span class="h3"></span><span class="h4"></span>
   </div>
 
-  <main>
-    <!-- Logo provisoire : goutte à bandes pastel au-dessus d'ondes -->
-    <svg class="logo" viewBox="0 0 120 132" role="img" aria-label="Logo meloDrop">
-      <defs>
-        <clipPath id="drop-clip">
-          <path d="M60 6 C60 6 28 44 28 66 a32 32 0 0 0 64 0 C92 44 60 6 60 6 Z"/>
-        </clipPath>
-        <linearGradient id="waves" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#b9a6ff"/>
-          <stop offset="0.35" stop-color="#ffa3c8"/>
-          <stop offset="0.65" stop-color="#ffb48c"/>
-          <stop offset="1" stop-color="#92e6c4"/>
-        </linearGradient>
-      </defs>
+  <header class="nav" id="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="meloDrop, haut de la page">
+        <svg aria-hidden="true"><use href="#striped-drop"/></svg>
+        <span class="wordmark">melo<b>Drop</b></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#concept">Le concept</a></li>
+        <li><a href="#appli">L'appli</a></li>
+        <li><a href="#videos">Vidéos</a></li>
+        <li><a href="#technique">Technique</a></li>
+        <li><a href="#moi">Qui suis-je</a></li>
+      </ul>
+      <a class="btn btn-main" href="#beta">Rejoindre la bêta</a>
+    </div>
+  </header>
 
-      <ellipse cx="60" cy="112" rx="26" ry="6" fill="#b9a6ff" opacity="0.18"/>
-      <g fill="none" stroke="url(#waves)" stroke-linecap="round">
-        <ellipse cx="60" cy="117" rx="54" ry="12" stroke-width="2" opacity="0.35"/>
-        <ellipse cx="60" cy="114.5" rx="38" ry="8.5" stroke-width="2.5" opacity="0.6"/>
-        <ellipse cx="60" cy="112" rx="22" ry="5" stroke-width="3" opacity="0.9"/>
-      </g>
+  <main id="top">
 
-      <g clip-path="url(#drop-clip)">
-        <rect x="20" y="0"    width="80" height="36"   fill="#ffa3c8"/>
-        <rect x="20" y="38.5" width="80" height="13.5" fill="#ffb48c"/>
-        <rect x="20" y="54.5" width="80" height="13.5" fill="#ffe28f"/>
-        <rect x="20" y="70.5" width="80" height="13.5" fill="#92e6c4"/>
-        <rect x="20" y="86.5" width="80" height="14"   fill="#b9a6ff"/>
-      </g>
-    </svg>
+    <!-- ================= Hero ================= -->
+    <section class="hero" data-scene="0" id="accueil">
+      <div class="wrap hero-grid">
+        <div>
+          <h1 aria-label="Une chanson par jour, choisie par quelqu'un.">
+            <span class="line intro-hide" aria-hidden="true">Une chanson</span>
+            <span class="line intro-hide" aria-hidden="true">par jour,</span>
+            <span class="line soft intro-hide" aria-hidden="true">choisie par</span>
+            <span class="line soft intro-hide" aria-hidden="true">quelqu'un.</span>
+          </h1>
+          <p class="lead intro-hide"><strong>Pas par un algorithme.</strong> Sur meloDrop, chacun dépose chaque jour le titre qui compte pour lui. Toi, tu écoutes un extrait de 30 secondes, et tu swipes.</p>
+          <div class="hero-cta intro-hide">
+            <a class="btn btn-main" href="#beta">Rejoindre la bêta</a>
+            <a class="btn btn-ghost" href="#videos">
+              <svg aria-hidden="true"><use href="#i-play"/></svg>
+              Voir la vidéo
+            </a>
+          </div>
+          <ul class="facts intro-hide">
+            <li><svg aria-hidden="true" style="color:var(--lav)"><use href="#i-drop"/></svg>Sur Android, en accès anticipé</li>
+            <li><svg aria-hidden="true" style="color:var(--mint)"><use href="#i-drop"/></svg><span><strong>40</strong> testeurs</span></li>
+            <li><svg aria-hidden="true" style="color:var(--butter)"><use href="#i-drop"/></svg><span><strong data-count-versions>15</strong> versions en <span data-count-days>17</span> jours</span></li>
+          </ul>
+        </div>
 
-    <h1>meloDrop</h1>
+        <div class="hero-visual">
+          <div class="stage" id="stage">
+            <svg class="intro-drop" id="introDrop" viewBox="0 0 64 92" aria-hidden="true"><use href="#striped-drop"/></svg>
+            <span class="splash" id="splash" aria-hidden="true"></span>
+            <svg class="pond" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true">
+              <ellipse class="r3" cx="150" cy="44" rx="146" ry="30"/>
+              <ellipse class="r2" cx="150" cy="44" rx="108" ry="21"/>
+              <ellipse class="r1" cx="150" cy="44" rx="70" ry="12"/>
+            </svg>
 
-    <p class="tagline">Une chanson par jour, choisie par quelqu'un, pas par un algorithme.</p>
+            <!-- Discover screen, rebuilt in HTML. Cards are added by the script -->
+            <div class="phone intro-hide" id="phone" role="group" aria-label="Démo de l'écran Discover : glisse la carte ou utilise les boutons">
+              <div class="screen" id="screen">
+                <div class="status"><span>12:15</span><span class="cam"></span><span class="status-icons"><i></i><i></i></span></div>
+                <div class="app-head">
+                  <span class="wordmark">melo<b>Drop</b></span>
+                  <span class="head-icons" aria-hidden="true">
+                    <svg viewBox="0 0 24 28" style="color:var(--lav)"><use href="#i-drop"/></svg>
+                    <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  </span>
+                </div>
+                <div class="chip-row"><span class="chip">Abonnements d'abord</span></div>
+                <div class="deck" id="deck"></div>
+                <div class="choices">
+                  <button class="choice skip" type="button" data-choice="skip" aria-label="Passer"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+                  <button class="choice pick" type="button" data-choice="pick" aria-label="Pick"><svg aria-hidden="true"><use href="#i-star"/></svg></button>
+                  <button class="choice like" type="button" data-choice="like" aria-label="J'aime"><svg aria-hidden="true"><use href="#i-heart"/></svg></button>
+                </div>
+                <div class="hint">
+                  <p class="hint-text">Glisse à droite pour Liker, à gauche pour Passer<br>Vers le haut pour un Pick</p>
+                  <p class="toast" id="toast" aria-live="polite"></p>
+                </div>
+                <div class="tabbar" aria-hidden="true"><span class="on">DISCOVER</span><span>DROP</span><span>PROFIL</span></div>
+                <span class="gesture" aria-hidden="true"></span>
+                <div class="fx" id="fx" aria-hidden="true"></div>
+                <span class="finger" id="finger" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+          <p class="try intro-hide">Essaie : glisse la carte, ou touche un bouton.</p>
+        </div>
+      </div>
+    </section>
 
-    <p class="lead">
-      Pas d'algorithme ni de flux sans fin : chaque jour, chacun partage le titre
-      qui compte pour lui, et toi, tu découvres ceux des autres.
-    </p>
-
-    <div class="store">
-      <!--
-        Le jour où l'appli est en ligne : remplacer ce <span> par
-        <a class="store-btn" href="https://play.google.com/store/apps/details?id=TON_PACKAGE">
-        (même contenu, sans le badge). Le style du lien est déjà prêt.
-      -->
-      <span class="store-btn" aria-disabled="true" aria-label="Google Play, bêta test ouverte">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="6" y="2.5" width="12" height="19" rx="2.5"/>
-          <path d="M10.5 18.5h3"/>
-        </svg>
-        <span class="label">
-          <small>Télécharger sur</small>
-          <strong>Google Play</strong>
-        </span>
-        <span class="badge">Bêta test ouverte</span>
-      </span>
+    <div class="band" aria-hidden="true">
+      <div class="band-track" id="band"></div>
     </div>
 
-    <div class="beta">
-      <strong>La bêta est ouverte à tous.</strong> Pour la rejoindre :
-      <ol>
-        <li>Envoie l'adresse e-mail de ton compte Google Play à
-          <a href="mailto:melodrop.app@gmail.com?subject=B%C3%AAta%20meloDrop">melodrop.app@gmail.com</a>.</li>
-        <li>Tu reçois en retour le lien pour installer meloDrop depuis le Play Store.</li>
-      </ol>
-    </div>
+    <!-- ================= Concept ================= -->
+    <section class="section" data-scene="1" id="concept">
+      <div class="wrap">
+        <h2 class="reveal">Les plus belles découvertes viennent de quelqu'un.</h2>
+        <p class="intro reveal d1">Un ami qui te dit « écoute ça », une collègue qui te passe un titre. meloDrop remet cette personne au centre, une chanson par jour.</p>
 
-    <p class="testers">
-      Pour suivre les nouveautés et donner ton avis :
-      <a href="https://chat.whatsapp.com/Dj7H72SprBACMKc4X1BQMz" target="_blank" rel="noopener">rejoins les testeurs sur WhatsApp ›</a>
-    </p>
+        <div class="versus">
+          <article class="side algo reveal">
+            <p class="where">Sur les plateformes</p>
+            <h3>Un algorithme choisit pour toi</h3>
+            <p>Il part de ce que tu écoutes déjà. Tes playlists finissent par tourner en rond.</p>
+            <svg class="viz" viewBox="0 0 320 180" aria-hidden="true">
+              <circle cx="160" cy="90" r="62" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="2" stroke-dasharray="4 8"/>
+              <g class="loop-spin">
+                <circle cx="160" cy="28" r="9" fill="#5d5b69"/>
+                <circle cx="222" cy="90" r="9" fill="#5d5b69"/>
+                <circle cx="160" cy="152" r="9" fill="#5d5b69"/>
+                <circle cx="98" cy="90" r="9" fill="#5d5b69"/>
+                <path d="M196 39 l10 3 -3 10" fill="none" stroke="#8e8e9a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <text x="160" y="95" text-anchor="middle" fill="#8e8e9a" font-family="Figtree, sans-serif" font-size="14" font-weight="600">toujours pareil</text>
+            </svg>
+          </article>
 
-    <!-- Diaporamas : les images sont dans le dossier "slides" à côté de index.html -->
-    <section class="tour" aria-label="Présentation de l'appli">
-      <div class="tabs" role="tablist" aria-label="Présentation">
-        <button class="tab" type="button" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="true">Comment ça marche</button>
-        <button class="tab" type="button" role="tab" id="tab-new" aria-controls="panel-new" aria-selected="false" tabindex="-1">Nouveautés 0.7<span class="new" aria-hidden="true"></span></button>
+          <article class="side human reveal d1">
+            <p class="where">Sur meloDrop</p>
+            <h3>Une vraie personne choisit</h3>
+            <p>Chaque jour, quelqu'un partage un son qu'il aime. Tu tombes sur des titres que tu n'aurais jamais trouvés seul.</p>
+            <svg class="viz" viewBox="0 0 320 180" aria-hidden="true">
+              <ellipse class="wave" cx="160" cy="96" rx="150" ry="70" fill="none" stroke="url(#pond-grad)" stroke-width="2"/>
+              <ellipse class="wave" cx="160" cy="96" rx="150" ry="70" fill="none" stroke="url(#pond-grad)" stroke-width="2"/>
+              <ellipse class="wave" cx="160" cy="96" rx="150" ry="70" fill="none" stroke="url(#pond-grad)" stroke-width="2"/>
+              <use href="#striped-drop" x="144" y="56" width="32" height="46"/>
+              <circle class="bubble" cx="56" cy="62" r="8" fill="#ffb38a"/>
+              <circle class="bubble" cx="270" cy="48" r="7" fill="#9ee0b8" style="animation-delay:-1s"/>
+              <circle class="bubble" cx="250" cy="146" r="9" fill="#ffe08a" style="animation-delay:-2s"/>
+              <circle class="bubble" cx="80" cy="140" r="6" fill="#f5a8c8" style="animation-delay:-3s"/>
+            </svg>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= How it works ================= -->
+    <section class="section" data-scene="2" id="appli">
+      <div class="wrap">
+        <h2 class="reveal">Trois gestes, et c'est tout.</h2>
+        <p class="intro reveal d1">Pas de fil sans fin, pas de recommandations : un drop par personne et par jour, dans un ordre au hasard.</p>
+
+        <ol class="steps">
+          <li class="step reveal" data-in>
+            <div class="ill">
+              <span class="live">en ligne</span>
+              <svg class="mini-drop" viewBox="0 0 64 92" aria-hidden="true"><use href="#striped-drop"/></svg>
+              <div class="timer" id="timer"><div><strong>24 h</strong><span id="timerText">23:59:59</span></div></div>
+            </div>
+            <div class="step-head">
+              <span class="num"><svg viewBox="0 0 24 28" style="color:var(--peach)"><use href="#i-drop"/></svg><b>1</b></span>
+              <h3>Dépose ta chanson du jour</h3>
+            </div>
+            <p>Cherche un titre dans le catalogue Deezer et dépose-le. Il reste en ligne 24 heures. Un seul à la fois : il faut faire un vrai choix.</p>
+          </li>
+          <li class="step reveal d1" data-in>
+            <div class="ill">
+              <span class="dir d-skip">‹ Passer</span>
+              <span class="dir d-pick">Pick</span>
+              <span class="dir d-like">J'aime ›</span>
+              <div class="mini-card"><i></i><b></b><em></em></div>
+            </div>
+            <div class="step-head">
+              <span class="num"><svg viewBox="0 0 24 28" style="color:var(--lav)"><use href="#i-drop"/></svg><b>2</b></span>
+              <h3>Découvre les drops des autres</h3>
+            </div>
+            <p>Écoute l'extrait, puis choisis : à droite tu likes, à gauche tu passes, vers le haut c'est un pick, le coup de cœur dès la première écoute.</p>
+          </li>
+          <li class="step reveal d2" data-in>
+            <div class="ill">
+              <div class="mini-list">
+                <div class="mini-tabs"><span>Mes likes</span><span>Mes picks</span></div>
+                <div class="row"><i style="background:linear-gradient(150deg,#b4a7f5,#f5a8c8)"></i><div><b></b><em></em></div><svg style="color:var(--mint)"><use href="#i-heart"/></svg></div>
+                <div class="row"><i style="background:linear-gradient(150deg,#ffe08a,#ffb38a)"></i><div><b></b><em></em></div><svg style="color:var(--butter)"><use href="#i-star"/></svg></div>
+                <div class="row"><i style="background:linear-gradient(150deg,#9ee0b8,#6cc7a4)"></i><div><b></b><em></em></div><svg style="color:var(--mint)"><use href="#i-heart"/></svg></div>
+              </div>
+            </div>
+            <div class="step-head">
+              <span class="num"><svg viewBox="0 0 24 28" style="color:var(--mint)"><use href="#i-drop"/></svg><b>3</b></span>
+              <h3>Garde ce qui te plaît</h3>
+            </div>
+            <p>Tes titres t'attendent dans Mes likes, tes coups de cœur dans Mes picks. La personne qui a déposé le titre reçoit un like.</p>
+          </li>
+        </ol>
+
+        <p class="note reveal">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M4 12.5l5 5L20 6.5"/></svg>
+          Pas besoin de compte Spotify ou Deezer : tout se passe dans meloDrop.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= And also ================= -->
+    <section class="section" data-scene="3" id="plus">
+      <div class="wrap">
+        <h2 class="reveal">Et autour du drop, toute une appli.</h2>
+        <div class="more">
+          <ul class="features">
+            <li class="reveal"><svg viewBox="0 0 24 28" style="color:var(--butter)"><use href="#i-drop"/></svg><div><strong>La Mixtape</strong><span>La deuxième page de ton profil : ton podium de 3 titres préférés, et un son pour chaque label, comme « le son qui me met bien ».</span></div></li>
+            <li class="reveal d1"><svg viewBox="0 0 24 28" style="color:var(--lav)"><use href="#i-drop"/></svg><div><strong>Les abonnements</strong><span>Suis tes potes : leurs drops passent en premier dans Discover.</span></div></li>
+            <li class="reveal d1"><svg viewBox="0 0 24 28" style="color:var(--rose)"><use href="#i-drop"/></svg><div><strong>Les badges</strong><span>Des récompenses qui arrivent en droppant et en découvrant, ou données par l'équipe.</span></div></li>
+            <li class="reveal d2"><svg viewBox="0 0 24 28" style="color:var(--peach)"><use href="#i-drop"/></svg><div><strong>Mes skips</strong><span>Un titre passé trop vite ? Tu as 7 jours pour le repêcher.</span></div></li>
+            <li class="reveal d2"><svg viewBox="0 0 24 28" style="color:var(--mint)"><use href="#i-drop"/></svg><div><strong>La fiche d'un titre</strong><span>Touche une pochette : album, date de sortie, genre, et combien de drops, de likes et de picks sur meloDrop.</span></div></li>
+          </ul>
+
+          <div class="studio reveal d1" id="studio">
+            <div class="avatar-box" id="avatarBox">
+              <div class="aura aura-halo" data-aura="halo"></div>
+              <div class="aura aura-sparkles" data-aura="sparkles"></div>
+              <div class="aura aura-rain" data-aura="rain"></div>
+              <div class="aura aura-eq" data-aura="equalizer"></div>
+              <svg id="avatar" viewBox="0 0 100 100" role="img" aria-label="Aperçu d'un avatar meloDrop"></svg>
+            </div>
+            <div class="controls">
+              <div>
+                <p class="control-label">Couleur</p>
+                <div class="swatches" id="swatches"></div>
+              </div>
+              <div>
+                <p class="control-label">Goutte</p>
+                <div class="pills" id="drops"></div>
+              </div>
+              <div>
+                <p class="control-label">Aura</p>
+                <div class="pills" id="auras"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Gallery (the slides of the landing folder) ================= -->
+    <section class="section" data-scene="4" id="visuels">
+      <div class="wrap">
+        <h2 class="reveal">L'appli, écran par écran.</h2>
+        <div class="tabs reveal d1" role="tablist" aria-label="Galerie">
+          <button class="tab" type="button" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="true">Les bases</button>
+          <button class="tab" type="button" role="tab" id="tab-new" aria-controls="panel-new" aria-selected="false" tabindex="-1">Picks, Mixtape et compagnie</button>
+        </div>
       </div>
 
-      <div class="panel" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide">
-      <div class="tour-track" tabindex="0">
-        <figure class="slide">
-          <a href="slides/pourquoi.webp" target="_blank">
-            <img src="slides/pourquoi.webp" width="1600" height="900"
-                 alt="Pourquoi meloDrop ? Sur les plateformes, un algorithme choisit pour toi à partir de ce que tu écoutes déjà. Sur meloDrop, chaque jour, une vraie personne partage un son qu'elle aime.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/trois-gestes.webp" target="_blank">
-            <img src="slides/trois-gestes.webp" width="1600" height="900" loading="lazy"
-                 alt="L'appli en trois gestes : dépose ta chanson du jour, découvre les drops des autres en swipant, garde ceux qui te plaisent dans Mes likes. Pas besoin de compte Spotify ou Deezer.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/compte.webp" target="_blank">
-            <img src="slides/compte.webp" width="1600" height="900" loading="lazy"
-                 alt="Crée ton compte : choisis un pseudo, ajoute ton e-mail et un mot de passe, valide ton adresse avec un code à 6 chiffres, puis connecte-toi.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/depose.webp" target="_blank">
-            <img src="slides/depose.webp" width="1600" height="900" loading="lazy"
-                 alt="Dépose ta chanson du jour : cherche un titre dans le catalogue Deezer et dépose-le. Il reste en ligne 24 heures, et tu suis les likes reçus et le temps restant.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/decouvre.webp" target="_blank">
-            <img src="slides/decouvre.webp" width="1600" height="900" loading="lazy"
-                 alt="Découvre les drops des autres : écoute un extrait de 30 secondes, glisse à droite pour garder le titre, à gauche pour le passer. Les drops arrivent au hasard, sans algorithme.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/likes.webp" target="_blank">
-            <img src="slides/likes.webp" width="1600" height="900" loading="lazy"
-                 alt="Retrouve tout dans Mes likes : chaque titre gardé, avec le pseudo de la personne qui l'a déposé. Tu peux réécouter l'extrait ou retirer le titre.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/profil.webp" target="_blank">
-            <img src="slides/profil.webp" width="1600" height="900" loading="lazy"
-                 alt="Un profil à ton image : tes compteurs, tes derniers drops et ton avatar, avec une couleur pastel et un style de goutte.">
-          </a>
-        </figure>
-      </div>
-
-      <div class="tour-nav">
-        <button class="tour-btn" type="button" data-step="-1" aria-label="Slide précédente">‹</button>
-        <span class="tour-count" aria-live="polite">1 / 7</span>
-        <button class="tour-btn" type="button" data-step="1" aria-label="Slide suivante">›</button>
-      </div>
+      <div class="panel reveal d2" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide">
+        <div class="reel" tabindex="0">
+          <figure class="shot"><button type="button"><img src="slides/pourquoi.webp" width="1600" height="900" alt="Pourquoi meloDrop ? Sur les plateformes, un algorithme choisit pour toi à partir de ce que tu écoutes déjà. Sur meloDrop, chaque jour, une vraie personne partage un son qu'elle aime."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/trois-gestes.webp" width="1600" height="900" loading="lazy" alt="L'appli en trois gestes : dépose ta chanson du jour, découvre les drops des autres en swipant, garde ceux qui te plaisent dans Mes likes. Pas besoin de compte Spotify ou Deezer."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/compte.webp" width="1600" height="900" loading="lazy" alt="Crée ton compte : choisis un pseudo, ajoute ton e-mail et un mot de passe, valide ton adresse avec un code à 6 chiffres, puis connecte-toi."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/depose.webp" width="1600" height="900" loading="lazy" alt="Dépose ta chanson du jour : cherche un titre dans le catalogue Deezer et dépose-le. Il reste en ligne 24 heures, et tu suis les likes reçus et le temps restant."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/decouvre.webp" width="1600" height="900" loading="lazy" alt="Découvre les drops des autres : écoute un extrait de 30 secondes, glisse à droite pour garder le titre, à gauche pour le passer. Les drops arrivent au hasard, sans algorithme."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/likes.webp" width="1600" height="900" loading="lazy" alt="Retrouve tout dans Mes likes : chaque titre gardé, avec le pseudo de la personne qui l'a déposé. Tu peux réécouter l'extrait ou retirer le titre."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/profil.webp" width="1600" height="900" loading="lazy" alt="Un profil à ton image : tes compteurs, tes derniers drops et ton avatar, avec une couleur pastel et un style de goutte."></button></figure>
+        </div>
+        <div class="reel-nav">
+          <button class="round" type="button" data-step="-1" aria-label="Image précédente"><svg aria-hidden="true"><use href="#i-arrow-l"/></svg></button>
+          <span class="dots" aria-hidden="true"></span>
+          <button class="round" type="button" data-step="1" aria-label="Image suivante"><svg aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+        </div>
       </div>
 
       <div class="panel" id="panel-new" role="tabpanel" aria-labelledby="tab-new" hidden>
-      <div class="tour-track" tabindex="0">
-        <figure class="slide">
-          <a href="slides/nouveau-like-pick.webp" target="_blank">
-            <img src="slides/nouveau-like-pick.webp" width="1600" height="900" loading="lazy"
-                 alt="Like ou Pick ? Like, en glissant à droite : tu connais déjà le titre et tu l'aimes, il va dans Mes likes. Pick, en glissant vers le haut ou avec l'étoile : tu découvres le titre et il te plaît dès la première écoute, il va dans Mes likes et Mes picks. Dans les deux cas, l'auteur du drop reçoit un like.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/nouveau-profil.webp" target="_blank">
-            <img src="slides/nouveau-profil.webp" width="1600" height="900" loading="lazy"
-                 alt="Ton profil sur 2 pages : glisse entre Activité et Mixtape. La Mixtape montre ton podium de 3 titres préférés de tous les temps et un son pour chaque label, comme le son qui te met bien.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/nouveau-badges.webp" target="_blank">
-            <img src="slides/nouveau-badges.webp" width="1600" height="900" loading="lazy"
-                 alt="Les badges : l'équipe meloDrop en donne pour récompenser certains membres. Ils s'affichent en bas de la Mixtape, et un appui montre pourquoi et quand le badge a été reçu.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/nouveau-fiche.webp" target="_blank">
-            <img src="slides/nouveau-fiche.webp" width="1600" height="900" loading="lazy"
-                 alt="Touche une pochette : la fiche du titre montre l'album, la date de sortie, la durée, le genre, et le nombre de drops, likes et picks du titre sur meloDrop.">
-          </a>
-        </figure>
-        <figure class="slide">
-          <a href="slides/nouveau-abonnements.webp" target="_blank">
-            <img src="slides/nouveau-abonnements.webp" width="1600" height="900" loading="lazy"
-                 alt="Suis tes potes : un bouton Suivre sur chaque profil, les listes d'abonnés et d'abonnements, et dans Discover la pastille Abonnements d'abord pour voir leurs drops en premier.">
-          </a>
-        </figure>
+        <div class="reel" tabindex="0">
+          <figure class="shot"><button type="button"><img src="slides/nouveau-like-pick.webp" width="1600" height="900" loading="lazy" alt="Like ou Pick ? Like, en glissant à droite : tu connais déjà le titre et tu l'aimes, il va dans Mes likes. Pick, en glissant vers le haut ou avec l'étoile : tu découvres le titre et il te plaît dès la première écoute, il va dans Mes likes et Mes picks. Dans les deux cas, l'auteur du drop reçoit un like."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/nouveau-profil.webp" width="1600" height="900" loading="lazy" alt="Ton profil sur 2 pages : glisse entre Activité et Mixtape. La Mixtape montre ton podium de 3 titres préférés de tous les temps et un son pour chaque label, comme le son qui te met bien."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/nouveau-badges.webp" width="1600" height="900" loading="lazy" alt="Les badges : l'équipe meloDrop en donne pour récompenser certains membres. Ils s'affichent en bas de la Mixtape, et un appui montre pourquoi et quand le badge a été reçu."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/nouveau-fiche.webp" width="1600" height="900" loading="lazy" alt="Touche une pochette : la fiche du titre montre l'album, la date de sortie, la durée, le genre, et le nombre de drops, likes et picks du titre sur meloDrop."></button></figure>
+          <figure class="shot"><button type="button"><img src="slides/nouveau-abonnements.webp" width="1600" height="900" loading="lazy" alt="Suis tes potes : un bouton Suivre sur chaque profil, les listes d'abonnés et d'abonnements, et dans Discover la pastille Abonnements d'abord pour voir leurs drops en premier."></button></figure>
+        </div>
+        <div class="reel-nav">
+          <button class="round" type="button" data-step="-1" aria-label="Image précédente"><svg aria-hidden="true"><use href="#i-arrow-l"/></svg></button>
+          <span class="dots" aria-hidden="true"></span>
+          <button class="round" type="button" data-step="1" aria-label="Image suivante"><svg aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+        </div>
       </div>
-
-      <div class="tour-nav">
-        <button class="tour-btn" type="button" data-step="-1" aria-label="Slide précédente">‹</button>
-        <span class="tour-count" aria-live="polite">1 / 5</span>
-        <button class="tour-btn" type="button" data-step="1" aria-label="Slide suivante">›</button>
-      </div>
-      </div>
-
-      <p class="tour-hint">Touche une slide pour l'agrandir.</p>
     </section>
 
+    <dialog class="lightbox" id="lightbox" aria-label="Image agrandie">
+      <button class="round lightbox-close" type="button" id="lbClose" aria-label="Fermer"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+      <img id="lbImg" src="" alt="">
+      <div class="lightbox-bar">
+        <button class="round" type="button" id="lbPrev" aria-label="Image précédente"><svg aria-hidden="true"><use href="#i-arrow-l"/></svg></button>
+        <span class="muted" id="lbCount"></span>
+        <button class="round" type="button" id="lbNext" aria-label="Image suivante"><svg aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+      </div>
+    </dialog>
+
+    <!-- ================= Videos ================= -->
+    <section class="section" data-scene="1" id="videos">
+      <div class="wrap">
+        <h2 class="reveal">meloDrop en vidéo.</h2>
+        <p class="intro reveal d1">Le film court pour découvrir l'appli, puis la présentation complète du projet, de la démo jusqu'à la technique.</p>
+
+        <div class="promo reveal" id="promoBlock">
+          <div class="player landscape" id="promoPlayer">
+            <video id="promo" playsinline preload="none" poster="media/promo-poster-16x9.webp"
+                   data-landscape="media/promo-16x9.mp4" data-portrait="media/promo-9x16.mp4"
+                   data-poster-landscape="media/promo-poster-16x9.webp" data-poster-portrait="media/promo-poster-9x16.webp"></video>
+            <button class="play-big" type="button" id="promoPlay" aria-label="Lire le film de présentation (1 min 18)">
+              <span><svg aria-hidden="true"><use href="#i-play"/></svg></span>
+              <em>Le film<small>1 min 18, sous-titré en anglais</small></em>
+            </button>
+          </div>
+        </div>
+
+        <div class="talk" id="talk">
+          <div class="reveal">
+            <div class="yt" id="yt">
+              <img id="ytThumb" alt="Miniature de la vidéo de présentation de meloDrop" loading="lazy">
+              <div class="yt-fallback" aria-hidden="true"><svg viewBox="0 0 64 92"><use href="#striped-drop"/></svg><p>meloDrop, le projet</p></div>
+              <button class="play-big" type="button" id="ytPlay" aria-label="Lire la présentation complète sur YouTube">
+                <span><svg aria-hidden="true"><use href="#i-play"/></svg></span>
+              </button>
+            </div>
+          </div>
+          <div class="reveal d1">
+            <h3>La présentation complète, en 5 minutes</h3>
+            <p class="muted" style="margin-top:8px">Va directement à la partie qui t'intéresse :</p>
+            <ol class="chapters" id="chapters"></ol>
+            <a class="yt-link" id="ytLink" href="#" target="_blank" rel="noopener">Ouvrir sur YouTube</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Versions ================= -->
+    <section class="section" data-scene="2" id="versions">
+      <div class="wrap">
+        <h2 class="reveal" id="versionsTitle">15 versions en 17 jours.</h2>
+        <p class="intro reveal d1">La première version est sortie le 26 octobre 2026. Depuis, les retours des testeurs font avancer l'appli presque chaque jour.</p>
+        <div class="timeline" id="timeline">
+          <div class="tl-line" aria-hidden="true"></div>
+          <ol class="tl-track" id="tlTrack" tabindex="0" aria-label="Historique des versions"></ol>
+          <div class="tl-nav">
+            <button class="round" type="button" data-tl="-1" aria-label="Versions précédentes"><svg aria-hidden="true"><use href="#i-arrow-l"/></svg></button>
+            <button class="round" type="button" data-tl="1" aria-label="Versions suivantes"><svg aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Under the hood ================= -->
+    <section class="section" data-scene="3" id="technique">
+      <div class="wrap">
+        <h2 class="reveal">Sous le capot.</h2>
+        <p class="intro reveal d1">Une appli Android qui parle à une API, une base de données, et le catalogue public de Deezer pour la musique.</p>
+
+        <div class="arch reveal d1">
+          <div class="node n-phone">
+            <h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 18.5h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>L'appli Android</h3>
+            <p>Les écrans, les swipes et les animations.</p>
+            <div class="tags"><span>Kotlin</span><span>Jetpack Compose</span><span>Retrofit</span></div>
+          </div>
+          <div class="wire c1" aria-hidden="true"><i></i><i></i></div>
+          <div class="node n-api">
+            <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6 3 12l5 6M16 6l5 6-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>L'API</h3>
+            <p>Les comptes, les drops, le fil Discover et les likes.</p>
+            <div class="tags"><span>Python</span><span>FastAPI</span><span>SQLAlchemy</span><span>Alembic</span></div>
+          </div>
+          <div class="wire c2" aria-hidden="true"><i></i><i></i></div>
+          <div class="node n-db">
+            <h3><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7.5" ry="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" fill="none" stroke="currentColor" stroke-width="2"/></svg>La base</h3>
+            <p>Les utilisateurs, les chansons, les drops et les swipes.</p>
+            <div class="tags"><span>MySQL</span></div>
+          </div>
+          <div class="wire c3" aria-hidden="true"><i></i><i></i></div>
+          <div class="node n-deezer">
+            <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>L'API publique Deezer</h3>
+            <p>La recherche, les pochettes, les genres et les extraits de 30 secondes.</p>
+          </div>
+        </div>
+
+        <div class="host reveal">
+          <strong>En ligne sur mon serveur Scaleway</strong>
+          <div class="tags" style="margin:0"><span>Docker</span><span>Nginx</span><span>Brevo pour les e-mails</span></div>
+        </div>
+        <p class="soon reveal"><span>En préparation</span>une version iPhone en React Native.</p>
+      </div>
+    </section>
+
+    <!-- ================= About me ================= -->
+    <section class="section" data-scene="4" id="moi">
+      <div class="wrap me">
+        <div class="portrait reveal" id="portrait">
+          <div class="glow" aria-hidden="true"></div>
+          <img class="photo" src="media/maxime.webp" width="800" height="1000" alt="Portrait de Maxime Bernier" loading="lazy">
+          <div class="monogram" aria-hidden="true">MB</div>
+          <svg class="ripples" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
+            <ellipse class="wave" cx="150" cy="30" rx="148" ry="26" fill="none" stroke="url(#pond-grad)" stroke-width="2"/>
+            <ellipse class="wave" cx="150" cy="30" rx="148" ry="26" fill="none" stroke="url(#pond-grad)" stroke-width="2"/>
+            <ellipse class="wave" cx="150" cy="30" rx="148" ry="26" fill="none" stroke="url(#pond-grad)" stroke-width="2"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="reveal">Qui suis-je ?</h2>
+          <p class="who reveal d1">Moi, c'est <strong>Maxime Bernier</strong>, développeur en formation à la Holberton School, cohorte C29.</p>
+          <p class="muted reveal d1">J'ai découvert la programmation au lycée, puis j'ai travaillé dans l'Éducation nationale avant de me reconvertir dans le développement.</p>
+          <p class="muted reveal d2">meloDrop est mon projet de fin de première année. Je l'ai mené seul, de l'appli Android jusqu'à la mise en ligne sur mon propre serveur, avec une quarantaine de testeurs pour me dire ce qui coince.</p>
+          <div class="hire reveal d2">
+            <p>Je cherche une alternance en développement Full Stack, à partir de décembre 2026.</p>
+            <a class="btn btn-main" href="https://www.linkedin.com/in/maxime-bernier-dev" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1v5.45h-4v-4.83c0-1.15-.02-2.63-1.6-2.63-1.61 0-1.85 1.25-1.85 2.55v4.91h-4v-11Z"/></svg>
+              Me contacter sur LinkedIn
+            </a>
+          </div>
+          <div class="links reveal d3">
+            <a class="btn btn-ghost" href="https://github.com/litoxam" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+              Mon GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Beta ================= -->
+    <section class="section" data-scene="0" id="beta">
+      <div class="wrap">
+        <div class="beta-panel reveal" id="betaPanel">
+          <canvas id="rain" aria-hidden="true"></canvas>
+          <div class="beta-grid">
+            <div>
+              <h2>Rejoins la bêta.</h2>
+              <p class="intro">La bêta est ouverte à tous. Il te faut juste un téléphone Android et un compte Google Play.</p>
+              <a class="whatsapp" href="https://chat.whatsapp.com/Dj7H72SprBACMKc4X1BQMz" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3 .78.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.25-.12-1.47-.72-1.7-.8-.23-.09-.4-.13-.56.12-.17.25-.64.8-.79.97-.14.16-.29.18-.54.06a6.7 6.7 0 0 1-3.33-2.9c-.25-.43.25-.4.72-1.34.08-.16.04-.3-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.42h-.48a.92.92 0 0 0-.67.31 2.8 2.8 0 0 0-.87 2.08 4.9 4.9 0 0 0 1.02 2.6 11.2 11.2 0 0 0 4.3 3.8c1.6.69 2.22.75 3.02.63.49-.07 1.47-.6 1.68-1.18.2-.58.2-1.08.14-1.18-.06-.1-.22-.17-.47-.29Z"/></svg>
+                Rejoindre les testeurs sur WhatsApp
+              </a>
+              <p class="muted android-only">meloDrop est sur Android pour l'instant. La version iPhone est en préparation.</p>
+            </div>
+            <div>
+              <ol class="join">
+                <li><div><strong>Envoie l'adresse de ton compte Google Play</strong><span>à melodrop.app@gmail.com, avec « Bêta meloDrop » en objet.</span></div></li>
+                <li><div><strong>Reçois ton lien</strong><span>Tu reçois en retour le lien pour installer meloDrop depuis le Play Store.</span></div></li>
+                <li><div><strong>Dépose ta première chanson</strong><span>Et découvre celles des autres dès le lendemain.</span></div></li>
+              </ol>
+              <div class="mail">
+                <a class="btn btn-main" id="mailBtn" href="mailto:melodrop.app@gmail.com?subject=B%C3%AAta%20meloDrop">Envoyer mon adresse</a>
+                <span class="address">melodrop.app@gmail.com <button type="button" id="copyBtn">Copier</button></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
-    © 2026 meloDrop<br>
-    Un projet de Maxime BERNIER.
+    <div class="wrap foot">
+      <a class="brand" href="#top" aria-label="meloDrop, haut de la page">
+        <svg aria-hidden="true"><use href="#striped-drop"/></svg>
+        <span class="wordmark">melo<b>Drop</b></span>
+      </a>
+      <span>© 2026 meloDrop. Un projet de Maxime Bernier, Holberton School.</span>
+      <nav aria-label="Liens">
+        <a href="https://github.com/litoxam" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/maxime-bernier-dev" target="_blank" rel="noopener">LinkedIn</a>
+        <a id="footYt" href="#" target="_blank" rel="noopener">YouTube</a>
+      </nav>
+    </div>
   </footer>
 
   <script>
-    // Slideshows: arrows and "n / total" counter, one per tab. Swipe and scroll work without this script.
-    const updates = [];
+    // ================= Content to update =================
 
-    document.querySelectorAll(".panel").forEach((panel) => {
-      const track = panel.querySelector(".tour-track");
-      const slides = track.querySelectorAll(".slide");
-      const buttons = panel.querySelectorAll(".tour-btn");
-      const count = panel.querySelector(".tour-count");
+    // Presentation video on YouTube
+    const YOUTUBE_ID = "D7tE25X23Eg";
 
-      // Index of the slide closest to the current scroll position
-      function currentIndex() {
-        let best = 0;
-        slides.forEach((slide, i) => {
-          if (Math.abs(slide.offsetLeft - track.scrollLeft) < Math.abs(slides[best].offsetLeft - track.scrollLeft)) {
-            best = i;
-          }
+    // Chapters of the presentation video (same as the YouTube description)
+    const CHAPTERS = [
+      ["0:00", "Intro"],
+      ["0:15", "Le problème"],
+      ["0:33", "Démo : déposer une chanson"],
+      ["0:47", "Démo : découvrir les drops"],
+      ["1:03", "Démo : Mes likes, Mes skips, la Mixtape"],
+      ["1:20", "Pourquoi meloDrop"],
+      ["1:30", "La conception"],
+      ["1:58", "L'architecture"],
+      ["2:19", "Le front-end"],
+      ["2:55", "Le back-end"],
+      ["3:15", "Avec le recul"],
+      ["3:33", "La base de données"],
+      ["4:07", "Les contraintes des API musicales"],
+      ["4:36", "Un projet qui évolue"],
+      ["4:55", "Remerciements"],
+    ];
+
+    // Versions of the app, oldest first. Add the new ones at the end: the title counts them
+    const VERSIONS = [
+      ["0.1.0", "2026-10-26", "La première version : compte, Discover, Drop, Mes likes et profil."],
+      ["0.2.0", "2026-10-27", "Des boutons Like et Skip sous la carte, et l'écoute de ton propre drop."],
+      ["0.2.1", "2026-10-27", "Une goutte triste quand un titre n'a pas de pochette."],
+      ["0.3.0", "2026-10-28", "Un rappel avant la fin de ton drop, et les genres en français."],
+      ["0.4.0", "2026-10-29", "Mes skips : repêche un titre passé par erreur."],
+      ["0.4.1", "2026-10-29", "Mes skips passe sur le profil, après les retours des testeurs."],
+      ["0.5.0", "2026-11-02", "La recherche d'utilisateurs et l'écran Mes drops."],
+      ["0.6.0", "2026-11-05", "Les picks : le coup de cœur dès la première écoute."],
+      ["0.7.0", "2026-11-05", "La Mixtape, les badges, les abonnements et la fiche d'un titre."],
+      ["0.8.0", "2026-11-05", "La recherche et le tri dans Mes likes, et les vues de ton drop."],
+      ["0.9.0", "2026-11-08", "Une carte par chanson, qui a liké ton drop, et des tutos."],
+      ["0.9.1", "2026-11-08", "Le tuto et les pochettes s'adaptent aux petits écrans."],
+      ["0.10.0", "2026-11-11", "Les animations de like, pick et skip, la pluie de gouttes et les auras."],
+      ["0.10.1", "2026-11-11", "L'appli reste en portrait, et les noms longs s'affichent en entier."],
+      ["0.10.2", "2026-11-11", "L'appli redevient compatible avec 25 appareils."],
+    ];
+
+    // Example drops of the demo (covers drawn in CSS)
+    const SONGS = [
+      { title: "Midnight City", artist: "M83", genre: "Électro", by: "lea", likes: 12, bg: "#b4a7f5", art: "radial-gradient(circle at 34% 38%, #ffe3ef 0 16%, transparent 16.6%), radial-gradient(90% 70% at 80% 10%, rgba(255,224,138,.55), transparent 60%), linear-gradient(160deg, #8f7bf4, #f47bad 55%, #ffa270)" },
+      { title: "Dreams", artist: "Fleetwood Mac", genre: "Rock", by: "elliot", likes: 4, bg: "#9ee0b8", art: "repeating-radial-gradient(circle at 50% 118%, #9ee0b8 0 .6em, #5fbf9b .6em 1.2em), linear-gradient(#20403a, #20403a)" },
+      { title: "La grenade", artist: "Clara Luciani", genre: "Pop", by: "sam_k", likes: 0, bg: "#ffb38a", art: "repeating-linear-gradient(-35deg, #ffe08a 0 1em, #ffb38a 1em 2em, #f5a8c8 2em 3em)" },
+      { title: "Redbone", artist: "Childish Gambino", genre: "R&B", by: "nina", likes: 21, bg: "#f5a8c8", art: "radial-gradient(circle at 64% 34%, #ffe08a 0 13%, rgba(255,224,138,.25) 14%, transparent 38%), linear-gradient(180deg, #1d1b3a, #47336f)" },
+      { title: "Instant Crush", artist: "Daft Punk", genre: "Électro", by: "litoxam", likes: 7, bg: "#ffe08a", art: "conic-gradient(from 30deg at 50% 50%, #b4a7f5, #9ee0b8, #ffe08a, #f5a8c8, #b4a7f5)" },
+    ];
+
+    // ================= Helpers =================
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const pastels = ["#b4a7f5", "#f5a8c8", "#ffb38a", "#ffe08a", "#9ee0b8"];
+
+    // Seconds from "m:ss"
+    const toSeconds = (t) => t.split(":").reduce((acc, part) => acc * 60 + Number(part), 0);
+
+    // ================= Navigation and halos =================
+    const nav = $("#nav");
+    addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 20), { passive: true });
+
+    // The halos move to a new place for each section, like when you change tabs in the app
+    const aurora = $("#aurora");
+    const navLinks = $$(".nav-links a");
+    const sceneObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        aurora.dataset.scene = entry.target.dataset.scene || "0";
+        navLinks.forEach((link) => link.classList.toggle("active", link.hash === "#" + entry.target.id));
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    $$("main > section").forEach((section) => sceneObserver.observe(section));
+
+    // Elements appear when they come on screen
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: "0px 0px -10% 0px" });
+    $$(".reveal, [data-in]").forEach((el) => revealObserver.observe(el));
+
+    // Marquee: the text is written twice so the loop has no gap
+    const bandText = ["Une chanson par jour", "Choisie par quelqu'un", "Pas par un algorithme", "Dépose, découvre, garde"];
+    const bandHTML = bandText.map((t, i) => `${t}<svg viewBox="0 0 24 28" style="color:${pastels[i % 5]}"><use href="#i-drop"/></svg>`).join("");
+    $("#band").innerHTML = `<span>${bandHTML}</span><span>${bandHTML}</span>`;
+
+    // ================= Avatar (drop in a pastel circle) =================
+    function avatarSVG(bg, drop = "night", face = true) {
+      const fills = {
+        night: `<path d="M50 18C50 18 30 41 30 55a20 20 0 0 0 40 0C70 41 50 18 50 18Z" fill="#1d1c25"/>`,
+        cream: `<path d="M50 18C50 18 30 41 30 55a20 20 0 0 0 40 0C70 41 50 18 50 18Z" fill="#f6eedf" stroke="rgba(23,20,42,.45)" stroke-width="1.4"/>`,
+        spectre: `<g clip-path="url(#av-clip)"><rect x="25" y="10" width="50" height="22" fill="#f5a8c8"/><rect x="25" y="33" width="50" height="10" fill="#ffb38a"/><rect x="25" y="44" width="50" height="10" fill="#ffe08a"/><rect x="25" y="55" width="50" height="10" fill="#9ee0b8"/><rect x="25" y="66" width="50" height="14" fill="#b4a7f5"/></g><path d="M50 18C50 18 30 41 30 55a20 20 0 0 0 40 0C70 41 50 18 50 18Z" fill="none" stroke="rgba(23,20,42,.45)" stroke-width="1.4"/>`,
+      };
+      const eyes = drop === "night" ? "#f2f2f5" : "#17142a";
+      return `
+        <defs><clipPath id="av-clip"><path d="M50 18C50 18 30 41 30 55a20 20 0 0 0 40 0C70 41 50 18 50 18Z"/></clipPath></defs>
+        <circle cx="50" cy="50" r="48" fill="${bg}"/>
+        <ellipse cx="50" cy="78" rx="16" ry="3.5" fill="rgba(0,0,0,.14)"/>
+        ${fills[drop]}
+        <path d="M41 42c2-5 5-9 7-11" stroke="rgba(255,255,255,.5)" stroke-width="3" stroke-linecap="round" fill="none"/>
+        ${face ? `<circle cx="44" cy="57" r="2.4" fill="${eyes}"/><circle cx="56" cy="57" r="2.4" fill="${eyes}"/><path d="M45.5 63.5q4.5 3.5 9 0" stroke="${eyes}" stroke-width="2" stroke-linecap="round" fill="none"/>` : ""}`;
+    }
+    const miniAvatar = (bg) => `<svg viewBox="0 0 100 100" aria-hidden="true">${avatarSVG(bg, "night", false)}</svg>`;
+
+    // ================= Hero: Discover demo =================
+    const deck = $("#deck");
+    const screen = $("#screen");
+    const fx = $("#fx");
+    const toast = $("#toast");
+    const finger = $("#finger");
+    let songIndex = 0;
+    let busy = false;
+    let lastUserAction = 0;
+
+    const likesLabel = (n) => (n === 0 ? "Aucun like" : n === 1 ? "1 like" : `${n} likes`);
+    const genreColor = (genre) => pastels[[...genre].reduce((a, c) => a + c.charCodeAt(0), 0) % 5];
+
+    function makeCard(song) {
+      const card = document.createElement("article");
+      card.className = "card";
+      card.dataset.likes = song.likes;
+      card.innerHTML = `
+        <div class="cover">
+          <div class="art" style="background:${song.art}"></div>
+          <span class="genre" style="color:${genreColor(song.genre)}">${song.genre}</span>
+          <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+          <button class="play" type="button" aria-label="Écouter l'extrait (démo)"><svg aria-hidden="true"><use href="#i-play"/></svg></button>
+          <span class="progress"></span>
+        </div>
+        <div class="meta">
+          <p class="title">${song.title}</p>
+          <p class="artist">${song.artist}</p>
+          <div class="by">
+            <div class="by-who">${miniAvatar(song.bg)}<div><small>Déposé par</small><span>@${song.by}</span></div></div>
+            <span class="likes">${likesLabel(song.likes)}</span>
+          </div>
+        </div>
+        <span class="stamp s-like" aria-hidden="true">J'aime</span>
+        <span class="stamp s-skip" aria-hidden="true">Passer</span>
+        <span class="stamp s-pick" aria-hidden="true">Pick</span>`;
+      // The play button only plays a little animation: there is no real sound in the demo
+      card.querySelector(".play").addEventListener("click", (event) => {
+        event.stopPropagation();
+        lastUserAction = Date.now();
+        const playing = card.classList.toggle("playing");
+        card.querySelector(".play use").setAttribute("href", playing ? "#i-pause" : "#i-play");
+      });
+      card.querySelector(".play").addEventListener("pointerdown", (event) => event.stopPropagation());
+      return card;
+    }
+
+    function nextSong() {
+      const song = SONGS[songIndex % SONGS.length];
+      songIndex += 1;
+      return song;
+    }
+
+    function fillDeck() {
+      while (deck.children.length < 2) {
+        const card = makeCard(nextSong());
+        if (deck.children.length === 1) card.classList.add("back");
+        deck.appendChild(card);
+        if (deck.children.length === 1) bindDrag(card);
+      }
+    }
+
+    const topCard = () => deck.firstElementChild;
+
+    // Offset of the card while it is dragged: the stamps and the buttons follow it
+    function setOffset(card, dx, dy) {
+      card.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx * 0.06}deg)`;
+      const like = Math.max(0, Math.min(1, dx / 90));
+      const skip = Math.max(0, Math.min(1, -dx / 90));
+      const pick = Math.max(0, Math.min(1, -dy / 90)) * (1 - Math.max(like, skip));
+      card.querySelector(".s-like").style.opacity = like;
+      card.querySelector(".s-skip").style.opacity = skip;
+      card.querySelector(".s-pick").style.opacity = pick;
+      $(".choice.like").style.transform = `scale(${1 + like * 0.18})`;
+      $(".choice.skip").style.transform = `scale(${1 + skip * 0.18})`;
+      $(".choice.pick").style.transform = `translateY(-.45em) scale(${1 + pick * 0.18})`;
+      card._dx = dx; card._dy = dy;
+    }
+
+    function resetButtons() {
+      $$(".choice").forEach((b) => (b.style.transform = ""));
+    }
+
+    function bindDrag(card) {
+      let startX = 0, startY = 0, dragging = false;
+      card.addEventListener("pointerdown", (event) => {
+        if (busy || event.button > 0) return;
+        dragging = true;
+        lastUserAction = Date.now();
+        startX = event.clientX; startY = event.clientY;
+        card.setPointerCapture(event.pointerId);
+        card.classList.add("dragging");
+      });
+      card.addEventListener("pointermove", (event) => {
+        if (!dragging) return;
+        setOffset(card, event.clientX - startX, event.clientY - startY);
+      });
+      const end = () => {
+        if (!dragging) return;
+        dragging = false;
+        lastUserAction = Date.now();
+        card.classList.remove("dragging");
+        const dx = card._dx || 0, dy = card._dy || 0;
+        if (dx > 80) choose("like");
+        else if (dx < -80) choose("skip");
+        else if (dy < -80) choose("pick");
+        else springBack(card);
+      };
+      card.addEventListener("pointerup", end);
+      card.addEventListener("pointercancel", () => { dragging = false; card.classList.remove("dragging"); springBack(card); });
+    }
+
+    function springBack(card) {
+      const from = card.style.transform || "none";
+      card.animate([{ transform: from }, { transform: "none" }], { duration: 450, easing: "cubic-bezier(.34,1.56,.64,1)" });
+      setOffset(card, 0, 0);
+      card.style.transform = "";
+      resetButtons();
+    }
+
+    // Position of an element inside the screen (for the effects)
+    function centerOf(el) {
+      const s = screen.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      return { x: r.left - s.left + r.width / 2, y: r.top - s.top + r.height / 2, w: s.width, h: s.height };
+    }
+
+    // One element of an effect: created, animated, then removed
+    function spawn(html, keyframes, options) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = html.trim();
+      const el = wrap.firstElementChild;
+      fx.appendChild(el);
+      const anim = el.animate(keyframes, { fill: "forwards", ...options });
+      anim.onfinish = () => el.remove();
+      return anim;
+    }
+
+    function ring(x, y, color, size, duration, delay = 0, width = 3) {
+      spawn(`<span style="width:${size}px;height:${size}px;margin:${-size / 2}px;border-radius:50%;border:${width}px solid ${color}"></span>`,
+        [{ transform: `translate(${x}px,${y}px) scale(.1)`, opacity: 1 }, { transform: `translate(${x}px,${y}px) scale(1)`, opacity: 0 }],
+        { duration, delay, easing: "cubic-bezier(.2,.7,.3,1)" });
+    }
+
+    function burst(x, y, symbol, colors, count, spread, size, duration, upward = false) {
+      for (let i = 0; i < count; i++) {
+        const angle = upward ? (-Math.PI / 2 + (Math.random() - 0.5) * 1.8) : (i / count) * Math.PI * 2 + Math.random() * 0.4;
+        const dist = spread * (0.6 + Math.random() * 0.6);
+        const tx = x + Math.cos(angle) * dist, ty = y + Math.sin(angle) * dist - (upward ? 30 : 0);
+        const s = size * (0.6 + Math.random() * 0.7);
+        const color = colors[i % colors.length];
+        spawn(`<svg style="width:${s}px;height:${s}px;margin:${-s / 2}px;color:${color}"><use href="#${symbol}"/></svg>`,
+          [{ transform: `translate(${x}px,${y}px) scale(.2) rotate(0deg)`, opacity: 1 },
+           { transform: `translate(${tx}px,${ty}px) scale(1) rotate(${(Math.random() - 0.5) * 90}deg)`, opacity: 1, offset: 0.7 },
+           { transform: `translate(${tx}px,${ty + 16}px) scale(.8)`, opacity: 0 }],
+          { duration: duration * (0.8 + Math.random() * 0.4), easing: "cubic-bezier(.2,.8,.3,1)" });
+      }
+    }
+
+    function bigIcon(x, y, symbol, color, size, duration) {
+      spawn(`<svg style="width:${size}px;height:${size}px;margin:${-size / 2}px;color:${color};filter:drop-shadow(0 0 18px ${color})"><use href="#${symbol}"/></svg>`,
+        [{ transform: `translate(${x}px,${y}px) scale(0)`, opacity: 1 },
+         { transform: `translate(${x}px,${y}px) scale(1.25)`, opacity: 1, offset: 0.3 },
+         { transform: `translate(${x}px,${y}px) scale(1)`, opacity: 1, offset: 0.6 },
+         { transform: `translate(${x}px,${y - 20}px) scale(1.1)`, opacity: 0 }],
+        { duration, easing: "ease-out" });
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none", offset: 0.15 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }], { duration: 1700, fill: "forwards" });
+      $(".hint-text").animate([{ opacity: 1 }, { opacity: 0, offset: 0.12 }, { opacity: 0, offset: 0.88 }, { opacity: 1 }], { duration: 1700 });
+    }
+
+    function effects(choice, card) {
+      const c = centerOf(card.querySelector(".cover"));
+      if (choice === "like") {
+        const b = centerOf($(".choice.like"));
+        ring(b.x, b.y, "#9ee0b8", 200, 750);
+        ring(b.x, b.y, "#9ee0b8", 280, 900, 140, 2);
+        bigIcon(c.x, c.y, "i-heart", "#9ee0b8", 86, 900);
+        burst(c.x, c.y, "i-heart", ["#9ee0b8", "#f5a8c8", "#b4a7f5"], 9, 110, 18, 950, true);
+        showToast("Ajouté à Mes likes");
+      } else if (choice === "pick") {
+        spawn(`<span style="width:100%;height:100%;background:radial-gradient(circle at 50% 40%, rgba(255,224,138,.55), rgba(255,224,138,.15))"></span>`,
+          [{ opacity: 1 }, { opacity: 0 }], { duration: 440, easing: "ease-out" });
+        screen.animate([{ transform: "none" }, { transform: "translate(-3px,2px)" }, { transform: "translate(3px,-2px)" }, { transform: "translate(-2px,-1px)" }, { transform: "none" }], { duration: 340 });
+        ring(c.x, c.y, "#ffe08a", 420, 900, 0, 4);
+        ring(c.x, c.y, "#b4a7f5", 520, 1050, 120, 3);
+        ring(c.x, c.y, "#f5a8c8", 620, 1200, 240, 2);
+        bigIcon(c.x, c.y, "i-star", "#ffe08a", 96, 950);
+        burst(c.x, c.y, "i-star", pastels, 14, 150, 16, 1000);
+        spawn(`<span style="font-family:Unbounded,sans-serif;font-weight:700;font-size:3em;color:#ffe08a;text-shadow:0 0 24px rgba(255,224,138,.7);width:6em;margin-left:-3em;text-align:center">PICK</span>`,
+          [{ transform: `translate(${c.w / 2}px,${c.y - 150}px) scale(.5)`, opacity: 0 },
+           { transform: `translate(${c.w / 2}px,${c.y - 150}px) scale(1.12)`, opacity: 1, offset: 0.25 },
+           { transform: `translate(${c.w / 2}px,${c.y - 150}px) scale(1)`, opacity: 1, offset: 0.7 },
+           { transform: `translate(${c.w / 2}px,${c.y - 170}px) scale(1)`, opacity: 0 }],
+          { duration: 900, easing: "ease-out" });
+        showToast("Ajouté à Mes picks");
+      } else {
+        const b = centerOf($(".choice.skip"));
+        ring(b.x, b.y, "rgba(201,199,210,.8)", 180, 700, 0, 2);
+        for (let i = 0; i < 5; i++) {
+          const y = c.y - 70 + i * 34 + Math.random() * 10;
+          spawn(`<span style="width:${70 + Math.random() * 60}px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(201,199,210,.8))"></span>`,
+            [{ transform: `translate(${c.x}px,${y}px)`, opacity: 0 }, { transform: `translate(${c.x - 60}px,${y}px)`, opacity: 1, offset: 0.3 }, { transform: `translate(${c.x - 220}px,${y}px)`, opacity: 0 }],
+            { duration: 520, delay: i * 30, easing: "ease-in" });
+        }
+        showToast("Passé, à retrouver dans Mes skips");
+      }
+    }
+
+    async function choose(choice) {
+      const card = topCard();
+      if (!card || busy) return;
+      busy = true;
+      card.style.pointerEvents = "none";
+      // A like or a pick gives one more like to the person who dropped the song
+      if (choice !== "skip") {
+        const n = Number(card.dataset.likes) + 1;
+        const label = card.querySelector(".likes");
+        label.textContent = likesLabel(n);
+        label.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)" }, { transform: "scale(1)" }], { duration: 300 });
+      }
+      if (!reduced) effects(choice, card);
+      else showToast(choice === "like" ? "Ajouté à Mes likes" : choice === "pick" ? "Ajouté à Mes picks" : "Passé, à retrouver dans Mes skips");
+
+      const dx = card._dx || 0, dy = card._dy || 0;
+      const from = `translate(${dx}px, ${dy}px) rotate(${dx * 0.06}deg)`;
+      const to = choice === "like" ? "translate(420px, -40px) rotate(24deg)"
+               : choice === "skip" ? "translate(-420px, -40px) rotate(-24deg)"
+               : "translate(0, -620px) scale(.85)";
+      await wait(choice === "skip" ? 0 : 140);
+      const exit = card.animate([{ transform: from, opacity: 1 }, { transform: to, opacity: 0.4 }], { duration: reduced ? 1 : 380, easing: "cubic-bezier(.5,0,.75,0)", fill: "forwards" });
+      await exit.finished;
+      card.remove();
+      resetButtons();
+
+      // The next card comes forward with a little bounce
+      const next = topCard();
+      if (next) {
+        next.classList.remove("back");
+        next.animate([{ transform: "translateY(.7em) scale(.94)", opacity: 0.55 }, { transform: "none", opacity: 1 }], { duration: reduced ? 1 : 520, easing: "cubic-bezier(.34,1.56,.64,1)" });
+        bindDrag(next);
+      }
+      fillDeck();
+      busy = false;
+    }
+
+    $$(".choice").forEach((button) => button.addEventListener("click", () => {
+      lastUserAction = Date.now();
+      choose(button.dataset.choice);
+    }));
+
+    // Arrow keys on the phone: left to skip, right to like, up to pick
+    $("#phone").addEventListener("keydown", (event) => {
+      const choice = { ArrowLeft: "skip", ArrowRight: "like", ArrowUp: "pick" }[event.key];
+      if (choice) { event.preventDefault(); lastUserAction = Date.now(); choose(choice); }
+    });
+
+    // Automatic demo: a finger swipes the card when nobody touches it
+    function tween(duration, step) {
+      return new Promise((resolve) => {
+        const start = performance.now();
+        const frame = (now) => {
+          const t = Math.min(1, (now - start) / duration);
+          step(t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+          if (t < 1) requestAnimationFrame(frame); else resolve();
+        };
+        requestAnimationFrame(frame);
+      });
+    }
+
+    const demoOrder = ["like", "skip", "pick", "like", "skip", "like", "pick"];
+    let demoStep = 0;
+    let heroVisible = true;
+    new IntersectionObserver(([entry]) => (heroVisible = entry.isIntersecting), { threshold: 0.35 }).observe($("#phone"));
+
+    async function demoGesture() {
+      const card = topCard();
+      if (!card || busy) return;
+      const choice = demoOrder[demoStep++ % demoOrder.length];
+      const target = choice === "like" ? [110, -6] : choice === "skip" ? [-110, -6] : [0, -110];
+      const c = centerOf(card.querySelector(".cover"));
+      finger.style.left = c.x + "px"; finger.style.top = c.y + "px";
+      finger.animate([{ opacity: 0, transform: "scale(1.4)" }, { opacity: 1, transform: "scale(1)" }], { duration: 250, fill: "forwards" });
+      await wait(260);
+      await tween(560, (k) => {
+        setOffset(card, target[0] * k, target[1] * k);
+        finger.style.left = c.x + target[0] * k + "px";
+        finger.style.top = c.y + target[1] * k + "px";
+      });
+      finger.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" });
+      if (Date.now() - lastUserAction < 500) { springBack(card); return; }
+      choose(choice);
+    }
+
+    fillDeck();
+    if (!reduced) {
+      setInterval(() => {
+        if (document.hidden || !heroVisible || busy) return;
+        if (Date.now() - lastUserAction < 7000) return;
+        demoGesture();
+      }, 3600);
+    }
+
+    // ================= Hero intro: the drop falls, the water ripples, the phone comes up =================
+    async function intro() {
+      const hidden = $$(".hero .intro-hide");
+      if (reduced) { hidden.forEach((el) => el.classList.remove("intro-hide")); return; }
+      const drop = $("#introDrop");
+      const stage = $("#stage");
+      const fallTo = stage.offsetHeight - 70;
+      drop.style.opacity = 1;
+      const fall = drop.animate([
+        { transform: `translateY(-140px) scale(.9, 1.1)`, opacity: 0 },
+        { transform: `translateY(-50px) scale(.92, 1.1)`, opacity: 1, offset: 0.22 },
+        { transform: `translateY(${fallTo}px) scale(.88, 1.18)`, opacity: 1, offset: 0.88 },
+        { transform: `translateY(${fallTo + 12}px) scale(1.6, .35)`, opacity: 0 },
+      ], { duration: 1050, easing: "cubic-bezier(.45,0,.85,.55)", fill: "forwards" });
+
+      // The title lines drop in one after the other
+      $$(".hero h1 .line").forEach((line, i) => {
+        line.classList.remove("intro-hide");
+        line.animate([{ transform: "translateY(-0.6em)", opacity: 0, filter: "blur(8px)" }, { transform: "none", opacity: 1, filter: "blur(0)" }],
+          { duration: 800, delay: 150 + i * 120, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "backwards" });
+      });
+
+      await fall.finished;
+      const splash = $("#splash");
+      [0, 140, 280].forEach((delay, i) => {
+        splash.animate([{ transform: "scale(1)", opacity: 0.9 }, { transform: `scale(${9 + i * 3}, ${5 + i * 2})`, opacity: 0 }],
+          { duration: 1100, delay, easing: "cubic-bezier(.2,.7,.3,1)" });
+      });
+
+      const phone = $("#phone");
+      phone.classList.remove("intro-hide");
+      phone.animate([{ transform: "translateY(60px) scale(.92)", opacity: 0 }, { transform: "none", opacity: 1 }],
+        { duration: 900, easing: "cubic-bezier(.34,1.4,.64,1)", fill: "backwards" });
+
+      hidden.filter((el) => !el.classList.contains("line") && el !== phone).forEach((el, i) => {
+        el.classList.remove("intro-hide");
+        el.animate([{ transform: "translateY(16px)", opacity: 0 }, { transform: "none", opacity: 1 }],
+          { duration: 700, delay: 120 + i * 90, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+      });
+    }
+    // Start once the fonts are ready, so the title does not jump
+    (document.fonts ? Promise.race([document.fonts.ready, wait(1200)]) : Promise.resolve()).then(intro);
+
+    // ================= Step 1: the 24 h countdown =================
+    const timer = $("#timer");
+    const timerText = $("#timerText");
+    let timerLeft = 24 * 3600 - 1;
+    new IntersectionObserver(([entry], obs) => {
+      if (!entry.isIntersecting) return;
+      obs.disconnect();
+      let p = 0;
+      const fill = () => { p = Math.min(100, p + 2.5); timer.style.setProperty("--p", p); if (p < 100) requestAnimationFrame(fill); };
+      reduced ? timer.style.setProperty("--p", 100) : requestAnimationFrame(fill);
+      setInterval(() => {
+        timerLeft -= 1;
+        const h = String(Math.floor(timerLeft / 3600)).padStart(2, "0");
+        const m = String(Math.floor((timerLeft % 3600) / 60)).padStart(2, "0");
+        const s = String(timerLeft % 60).padStart(2, "0");
+        timerText.textContent = `${h}:${m}:${s}`;
+        timer.style.setProperty("--p", (timerLeft / (24 * 3600)) * 100);
+      }, 1000);
+    }, { threshold: 0.5 }).observe(timer);
+
+    // ================= Avatar editor =================
+    const avatar = $("#avatar");
+    const avatarBox = $("#avatarBox");
+    const COLORS = [["Lavande", "#b4a7f5"], ["Rose", "#f5a8c8"], ["Pêche", "#ffb38a"], ["Beurre", "#ffe08a"], ["Menthe", "#9ee0b8"]];
+    const DROPS = [["night", "Nuit"], ["cream", "Crème"], ["spectre", "Spectre"]];
+    const AURAS = [["none", "Aucune"], ["halo", "Halo"], ["sparkles", "Paillettes"], ["rain", "Pluie"], ["equalizer", "Égaliseur"]];
+    const look = { color: "#b4a7f5", drop: "night", aura: "halo" };
+    let studioTouched = false;
+
+    // Pieces of the auras, placed once
+    const sparkles = $(".aura-sparkles");
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const r = 92 + (i % 2) * 8;
+      sparkles.insertAdjacentHTML("beforeend", `<i style="transform:translate(${Math.cos(a) * r}px,${Math.sin(a) * r}px);color:${pastels[i % 5]}"></i>`);
+      sparkles.lastElementChild.style.setProperty("--delay", `${-i * 0.25}s`);
+    }
+    const rain = $(".aura-rain");
+    for (let i = 0; i < 12; i++) {
+      rain.insertAdjacentHTML("beforeend", `<i style="left:${8 + Math.random() * 84}%;background:${pastels[i % 5]};animation-delay:${-Math.random() * 1.6}s;animation-duration:${1.3 + Math.random() * 0.8}s"></i>`);
+    }
+    const eq = $(".aura-eq");
+    for (let i = 0; i < 16; i++) {
+      eq.insertAdjacentHTML("beforeend", `<i style="transform:rotate(${i * 22.5}deg) translateY(80px);color:${pastels[i % 5]}"></i>`);
+      eq.lastElementChild.style.setProperty("--delay", `${-i * 0.11}s`);
+    }
+
+    function renderAvatar(pop = true) {
+      avatar.innerHTML = avatarSVG(look.color, look.drop, true);
+      $$(".aura", avatarBox).forEach((a) => a.classList.toggle("on", a.dataset.aura === look.aura));
+      $$("#swatches .swatch").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === look.color)));
+      $$("#drops .pill").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === look.drop)));
+      $$("#auras .pill").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === look.aura)));
+      if (pop && !reduced) {
+        avatarBox.classList.add("pop");
+        setTimeout(() => avatarBox.classList.remove("pop"), 220);
+      }
+    }
+
+    $("#swatches").innerHTML = COLORS.map(([name, hex]) => `<button class="swatch" type="button" data-value="${hex}" style="background:${hex}" aria-label="${name}"></button>`).join("");
+    $("#drops").innerHTML = DROPS.map(([value, name]) => `<button class="pill" type="button" data-value="${value}">${name}</button>`).join("");
+    $("#auras").innerHTML = AURAS.map(([value, name]) => `<button class="pill" type="button" data-value="${value}">${name}</button>`).join("");
+    $("#swatches").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; studioTouched = true; look.color = b.dataset.value; renderAvatar(); });
+    $("#drops").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; studioTouched = true; look.drop = b.dataset.value; renderAvatar(); });
+    $("#auras").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; studioTouched = true; look.aura = b.dataset.value; renderAvatar(); });
+    renderAvatar(false);
+
+    // Until someone touches it, the editor tries a new look every few seconds
+    let studioVisible = false;
+    new IntersectionObserver(([entry]) => (studioVisible = entry.isIntersecting), { threshold: 0.4 }).observe($("#studio"));
+    let lookStep = 0;
+    if (!reduced) setInterval(() => {
+      if (studioTouched || !studioVisible || document.hidden) return;
+      lookStep += 1;
+      look.color = COLORS[lookStep % COLORS.length][1];
+      look.aura = AURAS[1 + (lookStep % (AURAS.length - 1))][0];
+      look.drop = DROPS[Math.floor(lookStep / 2) % DROPS.length][0];
+      renderAvatar();
+    }, 2600);
+
+    // ================= Gallery: tabs, reels and full screen view =================
+    const tabs = $$(".tab");
+    const reels = [];
+
+    $$(".panel").forEach((panel) => {
+      const reel = $(".reel", panel);
+      const shots = $$(".shot", reel);
+      const [prev, next] = $$(".reel-nav .round", panel);
+      const dots = $(".dots", panel);
+      dots.innerHTML = shots.map(() => "<i></i>").join("");
+
+      function current() {
+        const mid = reel.scrollLeft + reel.clientWidth / 2;
+        let best = 0, bestDist = Infinity;
+        shots.forEach((shot, i) => {
+          const d = Math.abs(shot.offsetLeft + shot.offsetWidth / 2 - mid);
+          if (d < bestDist) { bestDist = d; best = i; }
         });
         return best;
       }
-
+      // The slide in the middle is bigger, the others shrink and fade
       function update() {
-        const i = currentIndex();
-        count.textContent = `${i + 1} / ${slides.length}`;
-        buttons[0].disabled = i === 0;
-        buttons[1].disabled = i === slides.length - 1;
-      }
-
-      buttons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const next = currentIndex() + Number(button.dataset.step);
-          if (next >= 0 && next < slides.length) {
-            track.scrollTo({ left: slides[next].offsetLeft });
-          }
+        const mid = reel.scrollLeft + reel.clientWidth / 2;
+        shots.forEach((shot) => {
+          const d = Math.min(1, Math.abs(shot.offsetLeft + shot.offsetWidth / 2 - mid) / shot.offsetWidth);
+          shot.style.setProperty("--d", d.toFixed(3));
         });
-      });
-
-      track.addEventListener("scroll", () => requestAnimationFrame(update));
+        const i = current();
+        prev.disabled = i === 0;
+        next.disabled = i === shots.length - 1;
+        $$("i", dots).forEach((dot, k) => dot.classList.toggle("on", k === i));
+      }
+      function go(i) {
+        const shot = shots[Math.max(0, Math.min(shots.length - 1, i))];
+        reel.scrollTo({ left: shot.offsetLeft + shot.offsetWidth / 2 - reel.clientWidth / 2, behavior: reduced ? "auto" : "smooth" });
+      }
+      prev.addEventListener("click", () => go(current() - 1));
+      next.addEventListener("click", () => go(current() + 1));
+      reel.addEventListener("scroll", () => requestAnimationFrame(update), { passive: true });
+      addEventListener("resize", update);
+      shots.forEach((shot, i) => $("button", shot).addEventListener("click", () => {
+        if (i !== current()) go(i); else openLightbox(shots, i);
+      }));
       update();
-      updates.push(update);
+      reels.push(update);
     });
 
-    // Tabs: one panel shown at a time. Left and right arrows move between the tabs
-    const tabs = [...document.querySelectorAll(".tab")];
-
-    function select(tab) {
+    function selectTab(tab) {
       tabs.forEach((other) => {
-        const selected = other === tab;
-        other.setAttribute("aria-selected", String(selected));
-        other.tabIndex = selected ? 0 : -1;
-        document.getElementById(other.getAttribute("aria-controls")).hidden = !selected;
+        const on = other === tab;
+        other.setAttribute("aria-selected", String(on));
+        other.tabIndex = on ? 0 : -1;
+        const panel = document.getElementById(other.getAttribute("aria-controls"));
+        panel.hidden = !on;
+        if (on) panel.classList.add("in");
       });
-      // A hidden slideshow has no size: its counter is set again once shown
-      updates.forEach((update) => update());
+      reels.forEach((update) => update());
     }
-
     tabs.forEach((tab, i) => {
-      tab.addEventListener("click", () => select(tab));
+      tab.addEventListener("click", () => selectTab(tab));
       tab.addEventListener("keydown", (event) => {
         const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
         if (!step) return;
         const next = tabs[(i + step + tabs.length) % tabs.length];
-        select(next);
-        next.focus();
+        selectTab(next); next.focus();
       });
     });
+    // Link with #nouveautes (shared in the testers' group): opens the second tab
+    if (location.hash === "#nouveautes") {
+      selectTab(tabs[1]);
+      $("#visuels").scrollIntoView();
+    }
 
-    // Link with #nouveautes (to share in the testers' group): opens the second tab
-    if (location.hash === "#nouveautes") select(tabs[1]);
+    const lightbox = $("#lightbox");
+    const lbImg = $("#lbImg");
+    let lbShots = [], lbIndex = 0;
+    function showLightbox() {
+      const img = $("img", lbShots[lbIndex]);
+      lbImg.src = img.src; lbImg.alt = img.alt;
+      $("#lbCount").textContent = `${lbIndex + 1} / ${lbShots.length}`;
+      lbImg.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 250 });
+    }
+    function openLightbox(shots, i) {
+      lbShots = shots; lbIndex = i;
+      showLightbox();
+      if (typeof lightbox.showModal === "function") lightbox.showModal(); else window.open($("img", shots[i]).src, "_blank");
+    }
+    $("#lbPrev").addEventListener("click", () => { lbIndex = (lbIndex - 1 + lbShots.length) % lbShots.length; showLightbox(); });
+    $("#lbNext").addEventListener("click", () => { lbIndex = (lbIndex + 1) % lbShots.length; showLightbox(); });
+    $("#lbClose").addEventListener("click", () => lightbox.close());
+    lightbox.addEventListener("click", (event) => { if (event.target === lightbox) lightbox.close(); });
+    lightbox.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight") $("#lbNext").click();
+      if (event.key === "ArrowLeft") $("#lbPrev").click();
+    });
+
+    // ================= Videos =================
+    // Promo: vertical file on a phone held upright, horizontal file everywhere else
+    const promo = $("#promo");
+    const promoPlayer = $("#promoPlayer");
+    const portraitQuery = matchMedia("(max-width: 760px) and (orientation: portrait)");
+    function pickPromo() {
+      if (!promo.paused) return;
+      const portrait = portraitQuery.matches;
+      promoPlayer.classList.toggle("portrait", portrait);
+      promoPlayer.classList.toggle("landscape", !portrait);
+      promo.poster = portrait ? promo.dataset.posterPortrait : promo.dataset.posterLandscape;
+      const src = portrait ? promo.dataset.portrait : promo.dataset.landscape;
+      if (!promo.src.endsWith(src)) promo.src = src;
+    }
+    pickPromo();
+    portraitQuery.addEventListener("change", pickPromo);
+    $("#promoPlay").addEventListener("click", () => {
+      $("#promoPlay").remove();
+      promo.controls = true;
+      promo.play().catch(() => {});
+    });
+    // If the file is missing, the block is hidden instead of showing a broken player
+    promo.addEventListener("error", () => $("#promoBlock").remove());
+
+    // Presentation on YouTube: the player only loads when someone clicks (lighter page)
+    const yt = $("#yt");
+    const ytThumb = $("#ytThumb");
+    const ytUrl = `https://www.youtube.com/watch?v=${YOUTUBE_ID}`;
+    $("#ytLink").href = ytUrl;
+    $("#footYt").href = ytUrl;
+    ytThumb.src = `https://i.ytimg.com/vi/${YOUTUBE_ID}/maxresdefault.jpg`;
+    // maxresdefault does not exist for every video: then hqdefault, then a drawn cover
+    ytThumb.addEventListener("error", () => {
+      if (!ytThumb.src.includes("hqdefault")) ytThumb.src = `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`;
+      else yt.classList.add("nothumb");
+    });
+    // A missing maxresdefault can also come back as a small grey placeholder (120 px wide)
+    ytThumb.addEventListener("load", () => {
+      if (ytThumb.naturalWidth <= 120 && !ytThumb.src.includes("hqdefault")) ytThumb.src = `https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg`;
+    });
+
+    function playYouTube(start = 0) {
+      yt.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}?autoplay=1&rel=0&start=${start}"
+        title="meloDrop, la présentation complète" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    }
+    $("#ytPlay").addEventListener("click", () => playYouTube(0));
+    $("#chapters").innerHTML = CHAPTERS.map(([t, label]) =>
+      `<li><button type="button" data-start="${toSeconds(t)}"><time>${t}</time><span>${label}</span></button></li>`).join("");
+    $("#chapters").addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      playYouTube(Number(button.dataset.start));
+      if (yt.getBoundingClientRect().top < 0) yt.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    // ================= Versions =================
+    const months = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+    const dayMs = 24 * 3600 * 1000;
+    const first = new Date(VERSIONS[0][1]);
+    const last = new Date(VERSIONS[VERSIONS.length - 1][1]);
+    const days = Math.round((last - first) / dayMs) + 1;
+    $("#versionsTitle").textContent = `${VERSIONS.length} versions en ${days} jours.`;
+    $$("[data-count-versions]").forEach((el) => (el.textContent = VERSIONS.length));
+    $$("[data-count-days]").forEach((el) => (el.textContent = days));
+    $("#tlTrack").innerHTML = VERSIONS.map(([version, date, text], i) => {
+      const d = new Date(date);
+      const latest = i === VERSIONS.length - 1;
+      return `<li class="version${latest ? " latest" : ""}" style="--c:${pastels[i % 5]};transition-delay:${0.3 + i * 0.07}s">
+        <div class="dot"></div>
+        <b>${version}</b>${latest ? '<span class="tag">Dernière</span>' : ""}
+        <time datetime="${date}">${d.getDate()} ${months[d.getMonth()]}</time>
+        <p>${text}</p>
+      </li>`;
+    }).join("");
+    const timeline = $("#timeline");
+    const tlTrack = $("#tlTrack");
+    new IntersectionObserver(([entry], obs) => {
+      if (!entry.isIntersecting) return;
+      obs.disconnect();
+      timeline.classList.add("in");
+    }, { threshold: 0.3 }).observe(timeline);
+    $$("[data-tl]").forEach((button) => button.addEventListener("click", () => {
+      tlTrack.scrollBy({ left: Number(button.dataset.tl) * tlTrack.clientWidth * 0.8, behavior: reduced ? "auto" : "smooth" });
+    }));
+
+    // ================= About me: initials if the photo is missing =================
+    const photo = $("#portrait .photo");
+    photo.addEventListener("error", () => $("#portrait").classList.add("no-photo"));
+    if (photo.complete && photo.naturalWidth === 0 && photo.getAttribute("loading") !== "lazy") $("#portrait").classList.add("no-photo");
+
+    // ================= Beta: rain of pastel drops, like after a drop in the app =================
+    const canvas = $("#rain");
+    const ctx = canvas.getContext("2d");
+    let raining = false;
+
+    function dropShape(x, y, s) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - s);
+      ctx.bezierCurveTo(x, y - s, x - s * 0.62, y - s * 0.1, x - s * 0.62, y + s * 0.28);
+      ctx.arc(x, y + s * 0.28, s * 0.62, Math.PI, 0, true);
+      ctx.bezierCurveTo(x + s * 0.62, y - s * 0.1, x, y - s, x, y - s);
+      ctx.fill();
+    }
+
+    function rainNow() {
+      if (raining || reduced) return;
+      raining = true;
+      const rect = canvas.getBoundingClientRect();
+      const ratio = Math.min(2, devicePixelRatio || 1);
+      canvas.width = rect.width * ratio; canvas.height = rect.height * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const W = rect.width, H = rect.height;
+      const drops = Array.from({ length: Math.round(W / 22) }, (_, i) => ({
+        x: Math.random() * W, y: -40 - Math.random() * H * 0.9,
+        v: 120 + Math.random() * 160, s: 5 + Math.random() * 8,
+        c: pastels[i % 5], done: false,
+      }));
+      const ripples = [];
+      let lastTime = performance.now();
+      const start = lastTime;
+      function frame(now) {
+        const dt = Math.min(0.05, (now - lastTime) / 1000);
+        lastTime = now;
+        ctx.clearRect(0, 0, W, H);
+        drops.forEach((d) => {
+          if (d.done) return;
+          d.v += 900 * dt; d.y += d.v * dt;
+          if (d.y > H - 18) { d.done = true; ripples.push({ x: d.x, y: H - 14, r: 2, a: 0.8, c: d.c }); return; }
+          ctx.globalAlpha = 0.85; ctx.fillStyle = d.c; dropShape(d.x, d.y, d.s);
+        });
+        ripples.forEach((r) => {
+          r.r += 60 * dt; r.a -= 0.9 * dt;
+          if (r.a <= 0) return;
+          ctx.globalAlpha = r.a; ctx.strokeStyle = r.c; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r, r.r * 0.28, 0, 0, Math.PI * 2); ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+        const alive = drops.some((d) => !d.done) || ripples.some((r) => r.a > 0);
+        if (alive && now - start < 6000) requestAnimationFrame(frame);
+        else { ctx.clearRect(0, 0, W, H); raining = false; }
+      }
+      requestAnimationFrame(frame);
+    }
+    new IntersectionObserver(([entry], obs) => {
+      if (entry.isIntersecting) { obs.disconnect(); setTimeout(rainNow, 300); }
+    }, { threshold: 0.5 }).observe($("#betaPanel"));
+    $("#mailBtn").addEventListener("click", rainNow);
+
+    $("#copyBtn").addEventListener("click", async () => {
+      const button = $("#copyBtn");
+      try {
+        await navigator.clipboard.writeText("melodrop.app@gmail.com");
+        button.textContent = "Copiée";
+      } catch {
+        button.textContent = "Sélectionne l'adresse";
+      }
+      setTimeout(() => (button.textContent = "Copier"), 2000);
+    });
   </script>
-
 </body>
 </html>

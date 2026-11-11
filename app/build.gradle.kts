@@ -11,8 +11,8 @@ android {
         applicationId = "com.app.melodrop"
         minSdk = 26
         targetSdk = 37
-        versionCode = 15
-        versionName = "v.0.10.1"
+        versionCode = 16
+        versionName = "v.0.10.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

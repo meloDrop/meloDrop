@@ -3,14 +3,11 @@ package com.app.melodrop.ui.whatsnew
 // Lines shown in the "Nouveautés" sheet, for the version installed.
 // To update at each new version, with the user lines of CHANGELOGFR.md
 val WhatsNewItems = listOf(
-    "Correctif : la bulle du tuto s'adapte à la taille de l'écran, et le bouton « Suivant » reste toujours visible.",
-    "Correctif : sur les petits écrans, la pochette de Discover garde toute la largeur de la carte.",
-    "Une carte par chanson : quand plusieurs membres droppent le même titre, il n'apparaît qu'une fois, et ton like ou ton pick compte pour chacun d'eux.",
-    "Sur une carte, touche « X personnes ont droppé cette chanson » ou les likes pour voir qui l'a droppée et qui l'a likée.",
-    "Sur l'écran Drop et sous tes drops, touche les likes, les picks ou les stats pour voir qui a aimé ton drop.",
-    "Sur le profil des autres, « Voir plus » ou le compteur de drops ouvre tous leurs drops.",
-    "Dans « Mes likes », « Mes picks » et « Mes skips », « drop par X personnes » ouvre la liste des droppeurs.",
-    "Certains badges arrivent maintenant tout seuls, quand tu remplis leur condition.",
-    "Un tuto pour Discover, Drop et Profil : tu peux le revoir ici avec « Revoir le tuto ».",
-    "Correctif : sur les petits écrans, le texte d'aide de Discover suit l'ordre des boutons.",
+    "Nouvelles animations dans Discover : des ondes et des étoiles pour un pick, des cœurs pour un like, et un skip qui file sur le côté.",
+    "Quand tu déposes ton titre, une pluie de gouttes colorées met ton drop en ligne.",
+    "Une chanson déjà dans tes likes peut revenir quand quelqu'un la redroppe, avec « Déjà dans tes likes ». Ton like compte pour ce nouveau drop, sans doublon dans ta liste.",
+    "Sous les boutons de Discover, un petit message confirme chaque like, pick ou skip.",
+    "Ton avatar se personnalise beaucoup plus, avec des onglets sous un avatar plus grand : couleur de la goutte, décor du fond, expression, et deux nouveaux styles, Jazz et Lo-fi.",
+    "Les accessoires sont plus détaillés, et la goutte a maintenant du volume et des reflets.",
+    "Pendant la phase de test, tout est débloqué : essaie les gouttes Or, Spectre, Océan et Prune et les 9 auras animées, visibles sur ton profil, dans les listes et sur les cartes Discover.",
 )

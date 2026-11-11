@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +46,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -622,17 +626,9 @@ internal fun ProfileHeader(
         // Takes all the space left, so the menu stays on the right
         Column(modifier = Modifier.weight(1f)) {
             // The display name, or the username when none was chosen (ADR-0019)
-            Text(
-                text = profile.displayName ?: profile.username,
-                fontFamily = Unbounded,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                // Unspecified: the letters take the gradient of the style instead
-                color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onBackground,
-                style = if (isCreator) LocalTextStyle.current.merge(TextStyle(brush = PastelGradient))
-                else LocalTextStyle.current,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            ProfileName(
+                name = profile.displayName ?: profile.username,
+                isCreator = isCreator,
             )
             Text(
                 text = "@${profile.username} · membre depuis ${memberSince(profile.createdAt)}",
@@ -642,6 +638,56 @@ internal fun ProfileHeader(
         }
 
         menu()
+    }
+}
+
+// Sizes tried for the name of a profile, from the biggest
+private val PROFILE_NAME_SIZES = listOf(22.sp, 20.sp, 18.sp, 16.sp)
+
+// The name of a profile, always in full, never cut with "…".
+// On one line at the biggest size that fits, down to 16 sp. Longer than that:
+// on several lines at 16 sp, a long word cut between two syllables with a "-"
+@Composable
+private fun ProfileName(
+    name: String,
+    isCreator: Boolean,
+) {
+    val measurer = rememberTextMeasurer()
+    // The creator wears the logo gradient (see ProfileHeader)
+    val style = (
+        if (isCreator) LocalTextStyle.current.merge(TextStyle(brush = PastelGradient))
+        else LocalTextStyle.current
+        ).merge(
+            TextStyle(
+                fontFamily = Unbounded,
+                fontWeight = FontWeight.Bold,
+                // On several lines: a word too long is cut between two syllables, with a "-"
+                hyphens = Hyphens.Auto,
+                lineBreak = LineBreak.Paragraph,
+            ),
+        )
+
+    BoxWithConstraints {
+        // Width left next to the avatar, in pixels
+        val width = constraints.maxWidth
+        // The biggest size where the whole name holds on one line, measured before drawing
+        val fontSize = remember(name, width) {
+            PROFILE_NAME_SIZES.firstOrNull { size ->
+                measurer.measure(
+                    text = name,
+                    style = style.copy(fontSize = size),
+                    maxLines = 1,
+                    softWrap = false,
+                ).size.width <= width
+            } ?: PROFILE_NAME_SIZES.last()
+        }
+
+        Text(
+            text = name,
+            style = style.copy(fontSize = fontSize),
+            // Unspecified: the letters of the creator take the gradient of the style instead
+            color = if (isCreator) Color.Unspecified else MaterialTheme.colorScheme.onBackground,
+        )
     }
 }
 
